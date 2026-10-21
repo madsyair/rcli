@@ -1,0 +1,84 @@
+Package: rcli
+Type: Package
+Title: Composite Leading Indicators from Component Selection to Validation
+Version: 0.1.1
+Authors@R: c(
+    person("Achmad Syahrul", "Choir", email = "madsyair@gmail.com",
+           role = c("aut", "cre"))
+    )
+Description: Builds composite leading indicators (CLI) for business and growth
+    cycles following the OECD system of composite leading indicators
+    (Gyomai and Guidetti 2012). Candidate series are de-trended and smoothed
+    (Hodrick and Prescott 1997 <doi:10.2307/2953682>; Christiano and
+    Fitzgerald 2003 <doi:10.1111/1468-2354.t01-1-00076>; Hamilton 2018
+    <doi:10.1162/rest_a_00706>), turning points are dated with the
+    Bry-Boschan and Harding-Pagan rules (Harding and Pagan 2002
+    <doi:10.1016/S0304-3932(01)00108-8>), and every candidate is classified
+    as leading, coincident, lagging or rejected from its lead at turning
+    points, cross-correlation, concordance and Granger causality
+    (Toda and Yamamoto 1995 <doi:10.1016/0304-4076(94)01616-8>).
+    Leading components are aggregated with equal weights, principal
+    components, Conference Board standardisation factors or a dynamic factor
+    model, and the composite is re-selected in a loop until it passes
+    in-sample and pseudo out-of-sample tests, including a check for the
+    selection bias of in-sample leads. A quality scorecard gives an explicit
+    verdict on the composite, and an optional 'shiny' interface runs the
+    workflow step by step. All steps are S4 objects with an audit trail of
+    selection decisions.
+License: GPL (>= 3)
+URL: https://github.com/madsyair/rcli
+BugReports: https://github.com/madsyair/rcli/issues
+Encoding: UTF-8
+Language: en-GB
+Depends:
+    R (>= 4.1.0)
+Imports:
+    graphics,
+    grDevices,
+    methods,
+    stats,
+    utils
+Suggests:
+    chromote,
+    Coinprofile,
+    knitr,
+    mFilter,
+    neverhpfilter,
+    rmarkdown,
+    seasonal,
+    shiny,
+    shinytest2,
+    spelling,
+    tempdisagg,
+    testthat (>= 3.0.0),
+    xts
+VignetteBuilder: knitr
+Config/testthat/edition: 3
+RoxygenNote: 7.3.1
+Collate:
+    'rcli-package.R'
+    'utils.R'
+    'holidays.R'
+    'classes-filter.R'
+    'filters.R'
+    'classes-dater.R'
+    'turning-points.R'
+    'classes-aggregator.R'
+    'classes-core.R'
+    'spec.R'
+    'align.R'
+    'candidates.R'
+    'cycles.R'
+    'assessment.R'
+    'aggregate.R'
+    'validation.R'
+    'quality.R'
+    'build.R'
+    'selection-bias.R'
+    'accessors.R'
+    'methods-show.R'
+    'methods-plot.R'
+    'simulate.R'
+    'app-plots.R'
+    'app-text.R'
+    'app.R'

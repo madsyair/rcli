@@ -1,0 +1,253 @@
+---
+title: "Building a composite leading indicator with rcli"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Building a composite leading indicator with rcli}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r setup, include = FALSE}
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>", fig.width = 7,
+                      fig.height = 4)
+library(rcli)
+```
+
+A composite leading indicator (CLI) combines series whose cycles turn before
+the business cycle. `rcli` follows the OECD system of composite leading
+indicators (Gyomai and Guidetti 2012) from the choice of candidates to a
+tested composite, and adds the statistical checks recommended in the
+literature on leading indicators (Marcellino 2006).
+
+## 1. Candidates and specification
+
+Every workflow starts with a reference series and candidate series at the
+same frequency. Here we simulate thirty years of monthly data in which the
+truth is known: two series lead by six and three months, one is coincident,
+one lags, one is counter-cyclical and two are noise.
+
+```{r data}
+sim <- simulate_cycles(seed = 2026)
+attr(sim, "truth")
+```
+
+The OECD asks for an economic rationale for every component; statistics do
+not replace it. `rcli` records it and warns when it is missing.
+
+```{r candidates}
+meta <- data.frame(
+  name = colnames(sim)[-1],
+  rationale = c("early_stage", "rapid_response", "rapid_response",
+                "rapid_response", "expectations", "prime_mover",
+                "prime_mover")
+)
+cand <- cli_candidates(sim, reference = "reference", meta = meta)
+cand
+```
+
+All methodological choices live in one specification object:
+
+```{r spec}
+spec <- cli_spec(freq = 12)
+spec
+```
+
+## 2. The whole workflow in one call
+
+```{r build}
+res <- cli_build(cand, spec)
+res
+```
+
+`cli_build()` extracts the cycles, dates the turning points, classifies every
+candidate, aggregates the leading ones and tests the composite. The
+classification table shows why each series was kept or rejected:
+
+```{r assessment}
+assessment(res)
+```
+
+The counter-cyclical series was inverted before it was assessed. The audit
+log records each iteration of the selection loop:
+
+```{r audit}
+audit_log(res)[, c("iteration", "action", "components", "ccf_lag", "passed")]
+```
+
+```{r plot, fig.alt = "Composite and reference cycles with reference contractions shaded"}
+plot(res)
+```
+
+## 3. Step by step
+
+Every step is also available on its own, so a workflow can stop anywhere —
+for example after the classification.
+
+```{r steps}
+cyc <- cli_cycles(cand, spec)
+cyc$lead_6
+tp <- cli_turning_points(cyc, spec)
+head(as.data.frame(tp$reference))
+cli <- cli_composite(cyc, c("lead_6", "lead_3"), spec, cyc$reference)
+cli_validate(cli, cyc$reference, spec)
+```
+
+Filters, turning-point rules and aggregation methods are interchangeable
+objects:
+
+```{r alternatives}
+alt <- update(spec, filter = cf_filter(), aggregator = dynamic_factor())
+components(cli_build(cand, alt))
+```
+
+## 4. How the classification rules were calibrated
+
+The thresholds were not guessed. The script `data-raw/calibrate_collect.R`
+simulates 60 samples for each frequency and three noise levels, classifies
+every candidate and compares the class with the truth. Two lessons shaped the
+defaults:
+
+* the median lead at turning points shrinks towards zero as noise grows,
+  whereas the lead of the cross-correlation peak stays unbiased, so the
+  cross-correlation lead is the primary lead measure;
+* concordance alone lets about one noise series in seventy through; adding
+  the Toda-Yamamoto Granger test removes almost all of them at nearly no
+  loss of power.
+
+```{r calibration}
+acc <- read.csv(system.file("calibration", "accuracy.csv",
+                            package = "rcli"))
+acc[, c("freq", "noise_sd", "correct.leading", "correct.rejected",
+        "false_leading", "overall")]
+```
+
+With low or moderate noise most candidates are classified correctly, and
+non-leading series are almost never labelled leading. With quarterly data and
+strong noise the power to detect leaders falls: thirty years give only 120
+observations.
+
+## 5. Is the in-sample lead real?
+
+Components are chosen because they led in the sample, so the in-sample lead
+overstates the lead to expect later. `cli_selection_bias()` chooses the
+components with data up to a cut-off date and measures the lead of that
+composite only at later turning points.
+
+```{r bias}
+cli_selection_bias(cand, spec, cutoffs = c(2012, 2016))
+```
+
+In this simulation the leaders are genuine, so the lead after the cut-off is
+as long as before it. With real data a large positive `lead_gap` means the
+in-sample lead is mostly a selection effect. Set `oos_cutoffs` in the
+specification to run this check inside `cli_build()`.
+
+## 6. Is the composite good enough?
+
+`cli_quality()` turns the validation into a scorecard with a verdict. It
+checks three groups of criteria:
+
+* **turning points**: the composite meets every leading criterion used to
+  classify candidates;
+* **prediction**: the area under the ROC curve of the implied probability of
+  contraction is at least 0.7, the quadratic probability score beats a
+  constant probability, and the Pesaran-Timmermann test finds that the
+  composite's direction predicts the later direction of the reference;
+* **out of sample**: after the cut-off dates the composite still leads, and
+  the in-sample lead does not exceed the later lead by more than `min_lead`.
+
+The verdict is *good* when all three groups pass, *acceptable* when the
+in-sample groups pass but the out-of-sample check was not run, and *weak*
+otherwise.
+
+```{r quality}
+res_oos <- cli_build(cand, update(spec, oos_cutoffs = c(2012, 2016)))
+cli_quality(res_oos)
+```
+
+## 7. Mixed frequencies and variable types
+
+`rcli` works at one frequency, but the data rarely arrive that way: GDP is
+quarterly, credit is a monthly stock, exchange rates are daily, some sales
+are weekly. `cli_align()` brings them to one frequency with the rule set by
+the type of each series (`series_types`): flows are summed, stocks are taken
+at the end of the period, averages are averaged. Weekly data are spread over
+their days before they are summed into months, so that months of five weeks
+do not look larger than months of four. A quarterly reference series is
+disaggregated to months with the Denton-Cholette method (or Chow-Lin with a
+monthly indicator that is not a candidate); quarterly candidates are
+interpolated at the month the OECD uses (central month, or last month for
+stocks).
+
+```{r align}
+gdp_q <- aggregate(sim[, "reference"], nfrequency = 4, FUN = sum)
+weeks <- seq(as.Date("1995-01-02"), as.Date("2024-12-23"), by = "week")
+sales <- data.frame(date = weeks,
+                    value = 700 * exp(cumsum(rnorm(length(weeks), 0, 0.01))))
+x <- cli_align(list(gdp = gdp_q, sim[, -1], sales = sales),
+               type = c(gdp = "flow", sales = "flow"), reference = "gdp")
+attr(x, "alignment")[c(1, 9), ]
+cand_mf <- cli_candidates(x, reference = "gdp",
+                          meta = data.frame(name = colnames(x)[-1],
+                                            rationale = "early_stage"))
+res_mf <- cli_build(cand_mf)
+leaders(res_mf)
+```
+
+When the reference series was disaggregated, the quality scorecard adds a
+line saying that its turning-point dates, and so the lead, are uncertain by
+about one month: the monthly path inside each quarter is an estimate.
+
+Moving holidays such as Idulfitri shift through the calendar, so fixed
+seasonal factors miss them. `holiday_effect()` turns their dates into
+regressors for X-13ARIMA-SEATS (package **seasonal**):
+
+```{r holidays, eval = FALSE}
+eid <- holiday_effect(idulfitri_dates(1990, 2030), name = "idulfitri")
+spec_sa <- cli_spec(seasonal_adjust = TRUE, holidays = eid)
+```
+
+`idulfitri_dates()` gives the dates of the arithmetic Islamic calendar,
+which can differ from the official Indonesian dates by a day or two; use
+the official dates when you have them.
+
+## 8. Graphical interface
+
+`run_app()` opens a Shiny application (package **shiny**) that walks
+through the same nine steps — data, candidate metadata, specification,
+cycles, turning points, classification, composite, validation with the
+scorecard, and export. Each step unlocks the next; re-running a step clears
+the results that depend on it. The export step offers the composite, the
+classification, the audit log, the scorecard, the `CliResult` object and an
+R script that reproduces the analysis.
+
+```{r app, eval = FALSE}
+run_app()               # Indonesian interface
+run_app(language = "en")
+```
+
+## 9. Extending rcli
+
+A new filter is a subclass of `CycleFilter` with a method for
+`extract_cycle()`:
+
+```{r extend}
+setClass("FirstDifference", contains = "CycleFilter")
+setMethod("extract_cycle", "FirstDifference", function(filter, x, ...) {
+  ts(c(NA, diff(as.numeric(x))), start = start(x), frequency = frequency(x))
+})
+fd <- new("FirstDifference", label = "first difference")
+head(extract_cycle(fd, sim[, "lead_6"]))
+```
+
+New aggregation methods work the same way with `Aggregator` and
+`aggregate_components()`.
+
+## References
+
+Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
+Indicators*. OECD Publishing, Paris.
+
+Marcellino, M. (2006). Leading indicators. In G. Elliott, C. W. J. Granger and
+A. Timmermann (eds.), *Handbook of Economic Forecasting*, Vol. 1, 879–960.
+Elsevier.

@@ -1,0 +1,36 @@
+spec <- cli_spec(12)
+cyc <- cli_cycles(sim_candidates(seed = 1), spec)
+
+test_that("AUC and Pesaran-Timmermann behave on known cases", {
+  expect_equal(rcli:::auc_score(c(0.1, 0.2, 0.8, 0.9), c(0, 0, 1, 1)), 1)
+  expect_equal(rcli:::auc_score(c(0.9, 0.8, 0.2, 0.1), c(0, 0, 1, 1)), 0)
+  expect_true(is.na(rcli:::auc_score(1:3, c(1, 1, 1))))
+  x <- as.numeric(sine_ts(shift = -6))
+  y <- as.numeric(sine_ts())
+  pt <- rcli:::pesaran_timmermann(x, y, 6)
+  expect_lt(pt$p_value, 1e-6)
+  expect_true(is.na(rcli:::pesaran_timmermann(1:5, 1:5, 1)$stat))
+})
+
+test_that("validation of a good composite passes", {
+  ci <- cli_composite(cyc, c("lead_6", "lead_3"), spec, cyc$reference)
+  v <- cli_validate(ci, cyc$reference, spec)
+  expect_true(v@passed)
+  expect_length(v@failed, 0)
+  expect_gte(v@turning_points$ccf_lag, 3)
+  expect_true(v@probability$qps >= 0 && v@probability$qps <= 2)
+  expect_gt(v@probability$auc, 0.8)
+  expect_lt(v@probability$pt_p, 0.01)
+  expect_equal(v@probability$horizon, v@turning_points$ccf_lag)
+  df <- as.data.frame(v)
+  expect_true(all(c("qps", "auc", "passed") %in% names(df)))
+})
+
+test_that("validation of a lagging composite fails with reasons", {
+  ci <- cli_composite(cyc, "lag_3", spec, cyc$reference)
+  v <- cli_validate(ci, cyc$reference, update(spec, horizon = 2))
+  expect_false(v@passed)
+  expect_true("ccf" %in% v@failed)
+  expect_equal(v@probability$horizon, 2)
+  expect_error(cli_validate(ci, ci, spec), class = "rcli_error_argument")
+})
