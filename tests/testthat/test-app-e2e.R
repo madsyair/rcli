@@ -92,10 +92,10 @@ test_that("a user completes the nine steps in the browser", {
 
   # 8. Validation: acceptable before, good after the out-of-sample check
   go_to(app, 8L)
-  expect_match(app$get_html("#verdict"), "ACCEPTABLE")
+  expect_text_soon(app, "#verdict", "ACCEPTABLE")
   app$click("run8")
   app$wait_for_idle(timeout = 120000)
-  expect_match(app$get_html("#verdict"), "GOOD")
+  expect_text_soon(app, "#verdict", "GOOD")
   expect_match(app$get_value(output = "scorecard"), "out of sample")
   expect_match(app$get_value(output = "sb_table"), "2016")
   for (id in c("roc_plot", "prob_plot", "sb_plot")) expect_plot(app, id)
@@ -132,10 +132,9 @@ test_that("steps cannot be skipped in the browser", {
   app$click("run6")
   app$wait_for_idle()
   expect_match(notifications(app), "Complete the previous step first")
-  expect_match(app$get_text("#assess_table"),
-               "Complete the previous step first")
+  expect_text_soon(app, "#assess_table", "Complete the previous step first")
   app$set_inputs(step = "s8")
-  expect_match(app$get_text("#scorecard"), "Complete the previous step first")
+  expect_text_soon(app, "#scorecard", "Complete the previous step first")
   expect_no_browser_errors(app)
 })
 
@@ -185,7 +184,7 @@ test_that("an uploaded quarterly CSV runs through the Indonesian interface", {
   expect_match(audit, "tindakan")
   expect_plot(app, "composite_plot")
   go_to(app, 8L)
-  expect_match(app$get_html("#verdict"), "Vonis mutu")
+  expect_text_soon(app, "#verdict", "Vonis mutu")
   score <- app$get_value(output = "scorecard")
   expect_match(score, "titik balik")
   expect_match(score, "lolos|GAGAL")
@@ -212,8 +211,7 @@ test_that("a malformed CSV gives an error message and the app keeps working", {
   app$click("run1")
   app$wait_for_idle()
   expect_match(notifications(app), "Error")
-  expect_match(app$get_text("#data_summary"),
-               "Complete the previous step first")
+  expect_text_soon(app, "#data_summary", "Complete the previous step first")
   app$set_inputs(source = "example_q", wait_ = FALSE)
   app$click("run1")
   app$wait_for_idle()
