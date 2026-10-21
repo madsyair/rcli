@@ -17,7 +17,16 @@ jobs:
       - uses: r-lib/actions/setup-r@v2
         with:
           use-public-rspm: true
+      - name: System libraries without Chromium (Linux)
+        # pak would add Chromium for {chromote} from a PPA that is often
+        # unavailable; the browser tests run in the gui-e2e job instead
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libcurl4-openssl-dev libssl-dev cmake \
+            libuv1-dev zlib1g-dev libxml2-dev
       - uses: r-lib/actions/setup-r-dependencies@v2
+        env:
+          PKG_SYSREQS: false
         with:
           extra-packages: any::covr
           needs: coverage

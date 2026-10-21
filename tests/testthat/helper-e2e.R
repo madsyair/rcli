@@ -2,6 +2,12 @@
 
 skip_if_no_browser <- function() {
   skip_on_cran()
+  # on continuous integration the browser tests run in their own job
+  # (.github/workflows/gui-e2e.yaml), where RCLI_E2E is "true"
+  if (identical(Sys.getenv("CI"), "true") &&
+      !identical(Sys.getenv("RCLI_E2E"), "true")) {
+    skip("Browser tests run in the gui-e2e job on CI")
+  }
   skip_if_not_installed("shinytest2")
   skip_if_not_installed("chromote")
   skip_if(is.null(tryCatch(chromote::find_chrome(), error = function(e) NULL)),
