@@ -3,7 +3,7 @@ Type: Package
 Title: Composite Leading Indicators from Component Selection to Validation
 Version: 0.1.1
 Authors@R: c(
-    person("Achmad Syahrul", "Choir", email = "madsyair@gmail.com",
+    person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
            role = c("aut", "cre"))
     )
 Description: Builds composite leading indicators (CLI) for business and growth
