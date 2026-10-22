@@ -3,9 +3,20 @@
 #' An `Aggregator` combines the normalised cycles of the selected leading
 #' components into one composite cycle.
 #'
-#' * `equal_weight()`: the OECD method. At each date the composite is the
-#'   mean of the available components; dates with less than `min_coverage`
-#'   of the components available are missing (OECD uses 60 percent).
+#' * `equal_weight()`: the default. At each date the composite is the mean
+#'   of the normalised cycles of the available components; dates with less
+#'   than `min_coverage` of the components available are missing (the OECD
+#'   uses 60 percent).
+#' * `oecd_aggregate()`: the OECD procedure (Gyomai and Guidetti 2012,
+#'   p. 9). Each component is the normalised cycle plus 100; at each date
+#'   the growth rates of the available components are averaged with equal
+#'   weights and the average growth is chained into the index, which starts
+#'   at the mean level of the components. A date is computed only when at
+#'   least `min_coverage` of the components are available; after a gap the
+#'   chain restarts at the mean level of the available components. When
+#'   all components are observed, the result moves almost exactly like
+#'   the equal-weight mean; it differs at the ragged edge, where a missing
+#'   component changes the average growth instead of the average level.
 #' * `principal_component()`: weights proportional to the loadings of the
 #'   first principal component of the components over their common sample,
 #'   in the spirit of the targeted-predictor approach (Bai and Ng 2008)
@@ -41,11 +52,15 @@
 #' large approximate dynamic factor models based on Kalman filtering.
 #' *Journal of Econometrics*, 164(1), 188--205.
 #'
+#' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
+#' Indicators*. OECD Publishing, Paris.
+#'
 #' The Conference Board (2001). *Business Cycle Indicators Handbook*.
 #' The Conference Board, New York.
 #' @seealso [cli_composite()], [cli_spec()]
 #' @examples
 #' equal_weight()
+#' oecd_aggregate()
 #' dynamic_factor(min_coverage = 0.5)
 #' @name Aggregator-class
 #' @aliases Aggregator
@@ -57,6 +72,9 @@ setClass("Aggregator", representation("VIRTUAL", label = "character",
 
 #' @rdname Aggregator-class
 setClass("EqualWeight", contains = "Aggregator")
+
+#' @rdname Aggregator-class
+setClass("OecdAggregate", contains = "Aggregator")
 
 #' @rdname Aggregator-class
 setClass("PrincipalComponent", contains = "Aggregator")
@@ -75,7 +93,14 @@ new_aggregator <- function(class, label, min_coverage) {
 #' @rdname Aggregator-class
 #' @export
 equal_weight <- function(min_coverage = 0.6) {
-  new_aggregator("EqualWeight", "Equal weights (OECD)", min_coverage)
+  new_aggregator("EqualWeight", "Equal weights", min_coverage)
+}
+
+#' @rdname Aggregator-class
+#' @export
+oecd_aggregate <- function(min_coverage = 0.6) {
+  new_aggregator("OecdAggregate", "Chained average growth (OECD)",
+                 min_coverage)
 }
 
 #' @rdname Aggregator-class

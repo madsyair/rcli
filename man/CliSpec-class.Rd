@@ -64,6 +64,14 @@ harness; empty to skip it.}
 
 \item{\code{holidays}}{List of [holiday_effect()] objects removed during seasonal
 adjustment.}
+
+\item{\code{classifier}}{A [Classifier-class]: the rule that labels series
+leading, coincident, lagging or rejected.}
+
+\item{\code{outliers}}{An [OutlierTreatment-class].}
+
+\item{\code{lag_shift}}{Logical; shift the components so that their median leads
+align before aggregation (OECD lag-shifting)?}
 }}
 
 \seealso{

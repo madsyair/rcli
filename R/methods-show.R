@@ -54,7 +54,6 @@ setMethod("show", "Aggregator", function(object) {
 #' @rdname show-methods
 #' @export
 setMethod("show", "CliSpec", function(object) {
-  unit <- if (object@freq == 12) "months" else "quarters"
   cat("<CliSpec> ", if (object@freq == 12) "monthly" else "quarterly",
       " composite leading indicator\n", sep = "")
   cat("  filter:      ", object@filter@label, "\n", sep = "")
@@ -70,15 +69,44 @@ setMethod("show", "CliSpec", function(object) {
                        collapse = ", "), ")")
         }, "\n", sep = "")
   }
-  cat("  leading if:  cross-correlation lead >= ", object@min_lead, " ", unit,
-      ", median lead >= ", object@min_median_lead,
-      ", leads >= ", object@min_consistency * 100, "% of turning points,\n",
-      "               missed and extra <= ", object@max_missed * 100, "% and ",
-      object@max_extra * 100, "%, concordance and Granger causality ",
-      "significant at ", object@alpha, "\n", sep = "")
+  outl <- spec_outliers(object)
+  if (!is(outl, "RobustOutliers") || !identical(object@transform, "auto")) {
+    cat("  transform:   ", object@transform, "\n", sep = "")
+    cat("  outliers:    ", outl@label, "\n", sep = "")
+  }
+  cat(classifier_lines(spec_classifier(object), object), sep = "")
+  if (methods::.hasSlot(object, "lag_shift") && isTRUE(object@lag_shift)) {
+    cat("  lag-shift:   components aligned on the shortest median lead\n")
+  }
   cat("  loop:        at most ", object@max_iter, " iterations, at least ",
       object@min_components, " components\n", sep = "")
   invisible(object)
+})
+
+setGeneric("classifier_lines", function(classifier, spec) {
+  standardGeneric("classifier_lines")
+})
+
+setMethod("classifier_lines", "Classifier", function(classifier, spec) {
+  paste0("  leading if:  ", classifier@label, "\n")
+})
+
+setMethod("classifier_lines", "RcliClassifier", function(classifier, spec) {
+  unit <- if (spec@freq == 12) "months" else "quarters"
+  paste0("  leading if:  cross-correlation lead >= ", spec@min_lead, " ", unit,
+         ", median lead >= ", spec@min_median_lead,
+         ", leads >= ", spec@min_consistency * 100, "% of turning points,\n",
+         "               missed and extra <= ", spec@max_missed * 100,
+         "% and ", spec@max_extra * 100, "%, concordance and Granger ",
+         "causality significant at ", spec@alpha, "\n")
+})
+
+setMethod("classifier_lines", "OecdClassifier", function(classifier, spec) {
+  paste0("  leading if:  median lead at turning points >= ",
+         classifier@coincident, " months (OECD rule)\n",
+         "               coincident within +/- ", classifier@coincident,
+         ", lagging <= -", classifier@coincident, ", >= ",
+         classifier@min_matched, " matched\n")
 })
 
 #' @rdname show-methods
@@ -169,7 +197,14 @@ setMethod("show", "CompositeIndex", function(object) {
       period_label(tm[span[1]], f), " to ", period_label(tm[span[2]], f),
       "\n", sep = "")
   w <- round(object@weights, 3)
-  cat(paste0("  ", names(w), ": ", w, collapse = "\n"), "\n", sep = "")
+  sh <- if (methods::.hasSlot(object, "shifts")) object@shifts else
+    numeric(0)
+  lab <- if (length(sh) > 0L) {
+    sprintf(" (shift %s)", sh[names(w)])
+  } else {
+    ""
+  }
+  cat(paste0("  ", names(w), ": ", w, lab, collapse = "\n"), "\n", sep = "")
   invisible(object)
 })
 

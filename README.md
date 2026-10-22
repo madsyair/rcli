@@ -22,8 +22,9 @@ composite leading indicators:
 5. **Classification** – leading, coincident, lagging or rejected, from the
    cross-correlation lead, leads at turning points, concordance and a
    Toda-Yamamoto Granger test (`cli_assess()`).
-6. **Aggregation** – equal weights, principal components, Conference Board
-   standardisation or a dynamic factor model (`cli_composite()`).
+6. **Aggregation** – equal weights, the OECD chained growth, principal
+   components, Conference Board standardisation or a dynamic factor model
+   (`cli_composite()`).
 7. **Validation** – turning-point statistics, QPS, AUC and the
    Pesaran-Timmermann test (`cli_validate()`), plus a check of the selection
    bias of in-sample leads (`cli_selection_bias()`).
@@ -32,6 +33,13 @@ composite leading indicators:
 9. **Quality verdict** – a scorecard of turning-point, prediction and
    out-of-sample criteria returns *good*, *acceptable* or *weak*
    (`cli_quality()`).
+
+`oecd_spec()` follows the OECD method step by step instead: TRAMO
+outliers with forecasts, the log/level test, the median-lead
+classification, lag-shifting and the chained average growth of the
+components; `cli_presentation()` gives the three OECD forms of the
+composite. The vignette explains, with simulations, where and why the
+defaults differ.
 
 Series of mixed frequencies (daily, weekly, monthly, quarterly) and types
 (flow, stock, average) are brought to one frequency with `cli_align()`, and

@@ -1,3 +1,44 @@
+# rcli 0.1.3
+
+## The OECD method as an option
+
+Every step of the OECD system (Gyomai and Guidetti 2012) is now available,
+and `oecd_spec()` sets them all at once. The defaults do not change.
+
+* `oecd_classifier()`: the OECD median-lead table (coincident within
+  +/- 2 months, leading from 2 months, longer leading over 8, lagging at
+  -2 or less). New strategy class `Classifier` with the generics
+  `classify_candidate()`, `leading_criteria()` and `quality_criteria()`;
+  `rcli_classifier()` is the default rule. `cli_spec(classifier = )`.
+* `tramo_outliers()`: additive outliers, transitory changes and level
+  shifts detected by TRAMO (through 'RJDemetra', new in Suggests, needs
+  Java) or by the regARIMA part of X-13 ('seasonal'); AO and TC effects are
+  removed and the series is extended with forecasts before the cycle
+  filter. New strategy class `OutlierTreatment` with `robust_outliers()`
+  (the previous rule, still the default) and `cli_spec(outliers = )`.
+* `cli_spec(transform = "test")`: logarithm or levels from the regARIMA
+  log/level test, as TRAMO decides at the OECD.
+* `oecd_aggregate()`: the average growth of the components chained into
+  the index, with the 60 percent rule.
+* `cli_spec(lag_shift = TRUE)` and `lag_shifts()`: components are moved so
+  that their median leads align; `cli_composite(shifts = )` and the new
+  `shifts` slot of `CompositeIndex`.
+* `cli_presentation()`: the three OECD forms of a composite (amplitude
+  adjusted, trend restored, 12-month rate of change) next to the reference.
+* The graphical interface offers the method (rcli or OECD) in step 3, the
+  chained aggregation and the log test; the exported script reproduces the
+  OECD composite, including lag shifts in manual mode.
+
+## Evidence for the defaults
+
+* `data-raw/compare_oecd.R` compares the defaults with the OECD options on
+  simulated data (`inst/calibration/oecd-*.csv`, vignette section 8). The
+  median-lead rule labels 20 to 28 percent of non-leading candidates
+  leading against at most 1.3 percent for the default rule; lag-shifting
+  shortens the lead of the composite by about three months; the chained
+  OECD aggregation is identical in sample and more than halves the error at
+  a ragged edge, so it is recommended for real-time work.
+
 # rcli 0.1.1
 
 * `cli_align()` brings daily, weekly, monthly and quarterly series to one

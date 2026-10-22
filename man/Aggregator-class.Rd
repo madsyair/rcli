@@ -5,16 +5,20 @@
 \alias{Aggregator-class}
 \alias{Aggregator}
 \alias{EqualWeight-class}
+\alias{OecdAggregate-class}
 \alias{PrincipalComponent-class}
 \alias{ConferenceBoard-class}
 \alias{DynamicFactor-class}
 \alias{equal_weight}
+\alias{oecd_aggregate}
 \alias{principal_component}
 \alias{conference_board}
 \alias{dynamic_factor}
 \title{Aggregation methods}
 \usage{
 equal_weight(min_coverage = 0.6)
+
+oecd_aggregate(min_coverage = 0.6)
 
 principal_component(min_coverage = 0.6)
 
@@ -34,9 +38,20 @@ An `Aggregator` combines the normalised cycles of the selected leading
 components into one composite cycle.
 }
 \details{
-* `equal_weight()`: the OECD method. At each date the composite is the
-  mean of the available components; dates with less than `min_coverage`
-  of the components available are missing (OECD uses 60 percent).
+* `equal_weight()`: the default. At each date the composite is the mean
+  of the normalised cycles of the available components; dates with less
+  than `min_coverage` of the components available are missing (the OECD
+  uses 60 percent).
+* `oecd_aggregate()`: the OECD procedure (Gyomai and Guidetti 2012,
+  p. 9). Each component is the normalised cycle plus 100; at each date
+  the growth rates of the available components are averaged with equal
+  weights and the average growth is chained into the index, which starts
+  at the mean level of the components. A date is computed only when at
+  least `min_coverage` of the components are available; after a gap the
+  chain restarts at the mean level of the available components. When
+  all components are observed, the result moves almost exactly like
+  the equal-weight mean; it differs at the ragged edge, where a missing
+  component changes the average growth instead of the average level.
 * `principal_component()`: weights proportional to the loadings of the
   first principal component of the components over their common sample,
   in the spirit of the targeted-predictor approach (Bai and Ng 2008)
@@ -58,6 +73,7 @@ for the generic `aggregate_components()` (see [cli_composite()]).
 }
 \examples{
 equal_weight()
+oecd_aggregate()
 dynamic_factor(min_coverage = 0.5)
 }
 \references{
@@ -72,6 +88,9 @@ predictors. *Journal of Econometrics*, 146(2), 304--317.
 Doz, C., Giannone, D. and Reichlin, L. (2011). A two-step estimator for
 large approximate dynamic factor models based on Kalman filtering.
 *Journal of Econometrics*, 164(1), 188--205.
+
+Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
+Indicators*. OECD Publishing, Paris.
 
 The Conference Board (2001). *Business Cycle Indicators Handbook*.
 The Conference Board, New York.

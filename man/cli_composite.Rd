@@ -3,6 +3,7 @@
 \name{aggregate_components}
 \alias{aggregate_components}
 \alias{aggregate_components,EqualWeight-method}
+\alias{aggregate_components,OecdAggregate-method}
 \alias{aggregate_components,PrincipalComponent-method}
 \alias{aggregate_components,ConferenceBoard-method}
 \alias{aggregate_components,DynamicFactor-method}
@@ -13,13 +14,15 @@ aggregate_components(aggregator, z, levels, spec)
 
 \S4method{aggregate_components}{EqualWeight}(aggregator, z, levels, spec)
 
+\S4method{aggregate_components}{OecdAggregate}(aggregator, z, levels, spec)
+
 \S4method{aggregate_components}{PrincipalComponent}(aggregator, z, levels, spec)
 
 \S4method{aggregate_components}{ConferenceBoard}(aggregator, z, levels, spec)
 
 \S4method{aggregate_components}{DynamicFactor}(aggregator, z, levels, spec)
 
-cli_composite(cycles, components, spec, reference = NULL)
+cli_composite(cycles, components, spec, reference = NULL, shifts = NULL)
 }
 \arguments{
 \item{aggregator, z, levels}{Internal arguments of the aggregation methods.}
@@ -33,6 +36,12 @@ already inverted, as returned in a [CliResult-class]).}
 
 \item{reference}{Optional [CycleSeries-class] of the reference series for
 the amplitude adjustment.}
+
+\item{shifts}{Optional named non-negative numbers of periods by which
+components are moved later before aggregation (OECD lag-shifting; see
+`lag_shift` in [cli_spec()]). The value of a shifted component at date
+\eqn{t} is its value at \eqn{t - s}; values moved past the last date
+are dropped.}
 }
 \value{
 A [CompositeIndex-class].

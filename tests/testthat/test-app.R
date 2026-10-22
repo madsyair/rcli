@@ -63,7 +63,7 @@ test_that("the interface builds in both languages", {
 })
 
 run_all_steps <- function(session, source = "example_m", mode = "auto",
-                          cutoffs = "2012, 2016") {
+                          cutoffs = "2012, 2016", method = "rcli") {
   session$setInputs(source = source, seed = 1, freq = "auto", start = "",
                     run1 = 1)
   session$setInputs(reference = "reference")
@@ -73,7 +73,8 @@ run_all_steps <- function(session, source = "example_m", mode = "auto",
   do.call(session$setInputs, inputs)
   session$setInputs(typ_1 = "stock", typ_2 = "flow")
   session$setInputs(run2 = 1)
-  session$setInputs(filter = "hp_double", aggregator = "equal",
+  session$setInputs(method = method, filter = "hp_double",
+                    aggregator = "equal",
                     transform = "auto", seasonal = FALSE, outlier = 5,
                     min_lead = 3, min_median_lead = 1, min_consistency = 0.5,
                     max_missed = 0.4, max_extra = 0.4, alpha = 0.05,
@@ -132,6 +133,33 @@ test_that("the server runs the nine steps in order", {
     expect_null(rv$cycles)
     expect_false(7L %in% rv$done)
   })
+})
+
+test_that("the OECD method runs in the interface and in the script", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("seasonal")
+  skip_on_cran()
+  shiny::testServer(rcli:::app_server("id"), {
+    session$userData$data <- function() rv$data
+    run_all_steps(session, mode = "manual", cutoffs = "", method = "oecd")
+    expect_s4_class(rv$spec@classifier, "OecdClassifier")
+    expect_true(rv$spec@lag_shift)
+    expect_equal(names(rv$composite@shifts), c("lead_6", "lead_3"))
+    expect_match(output$spec_print, "OECD")
+    expect_match(output$scorecard, "rata-rata lead")
+    script <- script()
+    expect_match(script, "oecd_spec(", fixed = TRUE)
+    expect_match(script, "shifts = lag_shifts(", fixed = TRUE)
+    eval_env <- new.env()
+    out <- utils::capture.output(eval(parse(text = script), envir = eval_env))
+    expect_equal(as.numeric(eval_env$cli@index),
+                 as.numeric(rv$composite@index))
+  })
+  expect_match(rcli:::spec_call(list(method = "oecd", seasonal = FALSE,
+                                     alpha = 0.05, min_auc = 0.7,
+                                     min_components = 2, max_iter = 10,
+                                     oos_cutoffs = "2015"), 12),
+               "oos_cutoffs = 2015", fixed = TRUE)
 })
 
 test_that("manual composites, uploads and downloads work", {

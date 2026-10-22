@@ -10,6 +10,10 @@
 #' after `spec@max_iter` iterations. Every iteration is written to the audit
 #' log ([audit_log()]).
 #'
+#' When `spec@lag_shift` is `TRUE`, every composite is built from components
+#' shifted so that their median leads align on the shortest one (OECD
+#' lag-shifting; see [cli_composite()]).
+#'
 #' Composites are ranked by the score
 #' \deqn{10 \times \textrm{criteria met} + \min(\textrm{lead}, 2\,
 #' \textrm{min\_lead}) + 5 \times \textrm{concordance} - 5 \times
@@ -89,8 +93,10 @@ select_components <- function(cycles, assessment, spec, reference) {
                         stringsAsFactors = FALSE)
     return(list(composite = NULL, validation = NULL, audit = audit))
   }
+  shift_on <- methods::.hasSlot(spec, "lag_shift") && isTRUE(spec@lag_shift)
   evaluate <- function(cs) {
-    comp <- cli_composite(cycles, cs, spec, ref)
+    sh <- if (shift_on) lag_shifts(cs, assessment) else NULL
+    comp <- cli_composite(cycles, cs, spec, ref, shifts = sh)
     val <- cli_validate(comp, ref, spec)
     list(composite = comp, validation = val, score = composite_score(val, spec))
   }

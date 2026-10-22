@@ -211,7 +211,59 @@ spec_sa <- cli_spec(seasonal_adjust = TRUE, holidays = eid)
 which can differ from the official Indonesian dates by a day or two; use
 the official dates when you have them.
 
-## 8. Graphical interface
+## 8. The OECD method and why the defaults differ
+
+`oecd_spec()` sets every step as in the OECD system (Gyomai and Guidetti
+2012): TRAMO outliers with short forecasts before the filter
+(`tramo_outliers()`, through RJDemetra or, without Java, the regARIMA part
+of X-13), the TRAMO log/level test (`transform = "test"`), the median-lead
+classification (`oecd_classifier()`), lag-shifting (`lag_shift = TRUE`) and
+the chained average growth of the components (`oecd_aggregate()`).
+`cli_presentation()` returns the three OECD forms of any composite:
+amplitude adjusted, trend restored and its 12-month rate of change.
+
+```{r oecd, eval = FALSE}
+res_oecd <- cli_build(cand, oecd_spec())
+tail(cli_presentation(res_oecd))
+```
+
+The package defaults differ where the simulations in
+`data-raw/compare_oecd.R` showed a gain. Classified with the OECD rule, the
+calibration candidates give these rates:
+
+```{r oecd-classification}
+cmp <- read.csv(system.file("calibration", "oecd-classification.csv",
+                            package = "rcli"))
+cmp[cmp$rule != "OECD (literal)", ]
+```
+
+The median-lead rule finds a few more true leaders, but it labels a fifth to
+more than a quarter of the non-leading candidates (and up to half of the
+pure-noise series) leading, against at most about 1 percent for the
+default rule. The aggregation experiment points the other way at the end of
+the sample:
+
+```{r oecd-aggregation}
+read.csv(system.file("calibration", "oecd-aggregation.csv",
+                     package = "rcli"))
+```
+
+The two aggregations are identical in sample, but when the longest-lead
+component misses its last two values the chained growth of the OECD stays
+much closer to the full-information composite; use `oecd_aggregate()` for
+real-time work. Lag-shifting makes the leads slightly more consistent and
+the composite misses fewer turning points, but it shortens the lead of the
+composite by about three months, to the shortest lead of the components;
+it is therefore off by default.
+
+TRAMO-type outliers and the robust default classify the candidates
+equally well when spikes and a level shift are injected:
+
+```{r oecd-outliers}
+read.csv(system.file("calibration", "oecd-outliers.csv", package = "rcli"))
+```
+
+## 9. Graphical interface
 
 `run_app()` opens a Shiny application (package **shiny**) that walks
 through the same nine steps — data, candidate metadata, specification,
@@ -226,7 +278,7 @@ run_app()               # Indonesian interface
 run_app(language = "en")
 ```
 
-## 9. Extending rcli
+## 10. Extending rcli
 
 A new filter is a subclass of `CycleFilter` with a method for
 `extract_cycle()`:

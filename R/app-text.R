@@ -46,6 +46,16 @@ app_text <- list(
     data_source = "Sumber", none = "(belum diisi)",
     var_type = "Tipe variabel", type_flow = "Aliran",
     type_stock = "Stok", type_average = "Rata-rata",
+    method = "Metode",
+    method_rcli = "rcli (bawaan, ambang terkalibrasi)",
+    method_oecd = "Persis OECD (Gyomai dan Guidetti 2012)",
+    method_help = paste(
+      "Metode OECD memakai pencilan TRAMO dengan prakiraan, uji log,",
+      "klasifikasi median lead (sejalan \u00b12 bulan), penggeseran lag, dan",
+      "agregasi laju pertumbuhan berantai. Penyaring, metode agregasi,",
+      "transformasi, ambang pencilan, dan ambang klasifikasi di kolom kanan",
+      "tidak dipakai; taraf nyata, AUC minimum, dan pengaturan loop tetap",
+      "dipakai."),
     filter = "Penyaring siklus", aggregator = "Metode agregasi",
     transform = "Transformasi", seasonal = "Penyesuaian musiman X-13",
     seasonal_missing = "(paket seasonal belum terpasang)",
@@ -142,6 +152,16 @@ app_text <- list(
     data_source = "Source", none = "(not given)",
     var_type = "Variable type", type_flow = "Flow",
     type_stock = "Stock", type_average = "Average",
+    method = "Method",
+    method_rcli = "rcli (default, calibrated thresholds)",
+    method_oecd = "Exactly as the OECD (Gyomai and Guidetti 2012)",
+    method_help = paste(
+      "The OECD method uses TRAMO outliers with forecasts, the log test,",
+      "the median-lead classification (coincident within \u00b12 months),",
+      "lag-shifting and chained average growth. The filter, aggregation",
+      "method, transformation, outlier threshold and the classification",
+      "thresholds on the right are not used; the significance level, the",
+      "minimum AUC and the loop settings still apply."),
     filter = "Cycle filter", aggregator = "Aggregation method",
     transform = "Transformation", seasonal = "X-13 seasonal adjustment",
     seasonal_missing = "(package seasonal not installed)",
@@ -230,6 +250,10 @@ app_phrases_id <- c(
     "pangsa titik balik sesudah titik potong yang didahului",
   "in-sample minus later lead" = "lead dalam sampel dikurangi lead sesudahnya",
   "lead within the OECD target range" = "lead dalam rentang sasaran OECD",
+  "mean lead at turning points" = "rata-rata lead di titik balik",
+  "standard deviation of the lead" = "simpangan baku lead",
+  "peak cross-correlation" = "puncak korelasi silang",
+  "close to median lead" = "dekat dengan median lead",
   # audit log and selection bias
   "initial composite of all leading candidates" =
     "komposit awal dari semua kandidat pendahulu",
@@ -314,7 +338,8 @@ translate_names <- function(df, p) {
 reason_phrases_id <- c(
   matched = "titik balik berpasangan", ccf = "lead korelasi silang",
   lead = "median lead", consistency = "konsistensi", missed = "terlewat",
-  extra = "ekstra", concordance = "konkordansi", granger = "Granger"
+  extra = "ekstra", concordance = "konkordansi", granger = "Granger",
+  "longer lead (over 8 months)" = "lead lebih panjang (di atas 8 bulan)"
 )
 
 translate_reasons <- function(x, language) {

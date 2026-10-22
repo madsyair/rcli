@@ -21,6 +21,9 @@ Composite index
 \item{\code{aggregator}}{The [Aggregator-class] used.}
 
 \item{\code{amplitude}}{Amplitude factor matching the reference cycle.}
+
+\item{\code{shifts}}{Named periods by which each component was moved later
+(lag-shifting); empty when the components were not shifted.}
 }}
 
 \seealso{

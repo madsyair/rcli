@@ -44,7 +44,7 @@ Useful links:
 
 }
 \author{
-\strong{Maintainer}: Achmad Syahrul Choir \email{madsyair@gmail.com}
+\strong{Maintainer}: Achmad Syahrul Choir \email{madsyair@stis.ac.id}
 
 }
 \keyword{internal}

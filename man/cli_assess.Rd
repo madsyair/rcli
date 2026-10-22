@@ -28,7 +28,9 @@ reference. A candidate whose peak cross-correlation is negative is
 inverted and assessed again.
 }
 \details{
-A candidate is **leading** when it has at least three matched turning
+The rule is the [Classifier-class] of the specification. With the default
+[rcli_classifier()], a candidate is **leading** when it has at least
+three matched turning
 points, its cross-correlation with the reference peaks with a positive sign
 at a lead of at least `min_lead`, its median lead at turning points is at
 least `min_median_lead`, it leads at least `min_consistency` of the
@@ -42,6 +44,10 @@ power. **Coincident** and **lagging** series pass the matching, missed,
 extra and concordance criteria with a cross-correlation peak within
 `coincident_band` or at a lag of at least `min_lead`. All others are
 **rejected**; the `reasons` column lists the leading criteria they failed.
+
+With [oecd_classifier()] the class follows the OECD table of median leads
+at turning points (coincident within +/- 2 months, lagging at -2 months
+or less); the other statistics are reported but not used.
 
 The lead of the cross-correlation peak is the primary lead measure because
 the Monte Carlo calibration of the package showed that median leads at

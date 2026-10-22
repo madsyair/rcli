@@ -24,6 +24,30 @@ setMethod("aggregate_components", "EqualWeight",
 })
 
 #' @rdname cli_composite
+setMethod("aggregate_components", "OecdAggregate",
+          function(aggregator, z, levels, spec) {
+  lv <- z + 100
+  n <- nrow(lv)
+  growth <- rbind(NA_real_, lv[-1, , drop = FALSE] / lv[-n, , drop = FALSE] -
+                    1)
+  covered <- coverage_mask(z, aggregator@min_coverage)
+  g <- rowMeans(growth, na.rm = TRUE)
+  g[!is.finite(g)] <- NA_real_
+  index <- rep(NA_real_, n)
+  for (t in seq_len(n)) {
+    if (!covered[t]) next
+    chain <- t > 1L && !is.na(index[t - 1L]) && !is.na(g[t])
+    index[t] <- if (chain) {
+      index[t - 1L] * (1 + g[t])
+    } else {
+      mean(lv[t, ], na.rm = TRUE)
+    }
+  }
+  w <- rep(1 / ncol(z), ncol(z))
+  list(cycle = index, index = NULL, weights = stats::setNames(w, colnames(z)))
+})
+
+#' @rdname cli_composite
 setMethod("aggregate_components", "PrincipalComponent",
           function(aggregator, z, levels, spec) {
   cc <- stats::complete.cases(z)
@@ -165,6 +189,11 @@ dfm_two_step <- function(z) {
 #' @param spec A [CliSpec-class].
 #' @param reference Optional [CycleSeries-class] of the reference series for
 #'   the amplitude adjustment.
+#' @param shifts Optional named non-negative numbers of periods by which
+#'   components are moved later before aggregation (OECD lag-shifting; see
+#'   `lag_shift` in [cli_spec()]). The value of a shifted component at date
+#'   \eqn{t} is its value at \eqn{t - s}; values moved past the last date
+#'   are dropped.
 #' @param aggregator,z,levels Internal arguments of the aggregation methods.
 #' @return A [CompositeIndex-class].
 #' @examples
@@ -175,7 +204,8 @@ dfm_two_step <- function(z) {
 #' cli <- cli_composite(cyc, c("lead_6", "lead_3"), spec, cyc$reference)
 #' cli
 #' @export
-cli_composite <- function(cycles, components, spec, reference = NULL) {
+cli_composite <- function(cycles, components, spec, reference = NULL,
+                          shifts = NULL) {
   if (!is(spec, "CliSpec")) {
     rcli_abort("`spec` must be a CliSpec.", "rcli_error_argument")
   }
@@ -195,19 +225,74 @@ cli_composite <- function(cycles, components, spec, reference = NULL) {
     if ("inverted (counter-cyclical)" %in% cycles[[nm]]@steps) -1 else 1
   }, numeric(1))
   attr(levels, "tsp") <- stats::tsp(template)
+  shifts <- check_shifts(shifts, components)
+  for (nm in names(shifts)) {
+    k <- as.integer(shifts[[nm]])
+    z[, nm] <- shift_vec(z[, nm], k)
+    levels[, match(nm, components)] <- shift_vec(
+      levels[, match(nm, components)], k)
+  }
   agg <- aggregate_components(spec@aggregator, z, levels, spec)
   cyc <- normalise_cycle(agg$cycle)
   amp <- if (is.null(reference)) 1 else reference_amplitude(reference)
   index <- if (is.null(agg$index)) 100 + cyc * amp else agg$index
   new("CompositeIndex", index = as_ts_like(index, template),
       cycle = as_ts_like(cyc, template), components = components,
-      weights = agg$weights, aggregator = spec@aggregator, amplitude = amp)
+      weights = agg$weights, aggregator = spec@aggregator, amplitude = amp,
+      shifts = shifts)
+}
+
+check_shifts <- function(shifts, components) {
+  if (is.null(shifts) || length(shifts) == 0L) return(numeric(0))
+  ok <- is.numeric(shifts) && !is.null(names(shifts)) &&
+    all(names(shifts) %in% components) && !anyNA(shifts) &&
+    all(shifts >= 0) && all(abs(shifts - round(shifts)) < 1e-8)
+  if (!ok) {
+    rcli_abort(paste("`shifts` must be named whole numbers >= 0, one per",
+                     "component."), "rcli_error_argument")
+  }
+  stats::setNames(as.numeric(shifts), names(shifts))
+}
+
+#' Lag shifts that align the leads of components
+#'
+#' OECD lag-shifting (Gyomai and Guidetti 2012, p. 9): every component is
+#' moved later by its median lead at turning points minus the shortest
+#' median lead of the components, rounded to whole periods, so that the
+#' leads of the components coincide and their turning points reinforce each
+#' other in the composite. Components without a median lead are not moved.
+#' [cli_build()] applies these shifts when `lag_shift = TRUE` in the
+#' specification; pass them to [cli_composite()] for a manual composite.
+#'
+#' @param components Names of the components.
+#' @param assessment A [LeadAssessment-class] from [cli_assess()].
+#' @return Named numeric vector of shifts (periods, at least 0).
+#' @examples
+#' sim <- simulate_cycles(seed = 1)
+#' meta <- data.frame(name = colnames(sim)[-1], rationale = "early_stage")
+#' cand <- cli_candidates(sim, "reference", meta = meta)
+#' a <- cli_assess(cand, cli_spec(freq = 12))
+#' lag_shifts(c("lead_6", "lead_3"), a)
+#' @export
+lag_shifts <- function(components, assessment) {
+  if (!is(assessment, "LeadAssessment") ||
+      !all(components %in% assessment@table$name)) {
+    rcli_abort("`components` must be candidates of the `assessment`.",
+               "rcli_error_argument")
+  }
+  tab <- assessment@table
+  lead <- tab$median_lead[match(components, tab$name)]
+  if (all(is.na(lead))) {
+    return(stats::setNames(rep(0, length(components)), components))
+  }
+  lead[is.na(lead)] <- min(lead, na.rm = TRUE)
+  stats::setNames(round(lead - min(lead)), components)
 }
 
 # Amplitude of the reference cycle in percent deviation from trend.
 reference_amplitude <- function(reference) {
   cyc <- as.numeric(reference@cycle)
-  if ("log" %in% reference@steps) {
+  if (is_logged(reference)) {
     100 * mean_abs_dev(cyc)
   } else {
     100 * mean_abs_dev(cyc) / mean(abs(as.numeric(reference@transformed)),

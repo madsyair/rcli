@@ -116,8 +116,9 @@ filter_choices <- c("hp_double", "hp", "cf", "bk", "hamilton")
 names(filter_choices) <- c("OECD double Hodrick-Prescott", "Hodrick-Prescott",
                            "Christiano-Fitzgerald", "Baxter-King",
                            "Hamilton regression")
-aggregator_choices <- c("equal", "pca", "cb", "dfm")
-names(aggregator_choices) <- c("Equal weights (OECD)",
+aggregator_choices <- c("equal", "oecd", "pca", "cb", "dfm")
+names(aggregator_choices) <- c("Equal weights",
+                               "Chained average growth (OECD)",
                                "First principal component",
                                "Conference Board", "Dynamic factor model")
 
@@ -173,11 +174,16 @@ app_ui <- function(language = "id") {
         t, 3L,
         shiny::fluidRow(
           shiny::column(6,
+            shiny::selectInput("method", t("method"), stats::setNames(
+              c("rcli", "oecd"), c(t("method_rcli"), t("method_oecd")))),
+            shiny::conditionalPanel(
+              "input.method == 'oecd'",
+              shiny::helpText(t("method_help"))),
             shiny::selectInput("filter", t("filter"), filter_choices),
             shiny::selectInput("aggregator", t("aggregator"),
                                aggregator_choices),
             shiny::selectInput("transform", t("transform"),
-                               c("auto", "log", "none")),
+                               c("auto", "log", "none", "test")),
             shiny::checkboxInput("seasonal", paste(
               t("seasonal"), if (!has_seasonal) t("seasonal_missing")),
               FALSE),
@@ -292,8 +298,9 @@ make_filter <- function(key) {
 }
 
 make_aggregator <- function(key) {
-  switch(key, equal = equal_weight(), pca = principal_component(),
-         cb = conference_board(), dfm = dynamic_factor())
+  switch(key, equal = equal_weight(), oecd = oecd_aggregate(),
+         pca = principal_component(), cb = conference_board(),
+         dfm = dynamic_factor())
 }
 
 parse_cutoffs <- function(text) {
@@ -400,9 +407,16 @@ app_script <- function(state) {
              "# 4-7. Cycles, turning points, classification, composite",
              "res <- cli_build(cand, spec)", "assessment(res)")
   if (identical(state$mode, "manual")) {
+    shift_arg <- if (isTRUE(state$lag_shift)) {
+      sprintf(paste0(",\n                     shifts = ",
+                     "lag_shifts(%s, assessment(res))"),
+              deparse_value(state$components))
+    } else {
+      ""
+    }
     lines <- c(lines, sprintf(
-      "cli <- cli_composite(cycles(res), %s, spec, cycles(res)[[\"%s\"]])",
-      deparse_value(state$components), state$reference),
+      "cli <- cli_composite(cycles(res), %s, spec, cycles(res)[[\"%s\"]]%s)",
+      deparse_value(state$components), state$reference, shift_arg),
       sprintf("val <- cli_validate(cli, cycles(res)[[\"%s\"]], spec)",
               state$reference),
       "", "# 8. Validation and quality", "cli_quality(val, spec)")
@@ -415,7 +429,16 @@ app_script <- function(state) {
 
 spec_call <- function(input, freq) {
   cut <- parse_cutoffs(input$oos_cutoffs)
-  agg <- c(equal = "equal_weight()", pca = "principal_component()",
+  if (identical(input$method, "oecd")) {
+    return(sprintf(paste0(
+      "spec <- oecd_spec(\n  freq = %s, seasonal_adjust = %s, alpha = %s,",
+      " min_auc = %s,\n  min_components = %s, max_iter = %s,",
+      " oos_cutoffs = %s\n)"),
+      freq, input$seasonal, input$alpha, input$min_auc,
+      input$min_components, input$max_iter, deparse_value(cut)))
+  }
+  agg <- c(equal = "equal_weight()", oecd = "oecd_aggregate()",
+           pca = "principal_component()",
            cb = "conference_board()", dfm = "dynamic_factor()")
   flt <- c(hp_double = "hp_double_filter()", hp = "hp_filter()",
            cf = "cf_filter()", bk = "bk_filter()",
@@ -625,7 +648,12 @@ app_server <- function(language = "id") {
         return()
       }
       freq <- stats::frequency(rv$data)
-      spec <- safely(cli_spec(
+      spec <- if (identical(input$method, "oecd")) safely(oecd_spec(
+        freq = freq, seasonal_adjust = input$seasonal, alpha = input$alpha,
+        min_auc = input$min_auc, min_components = input$min_components,
+        max_iter = input$max_iter,
+        oos_cutoffs = parse_cutoffs(input$oos_cutoffs)
+      )) else safely(cli_spec(
         freq = freq, filter = make_filter(input$filter),
         aggregator = make_aggregator(input$aggregator),
         transform = input$transform, seasonal_adjust = input$seasonal,
@@ -784,7 +812,11 @@ app_server <- function(language = "id") {
           if (length(comps) == 0L) {
             rcli_abort(t("components"), "rcli_error_argument")
           }
-          comp <- cli_composite(rv$cycles_used, comps, rv$spec, ref_cs)
+          shifts <- if (isTRUE(rv$spec@lag_shift)) {
+            lag_shifts(comps, rv$assessment)
+          }
+          comp <- cli_composite(rv$cycles_used, comps, rv$spec, ref_cs,
+                                shifts = shifts)
           val <- cli_validate(comp, ref_cs, rv$spec)
           list(composite = comp, validation = val,
                audit = audit_row(1L, "manual selection", comps, val,
@@ -917,7 +949,7 @@ app_server <- function(language = "id") {
           NULL,
         seed = input$seed, meta = rv$meta, reference = reference(),
         spec_call = rv$spec_call, mode = rv$mode,
-        components = rv$components
+        components = rv$components, lag_shift = isTRUE(rv$spec@lag_shift)
       ))
     })
     output$script <- shiny::renderText(script())

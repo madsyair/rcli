@@ -116,7 +116,25 @@ q_row <- function(group, criterion, value, threshold, passed) {
 }
 
 quality_turning_points <- function(row, spec) {
-  chk <- leading_checks(row, spec)
+  quality_criteria(spec_classifier(spec), row, spec)
+}
+
+#' @rdname Classifier-class
+#' @export
+setGeneric("quality_criteria", function(classifier, row, spec) {
+  standardGeneric("quality_criteria")
+})
+
+#' @rdname Classifier-class
+setMethod("quality_criteria", "Classifier", function(classifier, row, spec) {
+  chk <- leading_criteria(classifier, row, spec)
+  q_row("turning points", names(chk), NA_real_, "", unname(chk))
+})
+
+#' @rdname Classifier-class
+setMethod("quality_criteria", "RcliClassifier", function(classifier, row,
+                                                         spec) {
+  chk <- leading_criteria(classifier, row, spec)
   share <- function(k) if (row$n_ref > 0L) k / row$n_ref else NA_real_
   g <- "turning points"
   rbind(
@@ -138,7 +156,30 @@ quality_turning_points <- function(row, spec) {
     q_row(g, "Granger causality p-value", row$granger_p,
           sprintf("< %s", spec@alpha), chk[["granger"]])
   )
-}
+})
+
+#' @rdname Classifier-class
+setMethod("quality_criteria", "OecdClassifier", function(classifier, row,
+                                                         spec) {
+  chk <- leading_criteria(classifier, row, spec)
+  band <- oecd_band(classifier, spec)
+  share <- function(k) if (row$n_ref > 0L) k / row$n_ref else NA_real_
+  g <- "turning points"
+  i <- "information"
+  rbind(
+    q_row(g, "matched turning points", row$n_matched,
+          sprintf(">= %s", classifier@min_matched), chk[["matched"]]),
+    q_row(g, "median lead at turning points", row$median_lead,
+          sprintf(">= %s", round(band[["coincident"]], 3)), chk[["lead"]]),
+    q_row(i, "mean lead at turning points", row$mean_lead, "", NA),
+    q_row(i, "standard deviation of the lead", row$sd_lead, "", NA),
+    q_row(i, "cross-correlation lead", row$ccf_lag, "close to median lead",
+          NA),
+    q_row(i, "peak cross-correlation", row$ccf_r, "", NA),
+    q_row(i, "share of missed turning points", share(row$missed), "", NA),
+    q_row(i, "share of extra turning points", share(row$extra), "", NA)
+  )
+})
 
 quality_prediction <- function(prob, spec) {
   g <- "prediction"

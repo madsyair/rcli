@@ -205,8 +205,25 @@ assess_pair <- function(ref_cs, ref_tp, cand_cs, cand_tp, spec) {
   list(row = row, pairs = pairs)
 }
 
+# Classifier of a specification (specifications saved before 0.1.3 have
+# none and use the package rule).
+spec_classifier <- function(spec) {
+  if (methods::.hasSlot(spec, "classifier")) spec@classifier else
+    rcli_classifier()
+}
+
 # Criteria of a leading series; returns a named logical vector.
 leading_checks <- function(row, spec) {
+  leading_criteria(spec_classifier(spec), row, spec)
+}
+
+classify_row <- function(row, spec) {
+  classify_candidate(spec_classifier(spec), row, spec)
+}
+
+#' @rdname Classifier-class
+setMethod("leading_criteria", "RcliClassifier", function(classifier, row,
+                                                         spec) {
   conc_ok <- isTRUE(row$concordance_p < spec@alpha) &&
     isTRUE(row$concordance > row$concordance_expected)
   share <- function(k) if (row$n_ref > 0L) k / row$n_ref else Inf
@@ -220,10 +237,12 @@ leading_checks <- function(row, spec) {
     concordance = conc_ok,
     granger = isTRUE(row$granger_p < spec@alpha)
   )
-}
+})
 
-classify_row <- function(row, spec) {
-  chk <- leading_checks(row, spec)
+#' @rdname Classifier-class
+setMethod("classify_candidate", "RcliClassifier", function(classifier, row,
+                                                           spec) {
+  chk <- leading_criteria(classifier, row, spec)
   base_ok <- chk[["matched"]] && chk[["missed"]] && chk[["extra"]] &&
     chk[["concordance"]]
   cls <- if (all(chk)) {
@@ -241,7 +260,43 @@ classify_row <- function(row, spec) {
     paste(names(chk)[!chk], collapse = ", ")
   }
   list(class = cls, reasons = reasons)
+})
+
+# OECD thresholds in periods of the data.
+oecd_band <- function(classifier, spec) {
+  c(coincident = classifier@coincident, long = classifier@long) *
+    spec@freq / 12
 }
+
+#' @rdname Classifier-class
+setMethod("leading_criteria", "OecdClassifier", function(classifier, row,
+                                                         spec) {
+  band <- oecd_band(classifier, spec)
+  c(matched = isTRUE(row$n_matched >= classifier@min_matched),
+    lead = isTRUE(row$median_lead >= band[["coincident"]]))
+})
+
+#' @rdname Classifier-class
+setMethod("classify_candidate", "OecdClassifier", function(classifier, row,
+                                                           spec) {
+  band <- oecd_band(classifier, spec)
+  lead <- row$median_lead
+  if (!isTRUE(row$n_matched >= classifier@min_matched) || is.na(lead)) {
+    return(list(class = "rejected", reasons = "matched"))
+  }
+  if (lead >= band[["coincident"]]) {
+    reasons <- if (lead > band[["long"]]) {
+      sprintf("longer lead (over %s months)", classifier@long)
+    } else {
+      ""
+    }
+    return(list(class = "leading", reasons = reasons))
+  }
+  if (lead <= -band[["coincident"]]) {
+    return(list(class = "lagging", reasons = "lead"))
+  }
+  list(class = "coincident", reasons = "lead")
+})
 
 invert_cycle <- function(cs) {
   cs@cycle <- -cs@cycle
@@ -262,7 +317,9 @@ invert_cycle <- function(cs) {
 #' reference. A candidate whose peak cross-correlation is negative is
 #' inverted and assessed again.
 #'
-#' A candidate is **leading** when it has at least three matched turning
+#' The rule is the [Classifier-class] of the specification. With the default
+#' [rcli_classifier()], a candidate is **leading** when it has at least
+#' three matched turning
 #' points, its cross-correlation with the reference peaks with a positive sign
 #' at a lead of at least `min_lead`, its median lead at turning points is at
 #' least `min_median_lead`, it leads at least `min_consistency` of the
@@ -276,6 +333,10 @@ invert_cycle <- function(cs) {
 #' extra and concordance criteria with a cross-correlation peak within
 #' `coincident_band` or at a lag of at least `min_lead`. All others are
 #' **rejected**; the `reasons` column lists the leading criteria they failed.
+#'
+#' With [oecd_classifier()] the class follows the OECD table of median leads
+#' at turning points (coincident within +/- 2 months, lagging at -2 months
+#' or less); the other statistics are reported but not used.
 #'
 #' The lead of the cross-correlation peak is the primary lead measure because
 #' the Monte Carlo calibration of the package showed that median leads at

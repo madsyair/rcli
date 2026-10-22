@@ -27,6 +27,10 @@ after `spec@max_iter` iterations. Every iteration is written to the audit
 log ([audit_log()]).
 }
 \details{
+When `spec@lag_shift` is `TRUE`, every composite is built from components
+shifted so that their median leads align on the shortest one (OECD
+lag-shifting; see [cli_composite()]).
+
 Composites are ranked by the score
 \deqn{10 \times \textrm{criteria met} + \min(\textrm{lead}, 2\,
 \textrm{min\_lead}) + 5 \times \textrm{concordance} - 5 \times

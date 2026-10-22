@@ -9,7 +9,7 @@ cli_spec(
   filter = NULL,
   dater = NULL,
   aggregator = NULL,
-  transform = c("auto", "log", "none"),
+  transform = c("auto", "log", "none", "test"),
   seasonal_adjust = FALSE,
   outlier_threshold = 5,
   min_lead = NULL,
@@ -29,7 +29,10 @@ cli_spec(
   min_components = 2,
   horizon = NA,
   oos_cutoffs = numeric(0),
-  holidays = list()
+  holidays = list(),
+  classifier = NULL,
+  outliers = NULL,
+  lag_shift = FALSE
 )
 }
 \arguments{
@@ -43,13 +46,16 @@ cli_spec(
 \item{aggregator}{An [Aggregator-class]; default [equal_weight()].}
 
 \item{transform}{`"auto"` (logarithm for strictly positive series),
-`"log"` or `"none"`.}
+`"log"`, `"none"` or `"test"` (logarithm when the log/level test of a
+regARIMA model prefers it, as TRAMO does at the OECD; needs
+\pkg{RJDemetra} or \pkg{seasonal}).}
 
 \item{seasonal_adjust}{Seasonally adjust with X-13ARIMA-SEATS (needs the
 \pkg{seasonal} package)?}
 
 \item{outlier_threshold}{Robust z-score of period-to-period changes above
-which an observation is replaced by interpolation; `Inf` disables.}
+which an observation is replaced by interpolation; `Inf` disables. A
+shortcut for `outliers = robust_outliers(outlier_threshold)`.}
 
 \item{min_lead}{Minimum lead of the cross-correlation peak, in periods
 (default 3 months or 1 quarter). Also the minimum lag of a lagging series.}
@@ -100,6 +106,18 @@ the selection-bias harness run by [cli_build()].}
 X-13ARIMA-SEATS estimates and removes (needs `seasonal_adjust = TRUE`).
 For Indonesian data, `holiday_effect(idulfitri_dates())` removes the
 moving Idulfitri effect, which fixed monthly factors cannot.}
+
+\item{classifier}{A [Classifier-class]; default [rcli_classifier()]. Use
+[oecd_classifier()] for the OECD median-lead rule.}
+
+\item{outliers}{An [OutlierTreatment-class]; default
+`robust_outliers(outlier_threshold)`. Use [tramo_outliers()] for the
+OECD treatment.}
+
+\item{lag_shift}{Shift each component later by its median lead minus the
+shortest median lead of the components before aggregation, as the OECD
+does (default `FALSE`). Values moved past the last date of the data are
+dropped.}
 }
 \value{
 A [CliSpec-class] object.

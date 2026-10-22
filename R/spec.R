@@ -15,11 +15,14 @@
 #'   [bbq()] for quarterly data.
 #' @param aggregator An [Aggregator-class]; default [equal_weight()].
 #' @param transform `"auto"` (logarithm for strictly positive series),
-#'   `"log"` or `"none"`.
+#'   `"log"`, `"none"` or `"test"` (logarithm when the log/level test of a
+#'   regARIMA model prefers it, as TRAMO does at the OECD; needs
+#'   \pkg{RJDemetra} or \pkg{seasonal}).
 #' @param seasonal_adjust Seasonally adjust with X-13ARIMA-SEATS (needs the
 #'   \pkg{seasonal} package)?
 #' @param outlier_threshold Robust z-score of period-to-period changes above
-#'   which an observation is replaced by interpolation; `Inf` disables.
+#'   which an observation is replaced by interpolation; `Inf` disables. A
+#'   shortcut for `outliers = robust_outliers(outlier_threshold)`.
 #' @param min_lead Minimum lead of the cross-correlation peak, in periods
 #'   (default 3 months or 1 quarter). Also the minimum lag of a lagging series.
 #' @param min_median_lead Minimum median lead at turning points (default 1
@@ -53,6 +56,15 @@
 #'   X-13ARIMA-SEATS estimates and removes (needs `seasonal_adjust = TRUE`).
 #'   For Indonesian data, `holiday_effect(idulfitri_dates())` removes the
 #'   moving Idulfitri effect, which fixed monthly factors cannot.
+#' @param classifier A [Classifier-class]; default [rcli_classifier()]. Use
+#'   [oecd_classifier()] for the OECD median-lead rule.
+#' @param outliers An [OutlierTreatment-class]; default
+#'   `robust_outliers(outlier_threshold)`. Use [tramo_outliers()] for the
+#'   OECD treatment.
+#' @param lag_shift Shift each component later by its median lead minus the
+#'   shortest median lead of the components before aggregation, as the OECD
+#'   does (default `FALSE`). Values moved past the last date of the data are
+#'   dropped.
 #' @return A [CliSpec-class] object.
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -63,7 +75,8 @@
 #' update(spec, min_lead = 6, aggregator = dynamic_factor())
 #' @export
 cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
-                     aggregator = NULL, transform = c("auto", "log", "none"),
+                     aggregator = NULL,
+                     transform = c("auto", "log", "none", "test"),
                      seasonal_adjust = FALSE, outlier_threshold = 5,
                      min_lead = NULL, min_median_lead = NULL,
                      min_consistency = 0.5, max_missed = 0.4,
@@ -72,7 +85,8 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
                      lead_window = NULL, ccf_lag_max = NULL, alpha = 0.05,
                      granger_max_lag = NULL, granger_dmax = 1,
                      max_iter = 10, min_components = 2, horizon = NA,
-                     oos_cutoffs = numeric(0), holidays = list()) {
+                     oos_cutoffs = numeric(0), holidays = list(),
+                     classifier = NULL, outliers = NULL, lag_shift = FALSE) {
   check_frequency(freq)
   monthly <- freq == 12
   if (is(holidays, "HolidayEffect")) holidays <- list(holidays)
@@ -134,8 +148,18 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
     min_components = as.numeric(min_components),
     horizon = as.numeric(horizon),
     oos_cutoffs = as.numeric(oos_cutoffs),
-    holidays = holidays
+    holidays = holidays,
+    classifier = if (is.null(classifier)) rcli_classifier() else classifier,
+    outliers = if (is.null(outliers)) {
+      robust_outliers(outlier_threshold)
+    } else {
+      outliers
+    },
+    lag_shift = lag_shift
   )
+  if (is(spec@outliers, "RobustOutliers")) {
+    spec@outlier_threshold <- spec@outliers@threshold
+  }
   validObject(spec)
   spec
 }
@@ -201,6 +225,9 @@ setValidity("CliSpec", function(object) {
   } else if (length(hol) > 0L && !isTRUE(object@seasonal_adjust)) {
     msg <- c(msg, "`holidays` need `seasonal_adjust = TRUE`.")
   }
+  if (length(object@lag_shift) != 1L || is.na(object@lag_shift)) {
+    msg <- c(msg, "`lag_shift` must be TRUE or FALSE.")
+  }
   if (length(msg) == 0L) TRUE else msg
 })
 
@@ -227,6 +254,80 @@ setMethod("update", "CliSpec", function(object, ...) {
     if (is.numeric(value)) value <- as.numeric(value)
     slot(object, nm) <- value
   }
+  # keep the outlier shortcut and the outlier treatment in step
+  if ("outlier_threshold" %in% names(args) && !"outliers" %in% names(args)) {
+    object@outliers <- robust_outliers(object@outlier_threshold)
+  }
+  if (is(object@outliers, "RobustOutliers")) {
+    object@outlier_threshold <- object@outliers@threshold
+  }
   validObject(object)
   object
 })
+
+#' Specification that follows the OECD method
+#'
+#' A [cli_spec()] with every step set as in the OECD system of composite
+#' leading indicators (Gyomai and Guidetti 2012):
+#'
+#' * outliers: TRAMO, additive outliers and transitory changes replaced by
+#'   estimates ([tramo_outliers()]);
+#' * logarithm or levels: TRAMO test (`transform = "test"`);
+#' * end of the series: TRAMO forecasts before the filter
+#'   ([tramo_outliers()]);
+#' * cycle: double Hodrick-Prescott filter, 12 to 120 months
+#'   ([hp_double_filter()]);
+#' * turning points: simplified Bry-Boschan ([bry_boschan()]);
+#' * classification: median lead, coincident within +/- 2 months
+#'   ([oecd_classifier()]);
+#' * lag-shifting: the leads of the components aligned (`lag_shift = TRUE`);
+#' * aggregation: chained average growth with the 60 percent rule
+#'   ([oecd_aggregate()]);
+#' * presentation: amplitude adjusted, trend restored and 12-month rate of
+#'   change ([cli_presentation()]).
+#'
+#' Seasonal adjustment, which the OECD applies only to series that are not
+#' already adjusted at the source, uses X-13ARIMA-SEATS (the successor of
+#' X-12-ARIMA, with SEATS) when `seasonal_adjust = TRUE`. Quarterly
+#' components are interpolated linearly by [cli_align()] with
+#' `method = "linear"`, as the OECD does. The selection loop of
+#' [cli_build()] then evaluates composites with the OECD classifier.
+#'
+#' The minimum median lead of the out-of-sample check is set to the
+#' coincident band (2 months). Other arguments are passed to [cli_spec()].
+#'
+#' @param freq Data frequency, 12 or 4. The OECD system is monthly; for
+#'   quarterly data the month thresholds are converted to quarters.
+#' @param seasonal_adjust,holidays See [cli_spec()].
+#' @param engine Engine of [tramo_outliers()] and of the log/level test.
+#' @param ... Further arguments of [cli_spec()].
+#' @return A [CliSpec-class].
+#' @references
+#' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
+#' Indicators*. OECD Publishing, Paris.
+#' @seealso [cli_spec()] for the package defaults and the reasons they
+#'   differ (`vignette("rcli")`).
+#' @examples
+#' oecd_spec()
+#' \donttest{
+#' sim <- simulate_cycles(seed = 1)
+#' meta <- data.frame(name = colnames(sim)[-1], rationale = "early_stage")
+#' cand <- cli_candidates(sim, "reference", meta = meta)
+#' if (requireNamespace("seasonal", quietly = TRUE)) {
+#'   res <- cli_build(cand, oecd_spec(engine = "x13"))
+#'   res
+#' }
+#' }
+#' @export
+oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
+                      engine = c("auto", "tramo", "x13"), ...) {
+  check_frequency(freq)
+  engine <- match.arg(engine)
+  cls <- oecd_classifier()
+  cli_spec(freq = freq, filter = hp_double_filter(), dater = NULL,
+           aggregator = oecd_aggregate(), transform = "test",
+           seasonal_adjust = seasonal_adjust, holidays = holidays,
+           min_median_lead = cls@coincident * freq / 12,
+           classifier = cls, outliers = tramo_outliers(engine = engine),
+           lag_shift = TRUE, ...)
+}

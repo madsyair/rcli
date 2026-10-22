@@ -1,7 +1,7 @@
 Package: rcli
 Type: Package
 Title: Composite Leading Indicators from Component Selection to Validation
-Version: 0.1.1
+Version: 0.1.3
 Authors@R: c(
     person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
            role = c("aut", "cre"))
@@ -45,6 +45,7 @@ Suggests:
     mFilter,
     neverhpfilter,
     rmarkdown,
+    RJDemetra,
     seasonal,
     shiny,
     shinytest2,
@@ -64,16 +65,20 @@ Collate:
     'classes-dater.R'
     'turning-points.R'
     'classes-aggregator.R'
+    'classes-classifier.R'
+    'classes-outliers.R'
     'classes-core.R'
     'spec.R'
     'align.R'
     'candidates.R'
+    'outliers.R'
     'cycles.R'
     'assessment.R'
     'aggregate.R'
     'validation.R'
     'quality.R'
     'build.R'
+    'presentation.R'
     'selection-bias.R'
     'accessors.R'
     'methods-show.R'

@@ -1,0 +1,3 @@
+"method","reps","overall","leading_found","false_leading","mean_abs_ccf_r"
+"RobustOutliers",40,0.843,0.792,0.006,0.661
+"TramoOutliers",40,0.839,0.808,0.013,0.661

@@ -28,7 +28,7 @@ jobs:
         env:
           PKG_SYSREQS: false
         with:
-          extra-packages: any::covr
+          extra-packages: any::covr, RJDemetra=?ignore
           needs: coverage
       - name: Test coverage
         run: |

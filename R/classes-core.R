@@ -38,6 +38,11 @@
 #'   harness; empty to skip it.
 #' @slot holidays List of [holiday_effect()] objects removed during seasonal
 #'   adjustment.
+#' @slot classifier A [Classifier-class]: the rule that labels series
+#'   leading, coincident, lagging or rejected.
+#' @slot outliers An [OutlierTreatment-class].
+#' @slot lag_shift Logical; shift the components so that their median leads
+#'   align before aggregation (OECD lag-shifting)?
 #' @seealso [cli_spec()]
 #' @exportClass CliSpec
 setClass("CliSpec", representation(
@@ -51,8 +56,10 @@ setClass("CliSpec", representation(
   lead_window = "numeric", ccf_lag_max = "numeric", alpha = "numeric",
   granger_max_lag = "numeric", granger_dmax = "numeric",
   max_iter = "numeric", min_components = "numeric", horizon = "numeric",
-  oos_cutoffs = "numeric", holidays = "list"
-), prototype(holidays = list()))
+  oos_cutoffs = "numeric", holidays = "list", classifier = "Classifier",
+  outliers = "OutlierTreatment", lag_shift = "logical"
+), prototype(holidays = list(), classifier = rcli_classifier(),
+             outliers = robust_outliers(5), lag_shift = FALSE))
 
 #' Reference and candidate series
 #'
@@ -111,12 +118,14 @@ setClass("LeadAssessment", representation(
 #' @slot weights Weights of the components.
 #' @slot aggregator The [Aggregator-class] used.
 #' @slot amplitude Amplitude factor matching the reference cycle.
+#' @slot shifts Named periods by which each component was moved later
+#'   (lag-shifting); empty when the components were not shifted.
 #' @seealso [cli_composite()]
 #' @exportClass CompositeIndex
 setClass("CompositeIndex", representation(
   index = "ts", cycle = "ts", components = "character", weights = "numeric",
-  aggregator = "Aggregator", amplitude = "numeric"
-))
+  aggregator = "Aggregator", amplitude = "numeric", shifts = "numeric"
+), prototype(shifts = numeric(0)))
 
 #' Validation of a composite index
 #'

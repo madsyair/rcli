@@ -23,7 +23,7 @@ jobs:
           use-public-rspm: true
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
-          extra-packages: any::shinytest2, any::chromote, any::pkgload, local::.
+          extra-packages: any::shinytest2, any::chromote, any::pkgload, local::., RJDemetra=?ignore
           needs: check
       - name: Browser tests
         run: |

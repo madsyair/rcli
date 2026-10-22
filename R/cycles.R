@@ -63,14 +63,28 @@ cycle_one <- function(x, name, spec) {
     steps <- c(steps, attr(core, "step"))
     attr(core, "step") <- NULL
   }
-  core <- apply_transform(core, spec@transform, name)
+  outliers <- spec_outliers(spec)
+  engine <- if (methods::.hasSlot(outliers, "engine")) outliers@engine else
+    "auto"
+  core <- apply_transform(core, spec@transform, name, engine)
   steps <- c(steps, attr(core, "step"))
   attr(core, "step") <- NULL
-  out <- replace_outliers(core, spec@outlier_threshold)
-  if (out$n > 0L) steps <- c(steps, sprintf("replaced %d outlier(s)", out$n))
+  out <- treat_outliers(outliers, core)
+  steps <- c(steps, out$step)
   core <- out$x
-  cyc <- extract_cycle(spec@filter, core)
-  steps <- c(steps, sprintf("cycle: %s", spec@filter@label))
+  h <- length(out$forecast)
+  if (h > 0L) {
+    ext <- stats::ts(c(as.numeric(core), out$forecast),
+                     start = stats::start(core),
+                     frequency = stats::frequency(core))
+    cyc <- utils::head(as.numeric(extract_cycle(spec@filter, ext)),
+                       length(core))
+    steps <- c(steps, sprintf("cycle: %s (series extended by %d-period %s)",
+                              spec@filter@label, h, "forecasts"))
+  } else {
+    cyc <- extract_cycle(spec@filter, core)
+    steps <- c(steps, sprintf("cycle: %s", spec@filter@label))
+  }
   place <- function(v) {
     full <- rep(NA_real_, length(x))
     full[span[1]:span[2]] <- as.numeric(v)
@@ -81,8 +95,22 @@ cycle_one <- function(x, name, spec) {
       steps = c(steps, "normalised (mean 0, mean absolute deviation 1)"))
 }
 
-apply_transform <- function(x, transform, name) {
+# Outlier treatment of a specification (specifications saved before 0.1.3
+# have only the robust threshold).
+spec_outliers <- function(spec) {
+  if (methods::.hasSlot(spec, "outliers")) spec@outliers else
+    robust_outliers(spec@outlier_threshold)
+}
+
+apply_transform <- function(x, transform, name, engine = "auto") {
   positive <- all(x > 0)
+  if (transform == "test") {
+    use_log <- positive && log_test(x, engine)
+    out <- if (use_log) log(x) else x
+    attr(out, "step") <- if (use_log) "log (regARIMA log/level test)" else
+      "levels (regARIMA log/level test)"
+    return(out)
+  }
   if (transform == "log" && !positive) {
     rcli_abort(sprintf("Series '%s' has non-positive values; cannot log.",
                           name), "rcli_error_transform")
