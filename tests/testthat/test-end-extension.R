@@ -149,8 +149,10 @@ test_that("FR-003 AC-4: the 0.1.x settings reproduce the 0.1.3 composite", {
                   extension = no_extension())
   res <- cli_build(cand, old)
   expect_equal(res@composite@components, gold$components)
+  # 1e-9: linear algebra libraries differ across platforms by about 1e-11;
+  # a change of method moves the index by about 1e-2
   expect_equal(as.numeric(res@composite@index), gold$index,
-               tolerance = 1e-12)
+               tolerance = 1e-9)
 })
 
 test_that("NFR-001: no new hard dependencies", {
