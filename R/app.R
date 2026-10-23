@@ -142,7 +142,8 @@ app_ui <- function(language = "id") {
   t <- app_translator(language)
   has_seasonal <- requireNamespace("seasonal", quietly = TRUE)
   shiny::fluidPage(
-    shiny::titlePanel(t("title")),
+    shiny::titlePanel(sprintf("rcli %s: %s", utils::packageVersion("rcli"),
+                              t("title"))),
     shiny::uiOutput("progress"),
     shiny::navlistPanel(
       id = "step", widths = c(3, 9),
@@ -299,7 +300,10 @@ app_ui <- function(language = "id") {
         ),
         shiny::h4(t("scorecard")), shiny::tableOutput("cci_scorecard"),
         shiny::h4(t("audit")), shiny::tableOutput("cci_audit"),
-        shiny::h4(t("validation")), shiny::verbatimTextOutput("cci_print")
+        shiny::h4(t("validation")), shiny::verbatimTextOutput("cci_print"),
+        shiny::h4(t("cci_ref_heading")),
+        shiny::p(shiny::em(t("cci_ref_help"))),
+        shiny::actionButton("cci_ref", t("cci_ref"))
       ),
       step_panel(
         t, 10L,
@@ -406,6 +410,16 @@ deparse_value <- function(x) {
 
 # R code reproducing the analysis done in the interface.
 app_script <- function(state) {
+  if (!is.null(state$prelude)) {
+    # the coincident index of an earlier analysis became the reference
+    lines <- c(state$prelude, "",
+               "# The coincident index becomes the reference series",
+               "cand <- cci_as_reference(cci)")
+    if (isTRUE(state$cand_rebuilt)) {
+      lines <- c(lines, "", candidate_lines(state, "cand@data"))
+    }
+    return(paste(c(lines, analysis_lines(state)), collapse = "\n"))
+  }
   lines <- c("library(rcli)", "", "# 1. Data")
   if (state$source == "upload") {
     lines <- c(lines, sprintf(
@@ -416,23 +430,33 @@ app_script <- function(state) {
     lines <- c(lines, sprintf("data <- simulate_cycles(freq = %s, seed = %s)",
                               state$frequency, state$seed))
   }
+  lines <- c(lines, "", candidate_lines(state, "data"))
+  paste(c(lines, analysis_lines(state)), collapse = "\n")
+}
+
+# Step 2 of the script: the metadata and the candidate set built from `data`.
+candidate_lines <- function(state, data) {
   meta <- state$meta
-  lines <- c(lines, "", "# 2. Candidates and their economic rationale",
-             sprintf(paste0("meta <- data.frame(\n  name = %s,\n",
-                            "  rationale = %s,\n  source = %s,\n",
-                            "  type = %s\n)"),
-                     deparse_value(meta$name),
-                     deparse_value(meta$rationale),
-                     deparse_value(meta$source),
-                     deparse_value(if (is.null(meta$type)) {
-                       rep(NA_character_, nrow(meta))
-                     } else {
-                       meta$type
-                     })),
-             sprintf(paste0("cand <- cli_candidates(data, reference = ",
-                            "\"%s\", meta = meta)"),
-                     state$reference),
-             "", "# 3. Specification", state$spec_call, "",
+  c("# 2. Candidates and their economic rationale",
+    sprintf(paste0("meta <- data.frame(\n  name = %s,\n",
+                   "  rationale = %s,\n  source = %s,\n",
+                   "  type = %s\n)"),
+            deparse_value(meta$name),
+            deparse_value(meta$rationale),
+            deparse_value(meta$source),
+            deparse_value(if (is.null(meta$type)) {
+              rep(NA_character_, nrow(meta))
+            } else {
+              meta$type
+            })),
+    sprintf(paste0("cand <- cli_candidates(%s, reference = ",
+                   "\"%s\", meta = meta)"),
+            data, state$reference))
+}
+
+# Steps 3 to 9 of the script.
+analysis_lines <- function(state) {
+  lines <- c("", "# 3. Specification", state$spec_call, "",
              "# 4-7. Cycles, turning points, classification, composite",
              "res <- cli_build(cand, spec)", "assessment(res)")
   if (identical(state$mode, "manual")) {
@@ -460,10 +484,13 @@ app_script <- function(state) {
     } else {
       "cci <- cci_build(res)"
     }
-    lines <- c(lines, "", "# 9. Coincident index", call, "cli_quality(cci)",
-               "# cand_cci <- cci_as_reference(cci)  # the index as reference")
+    lines <- c(lines, "", "# 9. Coincident index", call, "cli_quality(cci)")
+    if (!isTRUE(state$as_reference)) {
+      lines <- c(lines, paste("# cand_cci <- cci_as_reference(cci)",
+                              " # the index as reference"))
+    }
   }
-  paste(lines, collapse = "\n")
+  lines
 }
 
 spec_call <- function(input, freq) {
@@ -517,7 +544,7 @@ app_server <- function(language = "id") {
       assessment = NULL, cycles_used = NULL, composite = NULL,
       validation = NULL, audit = NULL, done = integer(0), meta = NULL,
       spec_call = NULL, mode = "auto", components = character(0),
-      cci = NULL, cci_mode = NULL
+      cci = NULL, cci_mode = NULL, prelude = NULL, cand_rebuilt = FALSE
     )
     fields <- list(`1` = "data", `2` = c("cand", "meta"),
                    `3` = c("spec", "spec_call"), `4` = "cycles", `5` = "tps",
@@ -598,6 +625,8 @@ app_server <- function(language = "id") {
       })
       if (is.null(data)) return()
       rv$data <- data
+      rv$prelude <- NULL
+      rv$cand_rebuilt <- FALSE
       finish(1L)
       sel <- if ("reference" %in% colnames(data)) "reference" else
         colnames(data)[1]
@@ -643,7 +672,18 @@ app_server <- function(language = "id") {
                         stats::setNames(names(series_types),
                                         c(t("type_flow"), t("type_stock"),
                                           t("type_average"))))
+      # metadata already given is kept by candidate name (the order of the
+      # candidates changes with the reference); otherwise by position
+      known <- shiny::isolate(rv$meta)
       keep <- function(id, default) {
+        i <- as.integer(sub("^[a-z]+_", "", id))
+        col <- c(rat = "rationale", typ = "type", src = "source")[[
+          sub("_[0-9]+$", "", id)]]
+        if (!is.null(known) && col %in% names(known) &&
+            cands[i] %in% known$name) {
+          v <- known[[col]][match(cands[i], known$name)]
+          return(if (is.na(v)) "" else v)
+        }
         v <- shiny::isolate(input[[id]])
         if (is.null(v)) default else v
       }
@@ -693,6 +733,7 @@ app_server <- function(language = "id") {
       if (is.null(cand)) return()
       rv$cand <- cand
       rv$meta <- meta
+      rv$cand_rebuilt <- !is.null(rv$prelude)
       finish(2L)
     })
     output$cand_print <- shiny::renderPrint({
@@ -1022,6 +1063,30 @@ app_server <- function(language = "id") {
       rv$cci <- cci
       rv$cci_mode <- input$cci_mode
     })
+    # the coincident index becomes the reference of a new analysis
+    shiny::observeEvent(input$cci_ref, {
+      if (is.null(rv$cci) || is.null(rv$cci@composite)) {
+        shiny::showNotification(t("need_cci"), type = "warning")
+        return()
+      }
+      cand <- safely(cci_as_reference(rv$cci))
+      if (is.null(cand)) return()
+      state <- current_state()
+      state$as_reference <- TRUE
+      prelude <- app_script(state)
+      reset_from(2L)
+      rv$data <- cand@data
+      rv$cand <- cand
+      rv$meta <- cand@meta
+      rv$prelude <- prelude
+      rv$cand_rebuilt <- FALSE
+      rv$done <- 1:2
+      shiny::updateSelectInput(session, "reference",
+                               choices = colnames(cand@data),
+                               selected = cand@reference)
+      shiny::updateNavlistPanel(session, "step", selected = "s3")
+      shiny::showNotification(t("cci_ref_done"), type = "message")
+    })
     cci_quality <- shiny::reactive({
       need_cci()
       cli_quality(rv$cci)
@@ -1076,9 +1141,8 @@ app_server <- function(language = "id") {
           assessment = rv$assessment, composite = rv$composite,
           validation = rv$validation, audit = rv$audit)
     })
-    script <- shiny::reactive({
-      need(7L)
-      app_script(list(
+    current_state <- function() {
+      list(
         source = input$source,
         file_name = if (is.null(input$file)) "data.csv" else input$file$name,
         frequency = stats::frequency(rv$data),
@@ -1089,8 +1153,13 @@ app_server <- function(language = "id") {
         components = rv$components, lag_shift = isTRUE(rv$spec@lag_shift),
         cci_mode = rv$cci_mode,
         cci_components = if (is.null(rv$cci)) NULL else
-          rv$cci@composite@components
-      ))
+          rv$cci@composite@components,
+        prelude = rv$prelude, cand_rebuilt = rv$cand_rebuilt
+      )
+    }
+    script <- shiny::reactive({
+      need(7L)
+      app_script(current_state())
     })
     output$script <- shiny::renderText(script())
     csv_download <- function(name, value) {

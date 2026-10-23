@@ -2,7 +2,7 @@
 
 app_text <- list(
   id = list(
-    title = "rcli: Indikator Komposit Pendahulu",
+    title = "Indikator Komposit Pendahulu dan Sejalan",
     progress = "Kemajuan",
     need_prev = "Selesaikan langkah sebelumnya terlebih dahulu.",
     next_step = "Langkah berikutnya",
@@ -116,6 +116,16 @@ app_text <- list(
                                 "luar sampel sebelum mengandalkan ketepatan",
                                 "waktunya."),
     need_cci = "Bentuk indeks sejalan terlebih dahulu.",
+    cci_ref_heading = "Indeks sejalan sebagai seri acuan",
+    cci_ref_help = paste("Membentuk himpunan kandidat baru dengan indeks",
+                         "sejalan sebagai seri acuan, tanpa seri acuan lama",
+                         "dan komponen indeks. Langkah 1 dan 2 terisi dan",
+                         "metadata kandidat dipertahankan; lanjutkan dari",
+                         "langkah 3. Skrip R yang diekspor memuat seluruh",
+                         "rangkaian analisis."),
+    cci_ref = "Jadikan indeks sejalan seri acuan",
+    cci_ref_done = paste("Indeks sejalan menjadi seri acuan 'cci';",
+                         "lanjutkan dari langkah 3."),
     no_coincident = paste(
       "Tidak ada kandidat sejalan; ubah spesifikasi atau pilih komponen",
       "secara manual."),
@@ -125,7 +135,7 @@ app_text <- list(
     loaded = "Data dimuat", error = "Galat"
   ),
   en = list(
-    title = "rcli: Composite Leading Indicator",
+    title = "Composite Leading and Coincident Indicators",
     progress = "Progress",
     need_prev = "Complete the previous step first.",
     next_step = "Next step",
@@ -242,6 +252,16 @@ app_text <- list(
                                 "out-of-sample check before relying on the",
                                 "timing."),
     need_cci = "Build the coincident index first.",
+    cci_ref_heading = "The coincident index as reference",
+    cci_ref_help = paste("Builds a new candidate set with the coincident",
+                         "index as reference, without the former reference",
+                         "and the components of the index. Steps 1 and 2",
+                         "are filled and the candidate metadata is kept;",
+                         "continue from step 3. The exported R script holds",
+                         "the whole chain of analyses."),
+    cci_ref = "Use the coincident index as reference",
+    cci_ref_done = paste("The coincident index is now the reference 'cci';",
+                         "continue from step 3."),
     no_coincident = paste(
       "No candidate is coincident; change the specification or choose",
       "components manually."),

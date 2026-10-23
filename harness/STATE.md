@@ -8,6 +8,7 @@
 
 ## Tafsiran dan keputusan pengguna
 - 2026-10-23: pengguna meminta "Lanjutkan ke versi 0.2.0 sesuai kajian" (kajian: agregasi hibrida dan perpanjangan AR menjadi bawaan).
+- 2026-10-24 06:03: pengguna meminta judul GUI berversi dan tombol indeks sejalan sebagai seri acuan ("Iya. Kerjakan"); versi 0.2.2.
 - 2026-10-23 20:16: pengguna memilih "Kinerja: pilihan b" (penyelesai HP O(n)) dan "iya" untuk menggabungkan PR #1 ke seri 0.2 (versi 0.2.1).
 - Tafsiran: bentuk rantai diubah dari laju pertumbuhan (kajian) ke rata-rata perubahan siklus (aditif) atas temuan A2c C1; dukungan empiris diulang dengan kode paket (selisih ≤ 0,001).
 
@@ -19,6 +20,7 @@
 | INC-03 | Spesifikasi, OECD, GUI, kalibrasi, dokumen | FR-003, NFR-001–003 | — | selesai (G1–G8; rilis 0.2.0) |
 | INC-04 | Penyaring HP pita O(n) | FR-004, NFR-002 | F-03 | selesai |
 | INC-05 | Indeks koinsiden (PR #1) ke 0.2.1 | FR-005 | — | selesai |
+| INC-06 | GUI: judul berversi, indeks sejalan sebagai acuan | FR-006 | — | berjalan |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |

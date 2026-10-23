@@ -7,6 +7,7 @@
 | `oecd_spec`, hasil 0.1.x, GUI dan skrip | FR-003 | `test-end-extension.R`, `test-app.R` |
 | Kecocokan dengan solve() padat, seri linear dan invarian, stabilitas mundur, λ = 0, n < 4, n = 10⁵ | FR-004, F-03 | `tests/testthat/test-hp-solver.R`; replikasi mFilter di `test-filters.R` |
 | Indeks koinsiden, kartu skor, teks aturan per pengklasifikasi, GUI langkah 9–10, skrip ekspor | FR-005 | `test-coincident.R`, `test-quality.R`, `test-selection-bias.R`, `test-app.R`, `test-app-e2e.R`; `data-raw/calibrate_coincident.R` |
+| Judul berversi, tombol indeks sejalan sebagai acuan, metadata menurut nama, skrip ekspor berantai | FR-006 | `tests/testthat/test-app-reference.R`, `test-app-e2e.R` ("the coincident index becomes the reference in the browser") |
 | Imports tidak bertambah; biaya perpanjangan; kalibrasi dan evaluasi waktu nyata | NFR-001, NFR-002, NFR-003 | `test-end-extension.R`; data dari `data-raw/calibrate_*.R`, `data-raw/realtime_defaults.R` |
 
 ## Bukti merah (G4)
@@ -17,3 +18,6 @@ Log (2026-10-23, `devtools::test(filter = "ragged-edge|end-extension")`): 9 gala
 
 ### Bukti merah 0.2.1 (G4)
 Bukti merah: sebelum implementasi FR-004 (2026-10-23), `devtools::test(filter = "hp-solver")` gagal: AC-6 `Error: cannot allocate vector of size 74.5 Gb` (solve() padat untuk n = 10⁵) dan AC-3 dengan batas semula (galat sisa relatif 2e-10 > 1e-10, juga untuk solve() padat; batas direvisi ke galat mundur ternorma ≤ 10u sesuai teori, lihat 01 dan F-03).
+
+### Bukti merah 0.2.2 (G4)
+Bukti merah: sebelum implementasi FR-006 (2026-10-24), `devtools::test(filter = "app-reference")` gagal: judul tanpa versi (2 kegagalan), kunci teks `cci_ref` belum ada (galat), dan tombol `cci_ref` tidak berbuat apa-apa (6 kegagalan pada `rv$cand@reference`, `rv$done`, `rv$data`).

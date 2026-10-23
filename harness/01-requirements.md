@@ -59,7 +59,15 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 - AC-NFR-002.2  Waktu `cli_cycles()` per seri dengan perpanjangan AR (bawaan 0.2.1) ≤ waktu 0.1.3 tanpa perpanjangan, sehingga penyimpangan 0.2.0 (+16%) tertutup.
   - Hasil ukur (2026-10-23, median 15 ulangan, 7 seri `simulate_cycles(seed = 1)`): 0.2.0 terpasang (solve() padat) tanpa perpanjangan 0,0727 detik, dengan AR 0,0793 detik; 0.2.1 tanpa perpanjangan 0,0021 detik, dengan AR 0,0033 detik. Waktu dibagi 7 kandidat; `cli_cycles()` juga memproses seri acuan (8 seri), sehingga per seri sekitar 0,0029 detik. **Terpenuhi**: 0,0033 ≤ 0,0727.
 
-## Kebutuhan nonfungsional
+## Increment rcli 0.2.2 (keputusan pengguna 24 Oktober 2026: "Iya. Kerjakan")
+
+### FR-006 — GUI: judul dengan versi dan indeks sejalan sebagai seri acuan
+- AC-FR-006.1  Judul GUI berbunyi "rcli <versi>: Indikator Komposit Pendahulu dan Sejalan" (id) dan "rcli <versi>: Composite Leading and Coincident Indicators" (en), dengan versi dari `utils::packageVersion("rcli")`.
+- AC-FR-006.2  Langkah 9 punya tombol `cci_ref`. Tanpa indeks sejalan, tombol hanya memberi peringatan. Dengan indeks, `cci_as_reference()` dijalankan; langkah 1–2 berisi himpunan kandidat baru (acuan "cci", tanpa acuan lama dan komponen indeks), langkah 3 dan sesudahnya dikosongkan, panel pindah ke langkah 3.
+- AC-FR-006.3  Metadata kandidat (rasional, tipe, sumber) dipertahankan menurut nama kandidat, termasuk di isian langkah 2.
+- AC-FR-006.4  Skrip R ekspor mereproduksi komposit yang dibentuk terhadap indeks sejalan (indeks sama persis), baik tanpa maupun dengan pengulangan langkah 2; memuat analisis pertama, `cand <- cci_as_reference(cci)`, dan analisis kedua.
+- AC-FR-006.5  Langkah 1 yang dijalankan ulang menghapus rangkaian ini.
+
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.
 ### NFR-002 — Kinerja

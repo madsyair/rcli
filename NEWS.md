@@ -1,3 +1,21 @@
+# rcli 0.2.2
+
+## Graphical interface
+
+* The title shows the package version and names both indices ("rcli
+  0.2.2: Composite Leading and Coincident Indicators"; in Indonesian
+  "Indikator Komposit Pendahulu dan Sejalan").
+* Step 9 gains a button that makes the coincident index the reference
+  series of a new analysis (`cci_as_reference()`): steps 1 and 2 are filled
+  with the new candidate set, without the former reference and the
+  components of the index, the candidate metadata is kept, and the user
+  continues from step 3. The exported R script reproduces the whole chain:
+  the first analysis, `cand <- cci_as_reference(cci)`, and the analysis
+  against the index (with `cli_candidates(cand@data, ...)` when the
+  metadata is edited again). Loading data in step 1 starts from scratch.
+* The candidate metadata of step 2 is kept by candidate name when the
+  list of candidates changes, instead of by position.
+
 # rcli 0.2.1
 
 The coincident index prepared as 0.1.4 (never released) is merged into
