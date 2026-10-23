@@ -20,11 +20,13 @@ rcli_app(language = c("id", "en"))
 }
 \description{
 `run_app()` opens a Shiny application that walks through the workflow in
-nine steps: data, candidate metadata, specification, cycles, turning
+ten steps: data, candidate metadata, specification, cycles, turning
 points, classification, composite, validation with the quality scorecard,
-and export (results, a `CliResult` object and an R script that reproduces
-the analysis). Each step unlocks the next one; re-running a step clears
-the results that depend on it.
+coincident index ([cci_build()]), and export (results, a `CliResult`
+object and an R script that reproduces the analysis). Each step unlocks
+the next one; re-running a step clears the results that depend on it. The
+coincident index needs only the classification, so it can be built before
+or after the composite leading indicator.
 }
 \details{
 `rcli_app()` returns the application object without running it, for

@@ -129,7 +129,8 @@ plot_ccf <- function(cycles, reference, name, lag_max, tr = function(x) x) {
 }
 
 # Composite index against the reference cycle on the same scale.
-plot_composite <- function(composite, reference, ref_tp, tr = function(x) x) {
+plot_composite <- function(composite, reference, ref_tp, tr = function(x) x,
+                           label = "composite leading indicator") {
   idx <- composite@index
   ref <- 100 + reference@normalised * composite@amplitude
   if (is(composite@aggregator, "ConferenceBoard")) {
@@ -144,7 +145,7 @@ plot_composite <- function(composite, reference, ref_tp, tr = function(x) x) {
   graphics::lines(idx, lwd = 2, col = "firebrick")
   graphics::legend("topleft", bty = "n", lwd = c(2, 1.5, 8),
                    col = c("firebrick", "black", "grey80"),
-                   legend = c(tr("composite leading indicator"),
+                   legend = c(tr(label),
                               tr("reference cycle"),
                               tr("reference contraction")))
 }

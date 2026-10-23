@@ -7,7 +7,8 @@
 cli_quality(x, spec = NULL)
 }
 \arguments{
-\item{x}{A [CliValidation-class] or a [CliResult-class].}
+\item{x}{A [CliValidation-class], a [CliResult-class] or a
+[CciResult-class].}
 
 \item{spec}{A [CliSpec-class]; taken from `x` when it is a `CliResult`.}
 }
@@ -16,7 +17,10 @@ A [CliQuality-class] object.
 }
 \description{
 Turns the validation results into a scorecard with an explicit verdict.
-The criteria come in three groups:
+The criteria come in three groups. For a coincident index ([cci_build()],
+[cci_validate()]) the turning-point and out-of-sample groups test timing
+instead of lead (see [cci_validate()]); the prediction group scores the
+current contraction state (horizon 0).
 }
 \details{
 **Turning points** (OECD evaluation; Gyomai and Guidetti 2012): the

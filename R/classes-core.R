@@ -141,13 +141,22 @@ setClass("CompositeIndex", representation(
 #' @slot passed Logical; did the composite meet the leading criteria?
 #' @slot failed Criteria that were not met.
 #' @slot quality The [CliQuality-class] scorecard.
-#' @seealso [cli_validate()], [cli_quality()]
+#' @slot role `"leading"` for a composite leading indicator ([cli_validate()])
+#'   or `"coincident"` for a coincident index ([cci_validate()]); it decides
+#'   which criteria the scorecard applies.
+#' @seealso [cli_validate()], [cci_validate()], [cli_quality()]
 #' @exportClass CliValidation
 setClass("CliValidation", representation(
   turning_points = "data.frame", probability = "data.frame",
   out_of_sample = "data.frame", passed = "logical", failed = "character",
-  quality = "ANY"
-))
+  quality = "ANY", role = "character"
+), prototype(role = "leading"))
+
+# Role of a validation (objects saved before 0.1.4 have no role slot).
+validation_role <- function(x) {
+  if (methods::.hasSlot(x, "role") && length(x@role) == 1L) x@role else
+    "leading"
+}
 
 #' Quality scorecard of a composite leading indicator
 #'
@@ -180,3 +189,16 @@ setClass("CliResult", representation(
   turning_points = "list", assessment = "LeadAssessment",
   composite = "ANY", validation = "ANY", audit = "data.frame"
 ))
+
+#' Result of the coincident-index workflow
+#'
+#' A `CciResult` has the slots of a [CliResult-class]; the composite is a
+#' coincident index built from the candidates classified as coincident, and
+#' its validation has role `"coincident"`. The accessors of `CliResult`
+#' ([components()], [composite()], [validation()], [audit_log()],
+#' [cycles()], [turning_points()], [assessment()]) and [cli_quality()] work
+#' on it.
+#'
+#' @seealso [cci_build()]
+#' @exportClass CciResult
+setClass("CciResult", contains = "CliResult")

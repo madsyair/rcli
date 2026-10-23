@@ -129,9 +129,42 @@ test_that("the server runs the nine steps in order", {
     out <- utils::capture.output(eval(parse(text = script), envir = eval_env))
     expect_equal(components(eval_env$res), rv$composite@components)
     expect_s4_class(result(), "CliResult")
+    # 9. coincident index, built from the classification of step 6
+    expect_equal(coincidents(rv$assessment), "coincident")
+    session$setInputs(cci_mode = "auto", run9 = 1)
+    expect_s4_class(rv$cci, "CciResult")
+    expect_equal(rv$cci@composite@components, "coincident")
+    expect_equal(rv$cci@validation@role, "coincident")
+    expect_equal(nrow(rv$cci@validation@out_of_sample), 2)
+    expect_equal(cci_quality()@verdict, "good")
+    expect_match(output$cci_scorecard, "median lead at turning points")
+    expect_match(output$cci_audit, "initial index")
+    expect_match(output$cci_print, "coincident index")
+    for (o in c("cci_plot", "cci_weights_plot", "cci_components_plot")) {
+      expect_type(output[[o]], "list")
+    }
+    script <- script()
+    expect_match(script, "cci <- cci_build(res)", fixed = TRUE)
+    eval_env <- new.env()
+    out <- utils::capture.output(eval(parse(text = script), envir = eval_env))
+    expect_equal(as.numeric(eval_env$cci@composite@index),
+                 as.numeric(rv$cci@composite@index))
+    for (d in c("dl_cci", "dl_cci_quality")) {
+      expect_true(file.exists(output[[d]]))
+    }
+    expect_named(utils::read.csv(output$dl_cci), c("time", "index", "cycle"))
+    # rebuilding the composite keeps the index; manual mode keeps every
+    # chosen component
+    session$setInputs(run7 = 2)
+    expect_s4_class(rv$cci, "CciResult")
+    session$setInputs(cci_mode = "manual",
+                      cci_components = c("coincident", "lag_3"), run9 = 2)
+    expect_equal(rv$cci@composite@components, c("coincident", "lag_3"))
+    expect_match(script(), "select = FALSE", fixed = TRUE)
     # re-running an early step clears the later ones
     session$setInputs(run3 = 2)
     expect_null(rv$cycles)
+    expect_null(rv$cci)
     expect_false(7L %in% rv$done)
   })
 })
@@ -219,6 +252,11 @@ test_that("manual composites, uploads and downloads work", {
     expect_equal(rv$audit$action, "manual selection")
     session$setInputs(run8 = 1)
     expect_equal(nrow(rv$validation@out_of_sample), 0)
+    # the coincident index needs a choice of components when none is
+    # coincident; an empty manual choice is refused
+    session$setInputs(cci_mode = "manual", cci_components = character(0),
+                      run9 = 1)
+    expect_null(rv$cci)
     expect_match(script(), "read_cli_data(\"q.csv\"", fixed = TRUE)
     expect_match(script(), "cli_composite(cycles(res)", fixed = TRUE)
     for (d in c("dl_cli", "dl_assess", "dl_audit", "dl_quality", "dl_rds",
@@ -275,6 +313,19 @@ test_that("failed criteria are translated in the Indonesian interface", {
     translate_reasons(x, "id"),
     c("lead korelasi silang, median lead, konsistensi", "", "Granger")
   )
+})
+
+test_that("coincident phrases are translated", {
+  p <- rcli:::phrase_translator("id")
+  expect_equal(p("coincident index"), "indeks sejalan")
+  expect_equal(p("initial index of all coincident candidates"),
+               "indeks awal dari semua kandidat sejalan")
+  expect_equal(p("lag of the cross-correlation peak"),
+               "lag puncak korelasi silang")
+  q <- cli_quality(cci_build(sim_candidates(seed = 1)))
+  shown <- rcli:::quality_display(q, p)
+  expect_true(any(grepl("dalam", shown$ambang)))
+  expect_false(any(grepl("within", shown$ambang)))
 })
 
 test_that("the scorecard row for a disaggregated reference is translated", {

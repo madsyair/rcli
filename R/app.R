@@ -71,11 +71,13 @@ parse_dates <- function(x, frequency = NULL) {
 #' Run the step-by-step graphical interface
 #'
 #' `run_app()` opens a Shiny application that walks through the workflow in
-#' nine steps: data, candidate metadata, specification, cycles, turning
+#' ten steps: data, candidate metadata, specification, cycles, turning
 #' points, classification, composite, validation with the quality scorecard,
-#' and export (results, a `CliResult` object and an R script that reproduces
-#' the analysis). Each step unlocks the next one; re-running a step clears
-#' the results that depend on it.
+#' coincident index ([cci_build()]), and export (results, a `CliResult`
+#' object and an R script that reproduces the analysis). Each step unlocks
+#' the next one; re-running a step clears the results that depend on it. The
+#' coincident index needs only the classification, so it can be built before
+#' or after the composite leading indicator.
 #'
 #' `rcli_app()` returns the application object without running it, for
 #' deployment on Shiny Server or Posit Connect (see
@@ -129,7 +131,7 @@ step_panel <- function(t, k, ...) {
     shiny::h3(t(paste0("s", k))),
     shiny::p(shiny::em(t(paste0("h", k)))),
     ...,
-    if (k < 9L) {
+    if (k < 10L) {
       shiny::div(style = "margin: 20px 0;",
                  shiny::actionButton(paste0("next", k), t("next_step")))
     }
@@ -280,12 +282,35 @@ app_ui <- function(language = "id") {
       ),
       step_panel(
         t, 9L,
+        shiny::uiOutput("cci_verdict"),
+        shiny::radioButtons("cci_mode", t("comp_mode"), stats::setNames(
+          c("auto", "manual"), c(t("mode_auto"), t("mode_manual"))),
+          inline = TRUE),
+        shiny::checkboxGroupInput("cci_components", t("components"),
+                                  choices = character(0), inline = TRUE),
+        shiny::actionButton("run9", t("run9"), class = "btn-primary"),
+        shiny::h4(t("cci_plot")), shiny::plotOutput("cci_plot"),
+        shiny::fluidRow(
+          shiny::column(5, shiny::h4(t("weights")),
+                        shiny::plotOutput("cci_weights_plot", height = 300)),
+          shiny::column(7, shiny::h4(t("components_plot")),
+                        shiny::plotOutput("cci_components_plot",
+                                          height = 300))
+        ),
+        shiny::h4(t("scorecard")), shiny::tableOutput("cci_scorecard"),
+        shiny::h4(t("audit")), shiny::tableOutput("cci_audit"),
+        shiny::h4(t("validation")), shiny::verbatimTextOutput("cci_print")
+      ),
+      step_panel(
+        t, 10L,
         shiny::downloadButton("dl_cli", t("dl_cli")),
         shiny::downloadButton("dl_assess", t("dl_assess")),
         shiny::downloadButton("dl_audit", t("dl_audit")),
         shiny::downloadButton("dl_quality", t("dl_quality")),
         shiny::downloadButton("dl_rds", t("dl_rds")),
         shiny::downloadButton("dl_script", t("dl_script")),
+        shiny::downloadButton("dl_cci", t("dl_cci")),
+        shiny::downloadButton("dl_cci_quality", t("dl_cci_quality")),
         shiny::h4(t("code")), shiny::verbatimTextOutput("script")
       )
     )
@@ -363,7 +388,7 @@ quality_display <- function(q, p = function(x) x) {
   status <- ifelse(is.na(tab$passed), "info",
                    ifelse(tab$passed, "pass", "fail"))
   thr <- p(tab$threshold)
-  for (w in c("positive", "naive", "to")) {
+  for (w in c("positive", "naive", "to", "within")) {
     thr <- gsub(paste0("\\b", w, "\\b"), p(w), thr)
   }
   out <- data.frame(group = p(tab$group), criterion = p(tab$criterion),
@@ -428,6 +453,16 @@ app_script <- function(state) {
     lines <- c(lines, "audit_log(res)", "plot(res)", "",
                "# 8. Validation and quality", "cli_quality(res)")
   }
+  if (!is.null(state$cci_mode)) {
+    call <- if (identical(state$cci_mode, "manual")) {
+      sprintf("cci <- cci_build(res, components = %s, select = FALSE)",
+              deparse_value(state$cci_components))
+    } else {
+      "cci <- cci_build(res)"
+    }
+    lines <- c(lines, "", "# 9. Coincident index", call, "cli_quality(cci)",
+               "# cand_cci <- cci_as_reference(cci)  # the index as reference")
+  }
   paste(lines, collapse = "\n")
 }
 
@@ -481,12 +516,14 @@ app_server <- function(language = "id") {
       data = NULL, cand = NULL, spec = NULL, cycles = NULL, tps = NULL,
       assessment = NULL, cycles_used = NULL, composite = NULL,
       validation = NULL, audit = NULL, done = integer(0), meta = NULL,
-      spec_call = NULL, mode = "auto", components = character(0)
+      spec_call = NULL, mode = "auto", components = character(0),
+      cci = NULL, cci_mode = NULL
     )
     fields <- list(`1` = "data", `2` = c("cand", "meta"),
                    `3` = c("spec", "spec_call"), `4` = "cycles", `5` = "tps",
                    `6` = c("assessment", "cycles_used"),
-                   `7` = c("composite", "validation", "audit"))
+                   `7` = c("composite", "validation", "audit", "cci",
+                           "cci_mode"))
     reset_from <- function(k) {
       for (s in names(fields)) {
         if (as.integer(s) >= k) for (f in fields[[s]]) rv[[f]] <- NULL
@@ -517,8 +554,15 @@ app_server <- function(language = "id") {
       shiny::validate(shiny::need(k %in% rv$done, t("need_prev")))
     }
     reference <- function() rv$cand@reference
+    # the coincident index (step 9) needs only the classification; it is
+    # stored with the step-7 fields so that rebuilding the composite keeps it
+    need_cci <- function() {
+      shiny::validate(shiny::need(!is.null(rv$cci) &&
+                                    !is.null(rv$cci@composite),
+                                  t("need_cci")))
+    }
 
-    for (k in 1:8) {
+    for (k in 1:9) {
       local({
         kk <- k
         shiny::observeEvent(input[[paste0("next", kk)]], {
@@ -529,9 +573,9 @@ app_server <- function(language = "id") {
     }
 
     output$progress <- shiny::renderUI({
-      marks <- vapply(1:9, function(k) {
-        ok <- k %in% rv$done || (k == 9L && 7L %in% rv$done) ||
-          (k == 8L && 7L %in% rv$done)
+      marks <- vapply(1:10, function(k) {
+        ok <- k %in% rv$done || (k == 10L && 7L %in% rv$done) ||
+          (k == 8L && 7L %in% rv$done) || (k == 9L && !is.null(rv$cci))
         sprintf("%s %d", if (ok) "\u25CF" else "\u25CB", k)
       }, character(1))
       shiny::div(style = "margin-bottom: 10px; color: #555;",
@@ -776,6 +820,9 @@ app_server <- function(language = "id") {
       shiny::updateCheckboxGroupInput(
         session, "manual_components", choices = a@table$name,
         selected = leaders(a), inline = TRUE)
+      shiny::updateCheckboxGroupInput(
+        session, "cci_components", choices = a@table$name,
+        selected = coincidents(a), inline = TRUE)
     })
     output$assess_table <- shiny::renderTable({
       need(6L)
@@ -947,7 +994,81 @@ app_server <- function(language = "id") {
       show(rv$validation)
     })
 
-    # 9. Export ------------------------------------------------------------
+    # 9. Coincident index ---------------------------------------------------
+    shiny::observeEvent(input$run9, {
+      if (!6L %in% rv$done) {
+        shiny::showNotification(t("need_prev"), type = "warning")
+        return()
+      }
+      base <- new("CliResult", spec = rv$spec, candidates = rv$cand,
+                  cycles = rv$cycles_used, turning_points = rv$tps,
+                  assessment = rv$assessment, composite = NULL,
+                  validation = NULL, audit = data.frame())
+      cci <- shiny::withProgress(message = t("run9"), safely({
+        if (input$cci_mode == "auto") {
+          if (length(coincidents(rv$assessment)) == 0L) {
+            rcli_abort(t("no_coincident"), "rcli_error_no_coincident")
+          }
+          cci_build(base)
+        } else {
+          comps <- input$cci_components
+          if (length(comps) == 0L) {
+            rcli_abort(t("components"), "rcli_error_argument")
+          }
+          cci_build(base, components = comps, select = FALSE)
+        }
+      }))
+      if (is.null(cci) || is.null(cci@composite)) return()
+      rv$cci <- cci
+      rv$cci_mode <- input$cci_mode
+    })
+    cci_quality <- shiny::reactive({
+      need_cci()
+      cli_quality(rv$cci)
+    })
+    output$cci_verdict <- shiny::renderUI({
+      q <- cci_quality()
+      note <- if (q@verdict == "acceptable") "acceptable_note_cci" else
+        paste0(q@verdict, "_note")
+      shiny::div(
+        style = sprintf(paste("background: %s; color: white; padding: 14px;",
+                              "border-radius: 6px; margin-bottom: 14px;"),
+                        verdict_colour[[q@verdict]]),
+        shiny::h3(style = "margin: 0;",
+                  paste0(t("verdict"), ": ", t(q@verdict))),
+        shiny::p(style = "margin: 6px 0 0 0;", t(note))
+      )
+    })
+    output$cci_plot <- shiny::renderPlot({
+      need_cci()
+      plot_composite(rv$cci@composite, rv$cycles_used[[reference()]],
+                     rv$tps[[reference()]], tr = p, label = "coincident index")
+    })
+    output$cci_weights_plot <- shiny::renderPlot({
+      need_cci()
+      plot_weights(rv$cci@composite, tr = p)
+    })
+    output$cci_components_plot <- shiny::renderPlot({
+      need_cci()
+      plot_components(rv$cycles_used, rv$cci@composite, tr = p)
+    })
+    output$cci_scorecard <- shiny::renderTable({
+      quality_display(cci_quality(), p)
+    })
+    output$cci_audit <- shiny::renderTable({
+      need_cci()
+      a <- rv$cci@audit
+      a$action <- p(a$action)
+      a$passed <- ifelse(a$passed, p("pass"), p("fail"))
+      translate_names(a[, c("iteration", "action", "components", "ccf_lag",
+                            "median_lead", "passed", "score")], p)
+    })
+    output$cci_print <- shiny::renderPrint({
+      need_cci()
+      show(rv$cci@validation)
+    })
+
+    # 10. Export -----------------------------------------------------------
     result <- shiny::reactive({
       need(7L)
       new("CliResult", spec = rv$spec, candidates = rv$cand,
@@ -965,7 +1086,10 @@ app_server <- function(language = "id") {
           NULL,
         seed = input$seed, meta = rv$meta, reference = reference(),
         spec_call = rv$spec_call, mode = rv$mode,
-        components = rv$components, lag_shift = isTRUE(rv$spec@lag_shift)
+        components = rv$components, lag_shift = isTRUE(rv$spec@lag_shift),
+        cci_mode = rv$cci_mode,
+        cci_components = if (is.null(rv$cci)) NULL else
+          rv$cci@composite@components
       ))
     })
     output$script <- shiny::renderText(script())
@@ -995,5 +1119,12 @@ app_server <- function(language = "id") {
       filename = function() "cli_analysis.R",
       content = function(file) writeLines(script(), file)
     )
+    output$dl_cci <- csv_download("cci", function() {
+      need_cci()
+      as.data.frame(rv$cci@composite)
+    })
+    output$dl_cci_quality <- csv_download("cci_quality", function() {
+      as.data.frame(cci_quality())
+    })
   }
 }
