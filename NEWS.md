@@ -43,6 +43,15 @@ used instead of discarded.
   are 65 and 17 percent. Without the one-period floor of the timing band
   only 82.5 percent of truly coincident quarterly composites passed.
 
+## Graphical interface
+
+* New step 9, *Coincident index*: automatic selection or a manual choice of
+  components, the verdict, the index against the reference cycle, weights,
+  components, scorecard and audit log. It needs only step 6, so rebuilding
+  the composite in step 7 keeps it. Export moves to step 10 and gains the
+  index and its scorecard as CSV; the exported script adds `cci_build()`.
+  Indonesian and English text.
+
 ## Other changes
 
 * The test of the TRAMO/X-13 engine choice no longer needs 'seasonal'

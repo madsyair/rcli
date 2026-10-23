@@ -315,12 +315,14 @@ leaders(cli_build(cand_c))
 ## 10. Graphical interface
 
 `run_app()` opens a Shiny application (package **shiny**) that walks
-through the same nine steps — data, candidate metadata, specification,
+through the same ten steps — data, candidate metadata, specification,
 cycles, turning points, classification, composite, validation with the
-scorecard, and export. Each step unlocks the next; re-running a step clears
-the results that depend on it. The export step offers the composite, the
-classification, the audit log, the scorecard, the `CliResult` object and an
-R script that reproduces the analysis.
+scorecard, coincident index, and export. Each step unlocks the next;
+re-running a step clears the results that depend on it. The coincident
+index needs only the classification, so rebuilding the composite keeps it.
+The export step offers the composite, the classification, the audit log,
+the scorecards, the coincident index, the `CliResult` object and an R
+script that reproduces the analysis.
 
 ```{r app, eval = FALSE}
 run_app()               # Indonesian interface

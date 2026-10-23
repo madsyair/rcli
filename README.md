@@ -127,9 +127,10 @@ cand <- cli_candidates(x, reference = "gdp", meta = meta_x)
 
 ## Graphical interface
 
-`run_app()` opens a Shiny application that walks through nine steps (data,
+`run_app()` opens a Shiny application that walks through ten steps (data,
 candidate metadata, specification, cycles, turning points, classification,
-composite, validation with the quality scorecard, and export). Each step
+composite, validation with the quality scorecard, coincident index, and
+export). Each step
 unlocks the next one, and the export step writes an R script that reproduces
 the analysis. `rcli_app()` returns the application object for deployment on
 Shiny Server or Posit Connect (`system.file("app", package = "rcli")`).
