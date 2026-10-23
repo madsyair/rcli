@@ -291,3 +291,9 @@ test_that("R6: the selection score rewards timing and concordance", {
   expect_equal(score(transform(row, ccf_lag = -1)), base - 1)
   expect_lt(score(transform(row, concordance = 0.6)), base)
 })
+
+test_that("R16: the plot legend names the kind of index", {
+  res <- new("CliResult")
+  expect_equal(rcli:::index_label(res), "composite leading indicator")
+  expect_equal(rcli:::index_label(new("CciResult")), "coincident index")
+})

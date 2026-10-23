@@ -3,7 +3,7 @@
 - Increment: rcli 0.2.1 (FR-004 penyelesai HP O(n), F-03; FR-005 penggabungan
   PR #1 indeks koinsiden; NFR-002 revisi)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 1
+- Putaran: 2 (putaran 1 terhadap 59c330e; putaran 2 terhadap 4d060d8)
 - Keadaan yang direview: cabang `rcli-0.2.1`, HEAD 59c330e, terhadap basis
   99d1a2c (0.2.0 di main). Komit yang dibaca: 44b5654 (merge PR #1),
   c8ed1dd (HP pita, kalibrasi koinsiden), 59c330e (Rplots.pdf), serta
@@ -274,11 +274,121 @@
   untuk spesifikasi OECD berat sebelah. Saran: buka isu terpisah; terapkan
   `lag_shifts(comps, train@assessment)` hanya untuk peran "leading".
 
+## Review putaran 2
+- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang lokal `cci-0.1.4`,
+  HEAD 4d060d8. Komit yang dibaca sejak 59c330e:
+  - 161fa87: kolom `note` di `show()`;
+  - e948273: batas waktu n = 10⁵ tidak berlaku di bawah covr;
+  - e3bcd37: perbaikan R1–R14;
+  - 4d060d8: gate report.
+
+  Semua pemeriksaan dijalankan pada salinan `git archive HEAD`.
+- Kotak `[x]` di atas dicentang oleh A5. Status di bawah ini adalah
+  verifikasi saya.
+- Gerbang yang saya jalankan sendiri:
+  - `devtools::test()` lengkap: 1468 lulus, 0 gagal, 0 galat, 1 dilewati
+    (seasonal), termasuk e2e Chrome;
+  - `lintr::lint_package()`: 0 temuan;
+  - `roxygenise()`: `man/` dan `NAMESPACE` sinkron;
+  - tidak ada baris > 80 karakter di berkas R yang diubah (yang tersisa
+    hanya test-app-e2e.R:123-124 dari versi pertama).
+
+  Menurut koordinator, CI GitHub untuk 4d060d8 hijau (R-CMD-check di 3 OS,
+  lint, cakupan, gui-e2e). Saya tidak memverifikasinya sendiri.
+- Mutasi (filter
+  `coincident|selection-bias|quality|^app$|filters|plot|methods`):
+
+  | Mutan | Uraian | Status |
+  |---|---|---|
+  | C1 | cabang `.hasSlot` di `validation_role()` dihapus | **mati** (1 galat) |
+  | C5 | ambang waktu luar sampel 2 × band | **mati** (2 gagal) |
+  | C6 | kriteria pangsa tepat waktu selalu `TRUE` | **mati** (1 gagal) |
+  | C8 | suku median dihapus dari `coincident_score()` | **mati** (1 gagal) |
+  | C11 | `in_timing_band` OECD `<` → `<=` | mati (3 gagal) |
+  | C12 | `in_timing_band` bawaan `<=` → `<` | mati (5 gagal) |
+  | C15 | penolakan `hp_filter(Inf)` dihapus | mati (1 gagal) |
+  | C16 | teks ambang luar sampel tetap "within +/-" | mati (1 gagal) |
+  | C13 | `pct_timely_out` kembali ke `abs(leads) <= band` | **bertahan** (R15) |
+  | C14 | `index_label()` untuk `CciResult` → label pendahulu | **bertahan** (R16) |
+
+### Status temuan putaran 1
+- R1 tertutup. Uji membuat objek tanpa slot `role` (`.hasSlot` FALSE), dan
+  C1 kini mati. `cli_quality()`/`show()` pada objek itu belum diuji;
+  saya sudah memeriksanya manual di putaran 1.
+- R2 tertutup. `coincident_out_of_sample()` diuji di tepi pita untuk ketiga
+  baris; C5 dan C6 mati.
+- R3 tertutup di kode. `in_timing_band()` (inklusif untuk `Classifier`,
+  ketat untuk `OecdClassifier`) dipakai di kriteria dalam sampel, di baris
+  luar sampel, dan di `pct_timely_out`; teks ambang berasal dari
+  `timing_rules()` (C11, C12, C16 mati). Sisa celah uji kecil dicatat
+  di R15.
+- R4 tertutup. Legenda `plot()` memakai generic `index_label()`. Cabang
+  `role` dipertahankan sebagai keputusan yang dicatat di NEWS ("a value and
+  still selects the criteria"); saya terima. Metodenya tidak diuji (R16).
+- R5 tertutup. NEWS menjelaskan bahwa panel simulasi lengkap, sehingga hanya
+  perpanjangan AR yang berpengaruh. Uji "R5" membandingkan "chain" dan
+  "level" pada ujung compang-camping: badan seri identik sampai transformasi
+  afin, dan nilai terakhir berbeda.
+- R6 tertutup. Uji "R6" mengunci rumus skor (median dan lag masing-masing
+  −1), dan C8 mati. Rumusnya masih belum didokumentasikan di `?cci_build`,
+  tetapi itu nit dan saya tidak membuka temuan baru.
+- R7 tertutup untuk `hp_filter()`: `Inf` ditolak dengan
+  `rcli_error_argument` dan diuji (C15 mati). Sisa di
+  `hp_double_filter()` dicatat di R17.
+- R8 tertutup. Ada replikasi `mFilter` bulanan (λ = 129 600, toleransi
+  1e-8), dan AC-FR-004.5 serta F-03 §5/§8 sudah diperbaiki.
+- R9 tertutup. Gate report 4d060d8 menjalankan G5–G8 dengan perintah:
+  - uji: 1468 lulus;
+  - lint: bersih;
+  - cakupan: 96,6%;
+  - `R CMD check --as-cran`: 0 galat, 0 peringatan, 2 NOTE.
+
+  G6 di laporan itu masih membaca putusan putaran 1 (APPROVE). Gerbang ini
+  perlu dijalankan sekali lagi setelah putusan ini.
+- R10 tertutup. Judul menjadi "Composite Leading and Coincident Indicators"
+  (43 karakter).
+- R11 tertutup. Baris panjang dipecah, ada baris kosong sebelum
+  `# rcli 0.2.0`, butir refaktor pindah ke "Other changes", dan alasan
+  versi 0.2.1 dicatat di NEWS.
+- R12 tertutup. AC-NFR-002.2 menjelaskan pembagi 7 kandidat dan 8 seri.
+- R13 tertutup. Uji diberi nama "ten steps", komentar AC-3 dipindahkan,
+  dan mode manual kini membandingkan `@index` dari skrip dengan GUI.
+- R14 tertutup. Tabel log di STATE.md utuh. Catatan di luar cakupan
+  (`lag_shift` di uji bias seleksi) masuk "Eskalasi terbuka" di STATE.md.
+- Komit 161fa87 (kolom `note`) dan e948273 (AC-FR-004.6 tanpa covr) juga
+  saya periksa. Keduanya wajar dan diuji. Revisi AC-FR-004.6 tercatat di
+  01-requirements. Bukti O(n) tetap ada, karena n = 10⁵ selesai tanpa
+  matriks padat.
+
+### Temuan baru
+- [ ] [R15][nit] tests/testthat/test-coincident.R ("R2/R3") — `pct_timely_out`
+  di R/selection-bias.R:112 hanya teruji lewat `in_timing_band()`
+  langsung. Mutan C13 (kembali ke `abs(leads) <= band`) bertahan, karena
+  tidak ada uji `cli_selection_bias(role = "coincident")` dengan
+  `oecd_classifier()` dan lead tepat di tepi pita. Saran: uji
+  `one_cutoff()` dengan pasangan titik balik buatan atau
+  `local_mocked_bindings()` untuk lead ±band.
+- [ ] [R16][nit] R/methods-plot.R — `index_label()` tidak diuji (mutan C14
+  bertahan). Saran:
+  `expect_equal(rcli:::index_label(cci), "coincident index")` dan label
+  pendahulu untuk `CliResult`.
+- [ ] [R17][nit] R/classes-filter.R:99-101 —
+  `hp_double_filter(trend_period = Inf)` lolos validasi, dan
+  `hp_lambda(Inf)` = Inf menghasilkan siklus NaN. Ini sisa R7 yang sama
+  dengan perilaku 0.2.0. Saran: tolak periode tak berhingga di
+  `hp_double_filter()`, dan di `cf_filter()`/`bk_filter()` bila relevan.
+
+### Ringkasan putaran 2
+R1–R14 tertutup. Mutan C1, C5, C6 dan C8 yang bertahan di putaran 1 kini
+mati. Ada tiga nit baru (R15–R17); tidak ada blocker, major, atau minor
+yang terbuka. Catatan di luar cakupan (`lag_shift` di uji bias seleksi)
+tercatat sebagai eskalasi di STATE.md.
+
 ## Putusan
-Inti numerik FR-004 benar dan sesuai F-03 baris demi baris. Hasilnya
-diverifikasi independen terhadap `solve()` padat, solusi eksak rasional, dan
-`mFilter`. 15 dari 15 mutan solver mati, dan klaim waktu di NEWS serta
-`?Extension-class` terbukti. Penggabungan PR #1 bersih: agregator,
+Putaran 1 — Inti numerik FR-004 benar dan sesuai F-03 baris demi baris.
+Hasilnya diverifikasi independen terhadap `solve()` padat, solusi eksak
+rasional, dan `mFilter`. 15 dari 15 mutan solver mati, dan klaim waktu di
+NEWS serta `?Extension-class` terbukti. Penggabungan PR #1 bersih: agregator,
 perpanjangan, objek lama, dan skrip GUI konsisten dengan bawaan 0.2.0.
 Uji lengkap, lint, roxygen, dan `R CMD check --as-cran` bersih. Tidak ada
 blocker atau major. Ada sepuluh minor: R1, R2 dan R6 adalah celah uji
@@ -286,4 +396,12 @@ blocker atau major. Ada sepuluh minor: R1, R2 dan R6 adalah celah uji
 menyangkut desain dan dokumentasi; R9 gerbang usang; R10 judul. Ada pula
 empat nit. Sebaiknya R1, R2, R3 dan R9 ditutup sebelum rilis 0.2.1.
 
+Putaran 2 — R1–R14 tertutup dan terverifikasi; hanya nit R15–R17 yang
+terbuka. Jalankan ulang G6 agar gate report membaca putusan ini.
+
 Putusan: APPROVE
+
+## Tindak lanjut A5 sesudah putaran 2
+- [x] R16 (nit): uji "R16: the plot legend names the kind of index" (test-coincident.R).
+- [x] R17 (nit): `hp_double_filter()` menolak periode tak berhingga (`rcli_error_argument`); uji "R17" di test-filters.R; NEWS diperbarui.
+- [ ] R15 (nit): dibiarkan terbuka; `pct_timely_out` dengan pengklasifikasi OECD di tepi pita belum diuji lewat `one_cutoff()` (aturan intinya diuji langsung pada `in_timing_band()`).

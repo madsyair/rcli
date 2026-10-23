@@ -95,3 +95,10 @@ test_that("R8: the HP filter replicates mFilter at the monthly lambda", {
   expect_equal(as.numeric(ours), as.numeric(ref), tolerance = 1e-8)
   expect_error(hp_filter(Inf), class = "rcli_error_argument")
 })
+
+test_that("R17: infinite periods are rejected instead of giving NaN", {
+  expect_error(hp_double_filter(trend_period = Inf),
+               class = "rcli_error_argument")
+  expect_error(hp_double_filter(smooth_period = Inf),
+               class = "rcli_error_argument")
+})

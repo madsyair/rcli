@@ -56,3 +56,6 @@
 ## G8 Rilis
 - [x] Gerbang G1–G7 lolos
 - [x] check-as-cran — exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli
+
+## Pemeriksaan ulang 2026-10-24
+G1–G4 dan G6 dijalankan ulang tanpa perintah sesudah review putaran 2 (06-review.md, Putaran: 2, APPROVE): semua LOLOS. Uji lengkap sesudah tindak lanjut R16–R17: 0 gagal. CI GitHub pada 4d060d8: R-CMD-check (3 OS), lint, test-coverage, gui-e2e hijau.

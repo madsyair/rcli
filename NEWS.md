@@ -81,7 +81,8 @@ used instead of discarded.
   legend of `plot()` for a coincident index comes from a method as well.
   The role of a validation (`"leading"` or `"coincident"`) is a value and
   still selects the criteria.
-* `hp_filter(Inf)` is an error instead of a cycle of `NaN`.
+* `hp_filter(Inf)` and `hp_double_filter()` with an infinite period are
+  errors instead of giving a cycle of `NaN`.
 * The printed validation summary shows the reason (`note`) for cut-off
   dates without a composite, for example when no candidate was coincident
   in the training window.
