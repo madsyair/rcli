@@ -99,6 +99,10 @@ hp_filter <- function(lambda = NA) {
 hp_double_filter <- function(trend_period = NA, smooth_period = NA) {
   check_number(trend_period, "trend_period", lower = 2, allow_na = TRUE)
   check_number(smooth_period, "smooth_period", lower = 2, allow_na = TRUE)
+  if (any(is.infinite(c(trend_period, smooth_period)))) {
+    rcli_abort("`trend_period` and `smooth_period` must be finite.",
+               "rcli_error_argument")
+  }
   if (!is.na(trend_period) && !is.na(smooth_period) &&
       smooth_period >= trend_period) {
     rcli_abort("`smooth_period` must be shorter than `trend_period`.",

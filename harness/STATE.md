@@ -35,6 +35,8 @@
 | 2026-10-23 21:00 | INC-04 | A5 | G5 | hijau; cli_cycles 0,079 → 0,0033 detik per seri | 1/3 | A6 |
 | 2026-10-23 22:10 | INC-04/05 | A6 | G6 | APPROVE (R1–R10 minor, R11–R14 nit) | 1/3 | A5 perbaiki R1–R14 |
 | 2026-10-23 22:40 | INC-04/05 | A5 | G5 | R1–R14 ditindaklanjuti (lihat 06-review) | 2/3 | gerbang penuh G5–G8 |
+| 2026-10-23 23:00 | INC-04/05 | A0 | G1–G8 | LOLOS semua (cakupan 96,6%); CI PR #1 hijau | 2/3 | A6 putaran 2 |
+| 2026-10-24 05:50 | INC-04/05 | A6 | G6 | APPROVE putaran 2 (R1–R14 tertutup; nit R15–R17) | 2/3 | R16–R17 diperbaiki, merge PR #1 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
