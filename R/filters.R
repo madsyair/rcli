@@ -20,14 +20,52 @@ hp_lambda <- function(period) {
   1 / (4 * (1 - cos(2 * pi / period))^2)
 }
 
+# HP trend: solves (I + lambda D2'D2) tau = x, where D2 is the second
+# difference matrix. The matrix is symmetric positive definite and
+# pentadiagonal, so its LDL' factor keeps two subdiagonals (Golub and Van Loan
+# 2013, sec. 4.1-4.3) and the system is solved in O(n) time and memory
+# (harness/02-math/F-03.md). a0, a1 and a2 are the diagonal and the first and
+# second subdiagonals; l1[i] = L[i, i - 1], l2[i] = L[i, i - 2].
 hp_trend_core <- function(x, lambda) {
   n <- length(x)
   if (n < 4L) {
     rcli_abort("The HP filter needs at least 4 observations.",
                "rcli_error_short_series")
   }
-  d2 <- diff(diag(n), differences = 2)
-  as.numeric(solve(diag(n) + lambda * crossprod(d2), x))
+  a0 <- 1 + lambda * c(1, 5, rep(6, n - 4L), 5, 1)
+  a1 <- lambda * c(-2, rep(-4, n - 3L), -2)
+  a2 <- rep(lambda, n - 2L)
+  d <- numeric(n)
+  l1 <- numeric(n)
+  l2 <- numeric(n)
+  for (i in seq_len(n)) {
+    di <- a0[i]
+    if (i > 1L) di <- di - l1[i]^2 * d[i - 1L]
+    if (i > 2L) di <- di - l2[i]^2 * d[i - 2L]
+    d[i] <- di
+    if (i < n) {
+      li <- a1[i]
+      if (i > 1L) li <- li - l2[i + 1L] * l1[i] * d[i - 1L]
+      l1[i + 1L] <- li / di
+    }
+    if (i < n - 1L) l2[i + 2L] <- a2[i] / di
+  }
+  w <- numeric(n)
+  for (i in seq_len(n)) {
+    wi <- x[i]
+    if (i > 1L) wi <- wi - l1[i] * w[i - 1L]
+    if (i > 2L) wi <- wi - l2[i] * w[i - 2L]
+    w[i] <- wi
+  }
+  z <- w / d
+  tau <- numeric(n)
+  for (i in n:1) {
+    ti <- z[i]
+    if (i < n) ti <- ti - l1[i + 1L] * tau[i + 1L]
+    if (i < n - 1L) ti <- ti - l2[i + 2L] * tau[i + 2L]
+    tau[i] <- ti
+  }
+  tau
 }
 
 cf_core <- function(x, pl, pu) {

@@ -1,3 +1,93 @@
+# rcli 0.2.1
+
+The coincident index prepared as 0.1.4 (never released) is merged into
+the 0.2 series. It adds functions without changing any default, so the
+version stays in the 0.2 series at the maintainer's request.
+
+## Faster HP filter
+
+* The HP trend (used by `hp_filter()`, `hp_double_filter()`, the default
+  filter, and `cli_presentation()`) is now computed with a banded LDL'
+  factorisation of its pentadiagonal system in O(n) time and memory instead
+  of a dense `solve()` in O(n^3) time and O(n^2) memory. Results agree with
+  0.2.0 to about 1e-10 relative; both are backward stable. `cli_cycles()`
+  now takes about 3 ms instead of about 80 ms per monthly series of 30
+  years, so the AR extension that became the default in 0.2.0 costs less
+  than the filter of 0.1.3 without it. Series of 100,000 observations no
+  longer need 80 GB of memory.
+
+## Coincident index
+
+A coincident index summarises the current state of the cycle, as the
+Conference Board coincident economic index does next to its leading index.
+The candidates that `cli_assess()` already classified as coincident are now
+used instead of discarded.
+
+* `cci_build()`: aggregates the coincident candidates with the aggregator
+  of the specification (the same machinery as `cli_build()`, without
+  lag-shifting), validates the index and removes components by backward
+  elimination until it passes. It takes a `CliResult`, so that the leading
+  and the coincident index come from one run, or a `CandidateSet`.
+  `components` sets the starting components and `select = FALSE` keeps
+  them all. Returns a `CciResult`, a subclass of `CliResult`, so the usual
+  accessors, `plot()`, `summary()` and `cli_quality()` work.
+* `cci_validate()` and the generic `coincident_criteria()`: timing in place
+  of lead. The default rule asks for a cross-correlation peak within
+  `coincident_band`, a median lead at turning points within +/- 2 months
+  (one period for quarterly data), few missed and extra turning points and
+  significant concordance; Granger causality is not required. With
+  `oecd_classifier()` the median lead must lie strictly inside the OECD
+  coincident band. The current contraction state (horizon 0) is scored by
+  QPS, AUC and the Pesaran-Timmermann test.
+* `coincidents()` lists the candidates classified as coincident.
+* `cci_as_reference()` turns a coincident index into the reference series
+  of a new `CandidateSet`, dropping the former reference and the components
+  of the index, so a monthly index can replace a disaggregated quarterly
+  reference.
+* `cli_selection_bias(role = "coincident")` checks the timing of the index
+  after cut-off dates; the output gains `pct_timely_out`. `cci_build()`
+  runs it when `oos_cutoffs` is set, so a coincident index can reach the
+  verdict "good".
+* `CliValidation` gains a `role` slot (`"leading"` or `"coincident"`) that
+  the scorecard, `show()` and the selection-bias check follow. Objects saved
+  by earlier versions count as leading.
+* `data-raw/calibrate_coincident.R` and `inst/calibration/coincident.csv`:
+  Monte Carlo pass rates of the coincident criteria (100 replications). At
+  the default noise level 96 percent (monthly) and 99 percent (quarterly)
+  of truly coincident composites pass and at most 1 percent of composites
+  that lead or lag by 3 months; with twice the noise the quarterly rates
+  are 65 and 15 percent. The rates were computed with the 0.2 defaults
+  and moved by at most 2 points against those of the 0.1.x defaults; the
+  simulated panels are complete, so only the AR extension made a
+  difference (a test checks the chain at a ragged edge separately).
+  Without the one-period floor of the timing band only 82.5 percent of
+  truly coincident quarterly composites passed.
+
+## Graphical interface
+
+* New step 9, *Coincident index*: automatic selection or a manual choice of
+  components, the verdict, the index against the reference cycle, weights,
+  components, scorecard and audit log. It needs only step 6, so rebuilding
+  the composite in step 7 keeps it. Export moves to step 10 and gains the
+  index and its scorecard as CSV; the exported script adds `cci_build()`.
+  Indonesian and English text.
+
+## Other changes
+
+* The timing band of a coincident index, whether a lead lies inside it,
+  and the texts of its scorecard rules are internal methods of the
+  classifier instead of a branch on its class, so the OECD band is open
+  both in sample and after the cut-offs (it was closed after them). The
+  legend of `plot()` for a coincident index comes from a method as well.
+  The role of a validation (`"leading"` or `"coincident"`) is a value and
+  still selects the criteria.
+* `hp_filter(Inf)` is an error instead of a cycle of `NaN`.
+* The printed validation summary shows the reason (`note`) for cut-off
+  dates without a composite, for example when no candidate was coincident
+  in the training window.
+* The test of the TRAMO/X-13 engine choice no longer needs 'seasonal'
+  installed (it failed on machines without it).
+
 # rcli 0.2.0
 
 ## New defaults (results at the end of the sample change)

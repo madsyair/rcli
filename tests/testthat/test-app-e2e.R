@@ -1,8 +1,8 @@
 # End-to-end tests: the application runs in headless Chrome and is driven
-# through the nine steps as a user would, with clicks on the step buttons
+# through the ten steps as a user would, with clicks on the step buttons
 # and the "Next step" buttons. Skipped on CRAN and when Chrome is missing.
 
-test_that("a user completes the nine steps in the browser", {
+test_that("a user completes the ten steps in the browser", {
   skip_if_no_browser()
   app <- start_app("workflow-en", "en")
   on.exit(app$stop(), add = TRUE)
@@ -101,9 +101,22 @@ test_that("a user completes the nine steps in the browser", {
   for (id in c("roc_plot", "prob_plot", "sb_plot")) expect_plot(app, id)
   shot(app, "step8-validation")
 
-  # 9. Export: every download works and the script reproduces the result
+  # 9. Coincident index: the coincident candidate is preselected
   go_to(app, 9L)
-  shot(app, "step9-export")
+  expect_equal(app$get_value(input = "cci_components"), "coincident")
+  app$click("run9")
+  app$wait_for_idle(timeout = 120000)
+  expect_text_soon(app, "#cci_verdict", "ACCEPTABLE")
+  expect_match(app$get_value(output = "cci_scorecard"), "median lead")
+  expect_match(app$get_value(output = "cci_audit"), "initial index")
+  for (id in c("cci_plot", "cci_weights_plot", "cci_components_plot")) {
+    expect_plot(app, id)
+  }
+  shot(app, "step9-coincident")
+
+  # 10. Export: every download works and the script reproduces the result
+  go_to(app, 10L)
+  shot(app, "step10-export")
   csv <- utils::read.csv(app$get_download("dl_cli"))
   expect_named(csv, c("time", "index", "cycle"))
   expect_equal(nrow(csv), 360)
@@ -119,8 +132,14 @@ test_that("a user completes the nine steps in the browser", {
   # the script carries the out-of-sample cut-offs, so it reaches the same
   # verdict as the interface
   expect_equal(cli_quality(env$res)@verdict, "good")
+  # FR-005 AC-3: the script reproduces the coincident index as well
+  expect_equal(as.numeric(env$cci@composite@index),
+               utils::read.csv(app$get_download("dl_cci"))$index)
+  expect_true("criterion" %in%
+                names(utils::read.csv(app$get_download("dl_cci_quality"))))
 
   expect_match(app$get_html("#progress"), "\u25CF 9")
+  expect_match(app$get_html("#progress"), "\u25CF 10")
   expect_no_browser_errors(app)
 })
 
@@ -192,7 +211,13 @@ test_that("an uploaded quarterly CSV runs through the Indonesian interface", {
   expect_match(notifications(app), "titik potong")
   shot(app, "upload-id-step8")
   go_to(app, 9L)
+  app$click("run9")
+  app$wait_for_idle(timeout = 120000)
+  expect_text_soon(app, "#cci_verdict", "Vonis mutu")
+  expect_match(app$get_value(output = "cci_audit"), "indeks awal")
+  go_to(app, 10L)
   script <- readLines(app$get_download("dl_script"))
+  expect_true(any(grepl("cci_build(res)", script, fixed = TRUE)))
   expect_true(any(grepl("read_cli_data", script)))
   expect_true(any(grepl("dynamic_factor()", script, fixed = TRUE)))
   expect_true(any(grepl("cli_composite(cycles(res)", script, fixed = TRUE)))

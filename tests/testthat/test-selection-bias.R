@@ -38,3 +38,19 @@ test_that("summary warns when the in-sample lead is a selection effect", {
   )
   expect_output(summary(res), "selection effect")
 })
+
+test_that("the printed summary explains cut-offs without a composite", {
+  res <- cli_build(sim_candidates(seed = 1),
+                   cli_spec(12, oos_cutoffs = 2015))
+  v <- validation(res)
+  oos <- v@out_of_sample
+  oos$n_components <- 0L
+  oos$note <- "no coincident candidate before the cut-off"
+  v@out_of_sample <- oos
+  expect_output(show(v), "no coincident candidate before the cut-off")
+  # objects without notes print as before, without the column
+  v@out_of_sample$note <- ""
+  expect_false(any(grepl("note", capture.output(show(v)))))
+  v@out_of_sample$note <- NULL
+  expect_output(show(v), "selection bias")
+})

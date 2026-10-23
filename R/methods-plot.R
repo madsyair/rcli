@@ -17,6 +17,7 @@ tp_marks <- function(tp, y) {
 #' * `CompositeIndex`: the composite index.
 #' * `CliResult`: the normalised composite and reference cycles, with the
 #'   reference contractions shaded.
+#' * `CciResult`: the same for the coincident index.
 #'
 #' @param x The object to plot.
 #' @param y Unused.
@@ -84,10 +85,17 @@ setMethod("plot", "CliResult", function(x, y, ...) {
   cols <- "black"
   if (!is.null(x@composite)) {
     graphics::lines(x@composite@cycle, col = "firebrick", lwd = 1.5)
-    labels <- c(labels, "composite leading indicator")
+    labels <- c(labels, index_label(x))
     cols <- c(cols, "firebrick")
   }
   graphics::legend("topleft", legend = labels, col = cols, lwd = 1.5,
                    bty = "n")
   invisible(x)
 })
+
+# Legend label of the composite of a result.
+setGeneric("index_label", function(x) standardGeneric("index_label"))
+setMethod("index_label", "CliResult", function(x) {
+  "composite leading indicator"
+})
+setMethod("index_label", "CciResult", function(x) "coincident index")

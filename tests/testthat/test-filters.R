@@ -85,3 +85,13 @@ test_that("invalid filter arguments are rejected", {
   expect_error(extract_cycle(hamilton_filter(), ts(1:12, frequency = 4)),
                class = "rcli_error_short_series")
 })
+
+test_that("R8: the HP filter replicates mFilter at the monthly lambda", {
+  skip_if_not_installed("mFilter")
+  set.seed(8)
+  xm <- ts(cumsum(rnorm(360)) + 100, frequency = 12, start = 1995)
+  ours <- extract_cycle(hp_filter(129600), xm)
+  ref <- mFilter::hpfilter(xm, freq = 129600, type = "lambda")$cycle
+  expect_equal(as.numeric(ours), as.numeric(ref), tolerance = 1e-8)
+  expect_error(hp_filter(Inf), class = "rcli_error_argument")
+})

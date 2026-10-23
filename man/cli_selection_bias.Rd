@@ -4,7 +4,12 @@
 \alias{cli_selection_bias}
 \title{Check the selection bias of in-sample leads}
 \usage{
-cli_selection_bias(candidates, spec, cutoffs)
+cli_selection_bias(
+  candidates,
+  spec,
+  cutoffs,
+  role = c("leading", "coincident")
+)
 }
 \arguments{
 \item{candidates}{A [CandidateSet-class].}
@@ -12,15 +17,20 @@ cli_selection_bias(candidates, spec, cutoffs)
 \item{spec}{A [CliSpec-class].}
 
 \item{cutoffs}{Cut-off dates in decimal time (e.g. `c(2010, 2015)`).}
+
+\item{role}{`"leading"` (composite leading indicator) or `"coincident"`
+(coincident index).}
 }
 \value{
 A data frame with one row per cut-off: `cutoff`, `n_components`,
   `components`, in-sample `ccf_lag_in` and `median_lead_in`,
-  out-of-sample `median_lead_out`, `pct_led_out` and `n_tp_out` (number of
-  reference turning points after the cut-off), `lead_gap`
+  out-of-sample `median_lead_out`, `pct_led_out`, `pct_timely_out` (share
+  of later reference turning points matched within the coincident band)
+  and `n_tp_out` (number of reference turning points after the cut-off),
+  `lead_gap`
   (`median_lead_in - median_lead_out`) and `note`, which explains empty
-  rows (training window too short, or no leading candidate before the
-  cut-off).
+  rows (training window too short, or no leading or coincident candidate
+  before the cut-off).
 }
 \description{
 Leads measured on the sample used to choose the components overstate the
@@ -40,6 +50,10 @@ still two-sided filter estimates, so this is a pseudo out-of-sample check
 of selection, not a real-time evaluation (for that, store data vintages in
 the [CandidateSet-class]). A large positive `lead_gap` signals that the
 in-sample lead is mostly a selection effect.
+
+With `role = "coincident"` the same harness checks a coincident index:
+step 1 runs [cci_build()], and the later timing should stay within the
+coincident band (see [cci_validate()]) rather than stay positive.
 }
 \examples{
 \donttest{

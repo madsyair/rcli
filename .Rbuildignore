@@ -12,3 +12,4 @@
 ^pedoman$
 ^harness$
 ^Rplots\.pdf$
+^tests/testthat/Rplots\.pdf$

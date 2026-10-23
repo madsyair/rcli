@@ -169,7 +169,8 @@ test_that("TRAMO engine runs through RJDemetra when installed", {
 })
 
 test_that("engine auto falls back to X-13 without RJDemetra", {
-  local_mocked_bindings(has_rjdemetra = function() FALSE)
+  local_mocked_bindings(has_rjdemetra = function() FALSE,
+                        has_seasonal = function() TRUE)
   expect_equal(rcli:::resolve_engine("auto"), "x13")
   expect_error(rcli:::resolve_engine("tramo"),
                class = "rcli_error_dependency")

@@ -33,6 +33,7 @@
 * `CompositeIndex`: the composite index.
 * `CliResult`: the normalised composite and reference cycles, with the
   reference contractions shaded.
+* `CciResult`: the same for the coincident index.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)

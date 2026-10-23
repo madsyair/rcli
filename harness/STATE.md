@@ -8,6 +8,7 @@
 
 ## Tafsiran dan keputusan pengguna
 - 2026-10-23: pengguna meminta "Lanjutkan ke versi 0.2.0 sesuai kajian" (kajian: agregasi hibrida dan perpanjangan AR menjadi bawaan).
+- 2026-10-23 20:16: pengguna memilih "Kinerja: pilihan b" (penyelesai HP O(n)) dan "iya" untuk menggabungkan PR #1 ke seri 0.2 (versi 0.2.1).
 - Tafsiran: bentuk rantai diubah dari laju pertumbuhan (kajian) ke rata-rata perubahan siklus (aditif) atas temuan A2c C1; dukungan empiris diulang dengan kode paket (selisih ≤ 0,001).
 
 ## Increment
@@ -15,7 +16,9 @@
 |---|---|---|---|---|
 | INC-01 | Agregasi hibrida `equal_weight(ragged_edge)` | FR-001 | F-01 | selesai (G1–G5) |
 | INC-02 | Perpanjangan ujung `Extension` | FR-002 | F-02 | selesai (G1–G5) |
-| INC-03 | Spesifikasi, OECD, GUI, kalibrasi, dokumen | FR-003, NFR-001–003 | — | berjalan |
+| INC-03 | Spesifikasi, OECD, GUI, kalibrasi, dokumen | FR-003, NFR-001–003 | — | selesai (G1–G8; rilis 0.2.0) |
+| INC-04 | Penyaring HP pita O(n) | FR-004, NFR-002 | F-03 | selesai |
+| INC-05 | Indeks koinsiden (PR #1) ke 0.2.1 | FR-005 | — | selesai |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -25,6 +28,14 @@
 | 2026-10-23 15:40 | INC-01/02 | A4 | G4 | merah terbukti | 1/3 | A5 |
 | 2026-10-23 15:55 | INC-01/02 | A5 | G5 (uji, lint) | LOLOS 1162 uji | 1/3 | A2c putaran 2, A6 |
 | 2026-10-23 16:20 | INC-01 | A2c | G2 | ACCEPT (D1–D4 minor, ditindaklanjuti) | 2/3 | A6 |
+| 2026-10-23 19:00 | INC-03 | A8 | G8 + CI | LOLOS (CI hijau di main 99d1a2c) | 1/3 | menunggu keputusan NFR-002 |
+| 2026-10-23 20:30 | INC-05 | A0 | — | merge PR #1: konflik DESCRIPTION, NEWS; semua uji lolos; kalibrasi koinsiden diulang | 1/3 | INC-04 |
+| 2026-10-23 20:50 | INC-04 | A1, A2 | G1, G2 | F-03 CITED-VERIFIED (simbolik n = 4–9, numerik) | 1/3 | A4 |
+| 2026-10-23 20:55 | INC-04 | A4 | G4 | merah (74,5 GB; AC-3 batas direvisi) | 1/3 | A5 |
+| 2026-10-23 21:00 | INC-04 | A5 | G5 | hijau; cli_cycles 0,079 → 0,0033 detik per seri | 1/3 | A6 |
+| 2026-10-23 22:10 | INC-04/05 | A6 | G6 | APPROVE (R1–R10 minor, R11–R14 nit) | 1/3 | A5 perbaiki R1–R14 |
+| 2026-10-23 22:40 | INC-04/05 | A5 | G5 | R1–R14 ditindaklanjuti (lihat 06-review) | 2/3 | gerbang penuh G5–G8 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
+- Di luar increment 0.2.1 (temuan A6): dengan `lag_shift = TRUE` (bawaan `oecd_spec()`), uji bias seleksi membandingkan komposit tergeser di dalam sampel dengan komposit tanpa geser sesudah titik potong, sehingga `lead_gap` (R/selection-bias.R) bias. Ada sejak 0.1.3; diusulkan sebagai isu terpisah.

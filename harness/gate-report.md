@@ -1,4 +1,4 @@
-# Gate report — 2026-10-23T18:38:37
+# Gate report — 2026-10-23T21:19:48
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -12,7 +12,7 @@
 | G8 Rilis | LOLOS | 0 |
 
 ## G1 Kebutuhan
-- [x] Ada kebutuhan FR/NFR — 6 ID
+- [x] Ada kebutuhan FR/NFR — 8 ID
 - [x] Setiap FR/NFR punya kriteria penerimaan — lengkap
 - [x] Tidak ada TODO
 - [x] Bagian 'Di luar cakupan' ada
@@ -22,25 +22,28 @@
 - [x] F-01: kritikus independen — putusan terakhir: ACCEPT
 - [x] F-01: skrip verifikasi tersimpan — F-01_numeric.R, F-01_symbolic.py
 - [x] F-01: uji yang diturunkan — 8 butir
+- [x] F-03: status kelas A — CITED-VERIFIED
+- [x] F-03: skrip verifikasi tersimpan — F-03_numeric.R, F-03_symbolic.py
+- [x] F-03: uji yang diturunkan — 6 butir
 - [x] F-02: status kelas A — CITED-VERIFIED
 - [x] F-02: skrip verifikasi tersimpan — F-02_numeric.R
 - [x] F-02: uji yang diturunkan — 7 butir
 
 ## G3 Desain
-- [x] Setiap FR terpetakan di desain — 3 FR
+- [x] Setiap FR terpetakan di desain — 5 FR
 - [x] Ada ADR — 2 ADR
 - [x] Tidak ada TODO
 
 ## G4 Uji-dulu
 - [x] Ada berkas uji
-- [x] Setiap FR/NFR dilacak ke uji — 6 ID
-- [x] Setiap F-xx dilacak ke uji — 2 formula
+- [x] Setiap FR/NFR dilacak ke uji — 8 ID
+- [x] Setiap F-xx dilacak ke uji — 3 formula
 - [x] Bukti merah tercatat — sebelum implementasi (2026-10-23): `devtools::test(filter = "ragged-edge|end-ext
 
 ## G5 Build & uji
-- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1294 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=32813 -Dhttp.nonProxyHosts=localhost|127.
+- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1468 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46869 -Dhttp.nonProxyHosts=localhost|127.
 - [x] lint — exit 0: 
-- [x] coverage — exit 0: coverage 96.55376
+- [x] coverage — exit 0: coverage 96.64306
 
 ## G6 Review
 - [x] Tidak ada temuan blocker/major terbuka

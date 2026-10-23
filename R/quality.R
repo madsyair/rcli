@@ -1,7 +1,10 @@
 #' Is the composite leading indicator good enough?
 #'
 #' Turns the validation results into a scorecard with an explicit verdict.
-#' The criteria come in three groups:
+#' The criteria come in three groups. For a coincident index ([cci_build()],
+#' [cci_validate()]) the turning-point and out-of-sample groups test timing
+#' instead of lead (see [cci_validate()]); the prediction group scores the
+#' current contraction state (horizon 0).
 #'
 #' **Turning points** (OECD evaluation; Gyomai and Guidetti 2012): the
 #' composite must meet every leading criterion of the specification, the same
@@ -39,7 +42,8 @@
 #' turning-point and prediction groups pass but no out-of-sample check was
 #' run; `"weak"` otherwise.
 #'
-#' @param x A [CliValidation-class] or a [CliResult-class].
+#' @param x A [CliValidation-class], a [CliResult-class] or a
+#'   [CciResult-class].
 #' @param spec A [CliSpec-class]; taken from `x` when it is a `CliResult`.
 #' @return A [CliQuality-class] object.
 #' @references
@@ -77,10 +81,11 @@ cli_quality <- function(x, spec = NULL) {
     rcli_abort("Supply a CliValidation with its CliSpec, or a CliResult.",
                "rcli_error_argument")
   }
-  tab <- rbind(quality_turning_points(x@turning_points, spec),
+  role <- validation_role(x)
+  tab <- rbind(quality_turning_points(x@turning_points, spec, role),
                quality_prediction(x@probability, spec),
-               quality_out_of_sample(x@out_of_sample, spec),
-               quality_information(x@turning_points, spec),
+               quality_out_of_sample(x@out_of_sample, spec, role),
+               quality_information(x@turning_points, spec, role),
                quality_reference(ref_conv))
   rownames(tab) <- NULL
   ok <- function(g) {
@@ -96,7 +101,8 @@ cli_quality <- function(x, spec = NULL) {
   } else if (tp_ok && pr_ok && !has_oos) {
     verdict <- "acceptable"
     note <- paste("In-sample criteria are met; run the out-of-sample check",
-                  "(oos_cutoffs) before relying on the lead.")
+                  "(oos_cutoffs) before relying on the",
+                  if (role == "coincident") "timing." else "lead.")
   } else {
     verdict <- "weak"
     failed <- unique(tab$group[tab$passed %in% FALSE])
@@ -115,7 +121,10 @@ q_row <- function(group, criterion, value, threshold, passed) {
              threshold = threshold, passed = passed, stringsAsFactors = FALSE)
 }
 
-quality_turning_points <- function(row, spec) {
+quality_turning_points <- function(row, spec, role = "leading") {
+  if (role == "coincident") {
+    return(coincident_quality(spec_classifier(spec), row, spec))
+  }
   quality_criteria(spec_classifier(spec), row, spec)
 }
 
@@ -194,10 +203,11 @@ quality_prediction <- function(prob, spec) {
   )
 }
 
-quality_out_of_sample <- function(oos, spec) {
+quality_out_of_sample <- function(oos, spec, role = "leading") {
   if (nrow(oos) == 0L) return(NULL)
   oos <- oos[!is.na(oos$median_lead_out) & oos$n_tp_out >= 3L, , drop = FALSE]
   if (nrow(oos) == 0L) return(NULL)
+  if (role == "coincident") return(coincident_out_of_sample(oos, spec))
   g <- "out of sample"
   lead_out <- stats::median(oos$median_lead_out)
   led_out <- stats::median(oos$pct_led_out)
@@ -223,7 +233,11 @@ quality_reference <- function(conv) {
         1, "turning points +/- 1 month", NA)
 }
 
-quality_information <- function(row, spec) {
+quality_information <- function(row, spec, role = "leading") {
+  if (role == "coincident") {
+    return(q_row("information", "lag of the cross-correlation peak",
+                 row$ccf_lag, "0 for a coincident index", NA))
+  }
   q_row("information", "lead within the OECD target range", row$ccf_lag,
         sprintf("%s to %s", spec@target_lead[1], spec@target_lead[2]),
         NA)

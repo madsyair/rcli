@@ -224,9 +224,16 @@ setMethod("show", "CliValidation", function(object) {
     cat("  failed criteria: ", paste(object@failed, collapse = ", "), "\n",
         sep = "")
   }
-  cat("  lead: cross-correlation ", fmt_num(tp$ccf_lag, 0), ", median at ",
-      "turning points ", fmt_num(tp$median_lead, 1), " (",
-      fmt_num(100 * tp$pct_led, 0), "% of turning points led)\n", sep = "")
+  coincident <- validation_role(object) == "coincident"
+  if (coincident) {
+    cat("  timing (coincident index): cross-correlation lag ",
+        fmt_num(tp$ccf_lag, 0), ", median lead at turning points ",
+        fmt_num(tp$median_lead, 1), "\n", sep = "")
+  } else {
+    cat("  lead: cross-correlation ", fmt_num(tp$ccf_lag, 0), ", median at ",
+        "turning points ", fmt_num(tp$median_lead, 1), " (",
+        fmt_num(100 * tp$pct_led, 0), "% of turning points led)\n", sep = "")
+  }
   cat("  turning points: ", tp$missed, " missed, ", tp$extra, " extra of ",
       tp$n_ref, "; concordance ", fmt_num(tp$concordance), "\n", sep = "")
   cat("  horizon ", pr$horizon, ": QPS ", fmt_num(pr$qps, 3), ", AUC ",
@@ -238,10 +245,15 @@ setMethod("show", "CliValidation", function(object) {
   }
   oos <- object@out_of_sample
   if (nrow(oos) > 0L) {
-    cat("  selection bias (lead in sample vs after cut-off):\n")
-    print(oos[, c("cutoff", "n_components", "median_lead_in",
-                  "median_lead_out", "n_tp_out", "lead_gap")],
-          row.names = FALSE)
+    cat("  selection bias (", if (coincident) "timing" else "lead",
+        " in sample vs after cut-off):\n", sep = "")
+    cols <- c("cutoff", "n_components", "median_lead_in", "median_lead_out",
+              "n_tp_out", "lead_gap")
+    # rows without a composite say why (objects before 0.1.4 have no note)
+    if ("note" %in% names(oos) && any(nzchar(oos$note))) {
+      cols <- c(cols, "note")
+    }
+    print(oos[, cols], row.names = FALSE)
   }
   invisible(object)
 })

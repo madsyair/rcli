@@ -14,3 +14,13 @@
 ## Kompatibilitas
 - Objek 0.1.x tanpa slot baru: `EqualWeight` tanpa `ragged_edge` → "level"; `CliSpec` tanpa `extension` → tanpa perpanjangan (`methods::.hasSlot`).
 - Cara mendapat hasil 0.1.x didokumentasikan di NEWS dan `?cli_spec`.
+
+## Increment 0.2.1
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-004 | `hp_trend_core(x, lambda)` (internal) dengan faktorisasi LDLᵀ pita; antarmuka `hp_filter()`, `hp_double_filter()`, `cli_presentation()` tidak berubah | `R/filters.R` |
+| FR-005 | `cci_build()`, `cci_validate()`, `coincident_criteria()`, `coincidents()`, `cci_as_reference()`, kelas `CciResult`, slot `role` di `CliValidation`; GUI langkah 9 (indeks sejalan) dan 10 (ekspor); generic internal `timing_band()` dan `timing_rules()` | `R/coincident.R`, `R/app*.R`, `R/quality.R`, `R/selection-bias.R` |
+
+Keputusan 0.2.1:
+- Penyelesai pita ditulis dalam R murni (tanpa 'Matrix' dan tanpa kode C), karena tidak boleh ada Imports baru tanpa persetujuan dan waktunya sudah 0,4 ms per panggilan pada n = 372.
+- Pita lebar batas klasifikasi koinsiden diatur oleh metode kelas `Classifier` (generic internal), sesuai aturan CLAUDE.md "tanpa cabang `if (class == ...)` di inti"; kode PR #1 semula memakai `is(classifier, "OecdClassifier")`.

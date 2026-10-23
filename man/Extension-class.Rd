@@ -66,8 +66,8 @@ Maravall 2001).
   for which the autoregression cannot be fitted. In the real-time
   simulations behind this default (`data-raw/realtime_defaults.R`,
   vignette section 8) it cut the revision of the last value of the
-  composite by 18 to 23 percent, at a cost of about 8 ms per series of
-  30 years (mostly the filter applied to the longer series).
+  composite by 18 to 23 percent. With the O(n) HP solver of 0.2.1 it
+  costs about 1 ms per series of 30 years.
 * `no_extension()`: no forecasts (the behaviour of rcli 0.1.x).
 
 When the outlier treatment already gives forecasts ([tramo_outliers()]),
