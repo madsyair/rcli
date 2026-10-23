@@ -208,3 +208,86 @@ test_that("FR-005 AC-2: the calibration with the 0.2 defaults stands", {
   expect_true(all(base$pass_rate[base$truth %in%
                                    c("leading", "lagging")] <= 0.05))
 })
+
+# Review of 0.2.1 (harness/06-review.md, R1-R6)
+
+test_that("R1: a validation object without the role slot counts as leading", {
+  v <- new("CliValidation")
+  attr(v, "role") <- NULL
+  expect_false(methods::.hasSlot(v, "role"))
+  expect_equal(rcli:::validation_role(v), "leading")
+})
+
+test_that("R2/R3: the out-of-sample timing rules, band edges included", {
+  spec_r <- cli_spec(12)
+  spec_o <- cli_spec(12, classifier = oecd_classifier())
+  oos <- data.frame(median_lead_out = 2, pct_timely_out = 0.5, lead_gap = 0)
+  status <- function(o, spec) {
+    stats::setNames(rcli:::coincident_out_of_sample(o, spec)$passed,
+                    c("timing", "timely", "gap"))
+  }
+  expect_equal(unname(status(oos, spec_r)), c(TRUE, TRUE, TRUE))
+  # the OECD band is open in sample, so it is open out of sample too
+  expect_false(status(oos, spec_o)[["timing"]])
+  expect_match(rcli:::coincident_out_of_sample(oos, spec_o)$threshold[1],
+               "within (-2, 2)", fixed = TRUE)
+  expect_false(status(transform(oos, median_lead_out = 2.5),
+                      spec_r)[["timing"]])
+  expect_false(status(transform(oos, pct_timely_out = 0.4),
+                      spec_r)[["timely"]])
+  gap <- spec_r@min_lead
+  expect_true(status(transform(oos, lead_gap = -gap), spec_r)[["gap"]])
+  expect_false(status(transform(oos, lead_gap = gap + 0.5),
+                      spec_r)[["gap"]])
+  # the share of timely turning points follows the same rule
+  oecd <- spec_o@classifier
+  expect_equal(rcli:::in_timing_band(oecd, c(-2, -1, 2), 2),
+               c(FALSE, TRUE, FALSE))
+  expect_equal(rcli:::in_timing_band(spec_r@classifier, c(-2, 2.5), 2),
+               c(TRUE, FALSE))
+})
+
+test_that("R5: a coincident index chains at the ragged edge", {
+  sim <- simulate_cycles(leads = coin_leads, seed = 5)
+  n <- nrow(sim)
+  sim[(n - 1):n, "coin_b"] <- NA
+  meta <- data.frame(name = colnames(sim)[-1], rationale = "rapid_response")
+  cand <- cli_candidates(sim, "reference", meta = meta)
+  build <- function(edge) {
+    spec <- cli_spec(12, aggregator = equal_weight(min_coverage = 0.5,
+                                                   ragged_edge = edge))
+    cci_build(cand, spec, components = c("coin_a", "coin_b"),
+              select = FALSE)@composite
+  }
+  chain <- build("chain")
+  level <- build("level")
+  expect_equal(chain@aggregator@ragged_edge, "chain")
+  expect_equal(level@aggregator@ragged_edge, "level")
+  # the composite is rescaled over the sample, so compare after an affine
+  # fit on the dates before the ragged edge: they agree there, not at the
+  # edge, where the plain mean jumps to coin_a alone
+  y <- as.numeric(chain@cycle)
+  x <- as.numeric(level@cycle)
+  body <- seq_len(n - 2)
+  fit <- stats::lm(y[body] ~ x[body])
+  expect_lt(max(abs(stats::residuals(fit))), 1e-8)
+  pred <- stats::coef(fit)[[1]] + stats::coef(fit)[[2]] * x[n]
+  expect_gt(abs(y[n] - pred), 1e-3)
+})
+
+test_that("R6: the selection score rewards timing and concordance", {
+  spec <- cli_spec(12)
+  row <- data.frame(n_matched = 10, median_lead = 0, ccf_lag = 0,
+                    ccf_r = 0.8, n_ref = 10, missed = 1, extra = 1,
+                    concordance = 0.8, concordance_expected = 0.5,
+                    concordance_p = 0.01)
+  score <- function(r) {
+    rcli:::coincident_score(new("CliValidation", turning_points = r), spec)
+  }
+  base <- score(row)
+  # every criterion passes: 10 points each, minus lags, plus concordance
+  expect_equal(base, 10 * 6 - 0 - 0 + 5 * 0.8 - 5 * 0.2)
+  expect_equal(score(transform(row, median_lead = 1)), base - 1)
+  expect_equal(score(transform(row, ccf_lag = -1)), base - 1)
+  expect_lt(score(transform(row, concordance = 0.6)), base)
+})

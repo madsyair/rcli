@@ -1,7 +1,8 @@
 # rcli 0.2.1
 
 The coincident index prepared as 0.1.4 (never released) is merged into
-the 0.2 series.
+the 0.2 series. It adds functions without changing any default, so the
+version stays in the 0.2 series at the maintainer's request.
 
 ## Faster HP filter
 
@@ -14,9 +15,6 @@ the 0.2 series.
   years, so the AR extension that became the default in 0.2.0 costs less
   than the filter of 0.1.3 without it. Series of 100,000 observations no
   longer need 80 GB of memory.
-* The timing band of a coincident index and the texts of its scorecard
-  rules are now internal methods of the classifier instead of a branch on
-  its class.
 
 ## Coincident index
 
@@ -59,9 +57,11 @@ used instead of discarded.
   of truly coincident composites pass and at most 1 percent of composites
   that lead or lag by 3 months; with twice the noise the quarterly rates
   are 65 and 15 percent. The rates were computed with the 0.2 defaults
-  (AR extension, chained ragged edge) and moved by at most 2 points
-  against those of the 0.1.x defaults. Without the one-period floor of the timing band
-  only 82.5 percent of truly coincident quarterly composites passed.
+  and moved by at most 2 points against those of the 0.1.x defaults; the
+  simulated panels are complete, so only the AR extension made a
+  difference (a test checks the chain at a ragged edge separately).
+  Without the one-period floor of the timing band only 82.5 percent of
+  truly coincident quarterly composites passed.
 
 ## Graphical interface
 
@@ -74,11 +74,20 @@ used instead of discarded.
 
 ## Other changes
 
+* The timing band of a coincident index, whether a lead lies inside it,
+  and the texts of its scorecard rules are internal methods of the
+  classifier instead of a branch on its class, so the OECD band is open
+  both in sample and after the cut-offs (it was closed after them). The
+  legend of `plot()` for a coincident index comes from a method as well.
+  The role of a validation (`"leading"` or `"coincident"`) is a value and
+  still selects the criteria.
+* `hp_filter(Inf)` is an error instead of a cycle of `NaN`.
 * The printed validation summary shows the reason (`note`) for cut-off
   dates without a composite, for example when no candidate was coincident
   in the training window.
 * The test of the TRAMO/X-13 engine choice no longer needs 'seasonal'
   installed (it failed on machines without it).
+
 # rcli 0.2.0
 
 ## New defaults (results at the end of the sample change)

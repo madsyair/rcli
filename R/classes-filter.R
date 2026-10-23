@@ -88,6 +88,9 @@ setClass("HamiltonFilter", contains = "CycleFilter",
 #' @export
 hp_filter <- function(lambda = NA) {
   check_number(lambda, "lambda", lower = 0, allow_na = TRUE)
+  if (is.infinite(lambda)) {
+    rcli_abort("`lambda` must be finite.", "rcli_error_argument")
+  }
   new("HPFilter", label = "Hodrick-Prescott", lambda = as.numeric(lambda))
 }
 

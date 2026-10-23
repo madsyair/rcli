@@ -107,3 +107,40 @@ setMethod("show", "OecdClassifier", function(object) {
       object@min_matched, " matched turning points\n", sep = "")
   invisible(object)
 })
+
+# Half-width, in periods, of the timing band of a coincident index, and the
+# texts of the scorecard rules that depend on the classifier. Internal
+# generics, so that a classifier sets its own band without branches here.
+setGeneric("timing_band", function(classifier, spec) {
+  standardGeneric("timing_band")
+})
+setMethod("timing_band", "Classifier", function(classifier, spec) {
+  max(2 * spec@freq / 12, 1)
+})
+setMethod("timing_band", "OecdClassifier", function(classifier, spec) {
+  oecd_band(classifier, spec)[["coincident"]]
+})
+
+# TRUE where a lead lies in the timing band: inclusive by default, strict for
+# the OECD classifier (its coincident band is an open interval).
+setGeneric("in_timing_band", function(classifier, lead, band) {
+  standardGeneric("in_timing_band")
+})
+setMethod("in_timing_band", "Classifier", function(classifier, lead, band) {
+  abs(lead) <= band
+})
+setMethod("in_timing_band", "OecdClassifier", function(classifier, lead,
+                                                       band) {
+  abs(lead) < band
+})
+
+setGeneric("timing_rules", function(classifier, band) {
+  standardGeneric("timing_rules")
+})
+setMethod("timing_rules", "Classifier", function(classifier, band) {
+  list(matched = ">= 3", timing = sprintf("within +/- %s", band))
+})
+setMethod("timing_rules", "OecdClassifier", function(classifier, band) {
+  list(matched = sprintf(">= %s", classifier@min_matched),
+       timing = sprintf("within (-%s, %s)", band, band))
+})

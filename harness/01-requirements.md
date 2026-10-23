@@ -47,7 +47,7 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 - AC-FR-004.2  x linear → τ = x (toleransi 1e-8 relatif); untuk x acak Σ τ = Σ x dan Σ tτ = Σ tx (toleransi 1e-8 relatif).
 - AC-FR-004.3  Galat mundur ternorma η = ‖Aτ − x‖∞ / (‖A‖∞‖τ‖∞ + ‖x‖∞) ≤ 10u (u = `.Machine$double.eps`) untuk λ = 133 107,9, n = 372 (Higham 2002, §7.1). Revisi: batas semula ‖Aτ − x‖∞/‖x‖∞ ≤ 1e-10 lebih ketat daripada teori (≈ u‖A‖ ≈ 5e-10) dan juga dilanggar oleh `solve()` padat.
 - AC-FR-004.4  λ = 0 → τ = x; n < 4 → `rcli_error_short_series`.
-- AC-FR-004.5  Uji replikasi `mFilter::hpfilter` dan `neverhpfilter` tetap lolos.
+- AC-FR-004.5  Uji replikasi `mFilter::hpfilter` tetap lolos (triwulanan λ = 1600) dan ditambah uji bulanan λ = 129 600 (review R8; uji `neverhpfilter` menguji penyaring Hamilton, bukan HP).
 - AC-FR-004.6  n = 100 000 selesai (cara padat butuh memori 80 GB), dalam < 5 detik tanpa instrumentasi covr. Revisi: di CI cakupan, instrumentasi covr membuat loop R lebih lambat (5,47 detik), jadi batas waktu hanya berlaku tanpa covr.
 
 ### FR-005 — Indeks koinsiden (PR #1) di seri 0.2
@@ -57,7 +57,7 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 
 ### NFR-002 (revisi 0.2.1) — Kinerja
 - AC-NFR-002.2  Waktu `cli_cycles()` per seri dengan perpanjangan AR (bawaan 0.2.1) ≤ waktu 0.1.3 tanpa perpanjangan, sehingga penyimpangan 0.2.0 (+16%) tertutup.
-  - Hasil ukur (2026-10-23, median 15 ulangan, 7 seri `simulate_cycles(seed = 1)`): 0.2.0 terpasang (solve() padat) tanpa perpanjangan 0,0727 detik, dengan AR 0,0793 detik; 0.2.1 tanpa perpanjangan 0,0021 detik, dengan AR 0,0033 detik. **Terpenuhi**: 0,0033 ≤ 0,0727.
+  - Hasil ukur (2026-10-23, median 15 ulangan, 7 seri `simulate_cycles(seed = 1)`): 0.2.0 terpasang (solve() padat) tanpa perpanjangan 0,0727 detik, dengan AR 0,0793 detik; 0.2.1 tanpa perpanjangan 0,0021 detik, dengan AR 0,0033 detik. Waktu dibagi 7 kandidat; `cli_cycles()` juga memproses seri acuan (8 seri), sehingga per seri sekitar 0,0029 detik. **Terpenuhi**: 0,0033 ≤ 0,0727.
 
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru

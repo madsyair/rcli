@@ -89,7 +89,7 @@ run_all_steps <- function(session, source = "example_m", mode = "auto",
                     manual_components = c("lead_6", "lead_3"), run7 = 1)
 }
 
-test_that("the server runs the nine steps in order", {
+test_that("the server runs the ten steps in order", {
   skip_if_not_installed("shiny")
   server <- function(input, output, session) {
     rcli:::app_server("en")(input, output, session)
@@ -161,6 +161,10 @@ test_that("the server runs the nine steps in order", {
                       cci_components = c("coincident", "lag_3"), run9 = 2)
     expect_equal(rv$cci@composite@components, c("coincident", "lag_3"))
     expect_match(script(), "select = FALSE", fixed = TRUE)
+    manual_env <- new.env()
+    utils::capture.output(eval(parse(text = script()), envir = manual_env))
+    expect_equal(as.numeric(manual_env$cci@composite@index),
+                 as.numeric(rv$cci@composite@index))
     # re-running an early step clears the later ones
     session$setInputs(run3 = 2)
     expect_null(rv$cycles)

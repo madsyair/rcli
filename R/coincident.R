@@ -55,36 +55,12 @@ setGeneric("coincident_criteria", function(classifier, row, spec) {
   standardGeneric("coincident_criteria")
 })
 
-# Half-width, in periods, of the timing band of a coincident index, and the
-# texts of the scorecard rules that depend on the classifier. Internal
-# generics, so that a classifier sets its own band without branches here.
-setGeneric("timing_band", function(classifier, spec) {
-  standardGeneric("timing_band")
-})
-setMethod("timing_band", "Classifier", function(classifier, spec) {
-  max(2 * spec@freq / 12, 1)
-})
-setMethod("timing_band", "OecdClassifier", function(classifier, spec) {
-  oecd_band(classifier, spec)[["coincident"]]
-})
-
-setGeneric("timing_rules", function(classifier, band) {
-  standardGeneric("timing_rules")
-})
-setMethod("timing_rules", "Classifier", function(classifier, band) {
-  list(matched = ">= 3", timing = sprintf("within +/- %s", band))
-})
-setMethod("timing_rules", "OecdClassifier", function(classifier, band) {
-  list(matched = sprintf(">= %s", classifier@min_matched),
-       timing = sprintf("within (-%s, %s)", band, band))
-})
-
 #' @rdname coincident_criteria
 setMethod("coincident_criteria", "Classifier", function(classifier, row,
                                                         spec) {
   band <- timing_band(classifier, spec)
   c(matched = isTRUE(row$n_matched >= 3L),
-    timing = isTRUE(abs(row$median_lead) <= band))
+    timing = isTRUE(in_timing_band(classifier, row$median_lead, band)))
 })
 
 #' @rdname coincident_criteria
@@ -96,7 +72,7 @@ setMethod("coincident_criteria", "RcliClassifier", function(classifier, row,
     matched = row$n_matched >= 3L,
     ccf = isTRUE(abs(row$ccf_lag) <= spec@coincident_band) &&
       isTRUE(row$ccf_r > 0),
-    timing = isTRUE(abs(row$median_lead) <= band),
+    timing = isTRUE(in_timing_band(classifier, row$median_lead, band)),
     missed = share(row$missed) <= spec@max_missed,
     extra = share(row$extra) <= spec@max_extra,
     concordance = isTRUE(row$concordance_p < spec@alpha) &&
@@ -109,7 +85,7 @@ setMethod("coincident_criteria", "OecdClassifier", function(classifier, row,
                                                             spec) {
   band <- timing_band(classifier, spec)
   c(matched = isTRUE(row$n_matched >= classifier@min_matched),
-    timing = isTRUE(abs(row$median_lead) < band))
+    timing = isTRUE(in_timing_band(classifier, row$median_lead, band)))
 })
 
 # Scorecard rows of the coincident criteria.
@@ -144,14 +120,15 @@ coincident_quality <- function(classifier, row, spec) {
 # Out-of-sample rows of the coincident scorecard.
 coincident_out_of_sample <- function(oos, spec) {
   g <- "out of sample"
-  band <- timing_band(spec_classifier(spec), spec)
+  classifier <- spec_classifier(spec)
+  band <- timing_band(classifier, spec)
+  rule <- timing_rules(classifier, round(band, 3))$timing
   timing_out <- stats::median(oos$median_lead_out)
   timely <- stats::median(oos$pct_timely_out)
   gap <- stats::median(abs(oos$lead_gap))
   rbind(
-    q_row(g, "median lead after cut-offs", timing_out,
-          sprintf("within +/- %s", round(band, 3)),
-          isTRUE(abs(timing_out) <= band)),
+    q_row(g, "median lead after cut-offs", timing_out, rule,
+          isTRUE(in_timing_band(classifier, timing_out, band))),
     q_row(g, "share of later turning points within the band", timely,
           sprintf(">= %s", spec@min_consistency),
           isTRUE(timely >= spec@min_consistency)),

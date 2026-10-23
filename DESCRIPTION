@@ -1,6 +1,6 @@
 Package: rcli
 Type: Package
-Title: Composite Leading and Coincident Indicators from Selection to Validation
+Title: Composite Leading and Coincident Indicators
 Version: 0.2.1
 Authors@R: c(
     person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",

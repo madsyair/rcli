@@ -106,9 +106,10 @@ one_cutoff <- function(candidates, spec, t0, full_cycles, ref, ref_tp,
   empty$median_lead_out <- med_out
   empty$pct_led_out <- if (nrow(after) > 0L) sum(leads > 0) / nrow(after) else
     NA_real_
-  band <- timing_band(spec_classifier(spec), spec)
+  classifier <- spec_classifier(spec)
+  band <- timing_band(classifier, spec)
   empty$pct_timely_out <- if (nrow(after) > 0L) {
-    sum(abs(leads) <= band) / nrow(after)
+    sum(in_timing_band(classifier, leads, band)) / nrow(after)
   } else {
     NA_real_
   }
