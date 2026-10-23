@@ -74,6 +74,11 @@ setMethod("show", "CliSpec", function(object) {
     cat("  transform:   ", object@transform, "\n", sep = "")
     cat("  outliers:    ", outl@label, "\n", sep = "")
   }
+  end <- spec_extension(object)@label
+  if (methods::.hasSlot(outl, "forecast") && !identical(outl@forecast, 0)) {
+    end <- "forecasts of the outlier treatment"
+  }
+  cat("  end:         ", end, "\n", sep = "")
   cat(classifier_lines(spec_classifier(object), object), sep = "")
   if (methods::.hasSlot(object, "lag_shift") && isTRUE(object@lag_shift)) {
     cat("  lag-shift:   components aligned on the shortest median lead\n")

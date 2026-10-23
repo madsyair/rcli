@@ -20,8 +20,39 @@ setMethod("aggregate_components", "EqualWeight",
   w <- rep(1 / ncol(z), ncol(z))
   comp <- weighted_available(z, w)
   comp[!coverage_mask(z, aggregator@min_coverage)] <- NA_real_
+  edge <- if (methods::.hasSlot(aggregator, "ragged_edge")) {
+    aggregator@ragged_edge
+  } else {
+    "level"
+  }
+  if (identical(edge, "chain")) {
+    comp <- chain_ragged_edge(z, comp, aggregator@min_coverage)
+  }
   list(cycle = comp, index = NULL, weights = stats::setNames(w, colnames(z)))
 })
+
+# F-01 (harness/02-math/F-01.md, revision 2): the plain mean of the cycles
+# up to the last date at which every component is observed; after it, the
+# average change of the components observed at t and t - 1 is added to the
+# previous value. A step needs at least q components with a change (q from
+# `min_coverage`); the chain stops at the first date without them. `comp`
+# is the masked plain mean of z.
+chain_ragged_edge <- function(z, comp, min_coverage) {
+  n <- nrow(z)
+  full <- which(stats::complete.cases(z))
+  if (length(full) == 0L) return(comp)
+  last <- max(full)
+  if (last == n) return(comp)
+  q <- max(1, ceiling(min_coverage * ncol(z) - 1e-9))
+  out <- comp
+  out[(last + 1L):n] <- NA_real_
+  for (t in (last + 1L):n) {
+    both <- !is.na(z[t, ]) & !is.na(z[t - 1L, ])
+    if (sum(both) < q || is.na(out[t - 1L])) break
+    out[t] <- out[t - 1L] + mean(z[t, both] - z[t - 1L, both])
+  }
+  out
+}
 
 #' @rdname cli_composite
 setMethod("aggregate_components", "OecdAggregate",

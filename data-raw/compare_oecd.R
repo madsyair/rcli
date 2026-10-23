@@ -47,7 +47,8 @@ print(classification)
 
 # ---- B. aggregation and lag-shifting ------------------------------------------
 # True leading components with different leads; the composite is built with
-# the four combinations of aggregation and lag-shifting. "Ragged edge": the
+# the six combinations of aggregation (plain mean, chained at the edge,
+# OECD chain) and lag-shifting. "Ragged edge": the
 # longest-lead component misses its last `k` values, as when a series is
 # published late; the error is the gap to the full-information composite
 # over those dates, in units of the composite's mean absolute deviation.
@@ -74,10 +75,11 @@ aggregation_rep <- function(seed, noise_sd, k = 2L) {
   last <- max(which(!is.na(ragged$lead_9@normalised)))
   ragged$lead_9@normalised[(last - k + 1L):last] <- NA
   out <- list()
-  for (agg in c("equal", "oecd")) {
+  aggs <- list(level = equal_weight(ragged_edge = "level"),
+               chain = equal_weight(), oecd = oecd_aggregate())
+  for (agg in names(aggs)) {
     for (shift in c(FALSE, TRUE)) {
-      s <- update(spec, aggregator = if (agg == "equal") equal_weight() else
-        oecd_aggregate())
+      s <- update(spec, aggregator = aggs[[agg]])
       sh <- if (shift) lag_shifts(comps, a) else NULL
       full <- cli_composite(cyc, comps, s, ref, shifts = sh)
       part <- cli_composite(ragged, comps, s, ref, shifts = sh)

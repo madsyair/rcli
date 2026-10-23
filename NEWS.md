@@ -1,3 +1,53 @@
+# rcli 0.2.0
+
+## New defaults (results at the end of the sample change)
+
+Two steps that the OECD does better at the end of the sample are now on by
+default, in the form a simulation study found best (vignette, section 8):
+
+* `equal_weight()` gains `ragged_edge = c("chain", "level")`. With the new
+  default `"chain"`, the dates after the last date at which all components
+  are observed are filled by adding the average change of the components
+  available at both dates to the previous value, so that a component
+  published late no longer makes the end of the composite jump. Before that
+  date the composite is the plain mean as before; with complete data the
+  composite is identical to 0.1.x. Unlike the full OECD chain
+  (`oecd_aggregate()`), a component that starts late leaves the composite
+  unchanged. In real-time simulations the direction of the last monthly
+  change was right in 80 percent of vintages instead of 72 percent.
+* New strategy class `Extension` with `ar_extension()` (default) and
+  `no_extension()`, generic `extend_series()` and `cli_spec(extension = )`:
+  each series is extended by one year of forecasts from an autoregressive
+  model of its changes (`stats::ar()`, no new dependency) before the cycle
+  filter. The revision of the last value of the composite fell by 18 to 23
+  percent (`data-raw/realtime_defaults.R`,
+  `inst/calibration/realtime-defaults.csv`), at a cost of about 8 ms per
+  series. Forecasts from `tramo_outliers()` take precedence;
+  `oecd_spec()` uses no AR extension. Note that
+  `tramo_outliers(forecast = 0)` no longer means "no forecasts" on its own:
+  the AR extension then applies unless `extension = no_extension()`.
+* The calibration harness was run again with the new defaults
+  (`inst/calibration/accuracy.csv`); the classification thresholds stand.
+* To reproduce rcli 0.1.x exactly:
+  `cli_spec(aggregator = equal_weight(ragged_edge = "level"),
+  extension = no_extension())`; a test checks this against a composite
+  computed with rcli 0.1.3. Objects saved with 0.1.x keep their old
+  behaviour, and `update()` fills their missing fields accordingly; the
+  one exception is the plain equal-weights fallback of
+  `principal_component()` and `dynamic_factor()`, which now chains at the
+  ragged edge.
+
+## Other changes
+
+* The graphical interface offers "Equal weights, chained at the ragged edge"
+  (default) and "Equal weights, plain mean (rcli 0.1)" and a check box for
+  the AR extension; the exported script reproduces either.
+* `CliSpec` prints the end-of-series extension. `cli_spec()` checks the
+  class of `classifier`, `outliers` and `extension`.
+* Mathematical verification of the new aggregation (propositions, symbolic
+  and numerical checks, independent review) is kept in `harness/02-math/`
+  of the source repository.
+
 # rcli 0.1.3
 
 ## The OECD method as an option

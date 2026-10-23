@@ -32,7 +32,8 @@ cli_spec(
   holidays = list(),
   classifier = NULL,
   outliers = NULL,
-  lag_shift = FALSE
+  lag_shift = FALSE,
+  extension = NULL
 )
 }
 \arguments{
@@ -43,7 +44,10 @@ cli_spec(
 \item{dater}{A [Dater-class]; default [bry_boschan()] for monthly and
 [bbq()] for quarterly data.}
 
-\item{aggregator}{An [Aggregator-class]; default [equal_weight()].}
+\item{aggregator}{An [Aggregator-class]; default [equal_weight()], which
+after the last date with all components adds the average change of the
+available components to the previous value (since 0.2.0;
+`equal_weight(ragged_edge = "level")` restores rcli 0.1.x).}
 
 \item{transform}{`"auto"` (logarithm for strictly positive series),
 `"log"`, `"none"` or `"test"` (logarithm when the log/level test of a
@@ -118,6 +122,10 @@ OECD treatment.}
 shortest median lead of the components before aggregation, as the OECD
 does (default `FALSE`). Values moved past the last date of the data are
 dropped.}
+
+\item{extension}{An [Extension-class]; default [ar_extension()]: each
+series is extended by one year of AR forecasts before the cycle filter.
+Use [no_extension()] for the behaviour of rcli 0.1.x.}
 }
 \value{
 A [CliSpec-class] object.
@@ -129,8 +137,16 @@ follow the OECD system of composite leading indicators (Gyomai and
 Guidetti 2012); the quarterly ones translate them to quarters. The
 classification thresholds were calibrated with the Monte Carlo harness in
 `data-raw/` (see `vignette("rcli")`): on simulated monthly data they
-classify about 86 percent of candidates correctly with about 1 percent of
-non-leading series wrongly labelled leading.
+classify about 87 percent of candidates correctly with at most 1.3
+percent of non-leading series wrongly labelled leading (recalibrated with
+the 0.2.0 defaults).
+}
+\details{
+Since rcli 0.2.0 the defaults chain the composite at the ragged edge
+(`equal_weight()`) and extend each series with one year of AR forecasts
+before the filter (`ar_extension()`). The settings of rcli 0.1.x are
+`cli_spec(aggregator = equal_weight(ragged_edge = "level"),
+extension = no_extension())`.
 }
 \examples{
 spec <- cli_spec(freq = 12)

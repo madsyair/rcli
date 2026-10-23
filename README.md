@@ -15,16 +15,17 @@ composite leading indicators:
 2. **Specification** – every methodological choice in one validated object
    (`cli_spec()`).
 3. **Cycles** – log transformation, outlier treatment, optional seasonal
-   adjustment, and one of five filters: Hodrick-Prescott, OECD double HP,
+   adjustment, one year of AR forecasts appended to stabilise the end of the
+   series, and one of five filters: Hodrick-Prescott, OECD double HP,
    Christiano-Fitzgerald, Baxter-King or Hamilton (`cli_cycles()`).
 4. **Turning points** – Bry-Boschan and Harding-Pagan BBQ rules
    (`cli_turning_points()`).
 5. **Classification** – leading, coincident, lagging or rejected, from the
    cross-correlation lead, leads at turning points, concordance and a
    Toda-Yamamoto Granger test (`cli_assess()`).
-6. **Aggregation** – equal weights, the OECD chained growth, principal
-   components, Conference Board standardisation or a dynamic factor model
-   (`cli_composite()`).
+6. **Aggregation** – equal weights chained at the ragged edge, the OECD
+   chained growth, principal components, Conference Board standardisation
+   or a dynamic factor model (`cli_composite()`).
 7. **Validation** – turning-point statistics, QPS, AUC and the
    Pesaran-Timmermann test (`cli_validate()`), plus a check of the selection
    bias of in-sample leads (`cli_selection_bias()`).

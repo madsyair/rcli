@@ -6,14 +6,24 @@
 #' Guidetti 2012); the quarterly ones translate them to quarters. The
 #' classification thresholds were calibrated with the Monte Carlo harness in
 #' `data-raw/` (see `vignette("rcli")`): on simulated monthly data they
-#' classify about 86 percent of candidates correctly with about 1 percent of
-#' non-leading series wrongly labelled leading.
+#' classify about 87 percent of candidates correctly with at most 1.3
+#' percent of non-leading series wrongly labelled leading (recalibrated with
+#' the 0.2.0 defaults).
+#'
+#' Since rcli 0.2.0 the defaults chain the composite at the ragged edge
+#' (`equal_weight()`) and extend each series with one year of AR forecasts
+#' before the filter (`ar_extension()`). The settings of rcli 0.1.x are
+#' `cli_spec(aggregator = equal_weight(ragged_edge = "level"),
+#' extension = no_extension())`.
 #'
 #' @param freq Data frequency: 12 (monthly) or 4 (quarterly).
 #' @param filter A [CycleFilter-class]; default [hp_double_filter()].
 #' @param dater A [Dater-class]; default [bry_boschan()] for monthly and
 #'   [bbq()] for quarterly data.
-#' @param aggregator An [Aggregator-class]; default [equal_weight()].
+#' @param aggregator An [Aggregator-class]; default [equal_weight()], which
+#'   after the last date with all components adds the average change of the
+#'   available components to the previous value (since 0.2.0;
+#'   `equal_weight(ragged_edge = "level")` restores rcli 0.1.x).
 #' @param transform `"auto"` (logarithm for strictly positive series),
 #'   `"log"`, `"none"` or `"test"` (logarithm when the log/level test of a
 #'   regARIMA model prefers it, as TRAMO does at the OECD; needs
@@ -65,6 +75,9 @@
 #'   shortest median lead of the components before aggregation, as the OECD
 #'   does (default `FALSE`). Values moved past the last date of the data are
 #'   dropped.
+#' @param extension An [Extension-class]; default [ar_extension()]: each
+#'   series is extended by one year of AR forecasts before the cycle filter.
+#'   Use [no_extension()] for the behaviour of rcli 0.1.x.
 #' @return A [CliSpec-class] object.
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -86,10 +99,14 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
                      granger_max_lag = NULL, granger_dmax = 1,
                      max_iter = 10, min_components = 2, horizon = NA,
                      oos_cutoffs = numeric(0), holidays = list(),
-                     classifier = NULL, outliers = NULL, lag_shift = FALSE) {
+                     classifier = NULL, outliers = NULL, lag_shift = FALSE,
+                     extension = NULL) {
   check_frequency(freq)
   monthly <- freq == 12
   if (is(holidays, "HolidayEffect")) holidays <- list(holidays)
+  check_strategy(classifier, "Classifier", "classifier")
+  check_strategy(outliers, "OutlierTreatment", "outliers")
+  check_strategy(extension, "Extension", "extension")
   spec <- new(
     "CliSpec",
     freq = as.numeric(freq),
@@ -155,13 +172,34 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
     } else {
       outliers
     },
-    lag_shift = lag_shift
+    lag_shift = lag_shift,
+    extension = if (is.null(extension)) ar_extension() else extension
   )
   if (is(spec@outliers, "RobustOutliers")) {
     spec@outlier_threshold <- spec@outliers@threshold
   }
   validObject(spec)
   spec
+}
+
+check_strategy <- function(x, class, name) {
+  if (!is.null(x) && !is(x, class)) {
+    rcli_abort(sprintf("`%s` must be a %s object.", name, class),
+               "rcli_error_argument")
+  }
+  invisible(TRUE)
+}
+
+# Slots added after 0.1.0, filled with the behaviour of the version that
+# saved the object (used by update() on old specifications).
+upgrade_spec <- function(object) {
+  old <- list(holidays = list(), classifier = rcli_classifier(),
+              outliers = robust_outliers(object@outlier_threshold),
+              lag_shift = FALSE, extension = no_extension())
+  for (nm in names(old)) {
+    if (!methods::.hasSlot(object, nm)) attr(object, nm) <- old[[nm]]
+  }
+  object
 }
 
 setValidity("CliSpec", function(object) {
@@ -240,6 +278,7 @@ setValidity("CliSpec", function(object) {
 #' update(cli_spec(), aggregator = principal_component())
 #' @export
 setMethod("update", "CliSpec", function(object, ...) {
+  object <- upgrade_spec(object)
   args <- list(...)
   bad <- setdiff(names(args), slotNames(object))
   if (length(args) > 0L && (is.null(names(args)) || length(bad) > 0L)) {
@@ -329,5 +368,5 @@ oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
            seasonal_adjust = seasonal_adjust, holidays = holidays,
            min_median_lead = cls@coincident * freq / 12,
            classifier = cls, outliers = tramo_outliers(engine = engine),
-           lag_shift = TRUE, ...)
+           lag_shift = TRUE, extension = no_extension(), ...)
 }

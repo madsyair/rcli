@@ -1,0 +1,42 @@
+{
+  "language": "r",
+  "coverage_min_total": 90,
+  "coverage_min_core": 90,
+  "loop_budget": 3,
+  "command_timeout_sec": 1800,
+  "test_dirs": [
+    "tests"
+  ],
+  "commands": {
+    "G5": [
+      {
+        "name": "tests",
+        "cmd": "Rscript -e \"devtools::test(stop_on_failure = TRUE)\""
+      },
+      {
+        "name": "lint",
+        "cmd": "Rscript -e \"l <- lintr::lint_package(); print(l); quit(status = as.integer(length(l) > 0))\""
+      },
+      {
+        "name": "coverage",
+        "cmd": "NOT_CRAN=true Rscript -e \"cv <- covr::percent_coverage(covr::package_coverage()); cat('coverage', cv, '\\\\n'); quit(status = as.integer(cv < 90))\""
+      }
+    ],
+    "G7": [
+      {
+        "name": "document",
+        "cmd": "Rscript -e \"devtools::document()\""
+      },
+      {
+        "name": "examples",
+        "cmd": "Rscript -e \"devtools::run_examples(run_donttest = TRUE)\""
+      }
+    ],
+    "G8": [
+      {
+        "name": "check-as-cran",
+        "cmd": "Rscript -e \"devtools::check(args = c('--as-cran', '--no-manual'), env_vars = c('_R_CHECK_FORCE_SUGGESTS_' = 'false'), error_on = 'warning')\""
+      }
+    ]
+  }
+}

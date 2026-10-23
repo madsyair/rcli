@@ -1,0 +1,17 @@
+"variant","trend","noise_sd","revision","direction_right"
+"0.1.x","deterministic",0.4,0.763,0.743
+"chain only","deterministic",0.4,0.748,0.835
+"AR only","deterministic",0.4,0.626,0.738
+"0.2.0","deterministic",0.4,0.622,0.825
+"0.1.x","deterministic",0.8,0.818,0.7
+"chain only","deterministic",0.8,0.781,0.78
+"AR only","deterministic",0.8,0.631,0.693
+"0.2.0","deterministic",0.8,0.624,0.792
+"0.1.x","stochastic",0.4,0.774,0.743
+"chain only","stochastic",0.4,0.767,0.823
+"AR only","stochastic",0.4,0.624,0.752
+"0.2.0","stochastic",0.4,0.622,0.818
+"0.1.x","stochastic",0.8,0.821,0.7
+"chain only","stochastic",0.8,0.791,0.767
+"AR only","stochastic",0.8,0.629,0.705
+"0.2.0","stochastic",0.8,0.626,0.775

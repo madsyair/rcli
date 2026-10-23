@@ -3,7 +3,8 @@
 #' Applies, series by series on its own non-missing span: interpolation of
 #' internal gaps, optional seasonal adjustment of the original series with
 #' X-13ARIMA-SEATS, the transformation (`"auto"` takes logarithms of strictly
-#' positive series), outlier replacement, the cycle filter and the OECD
+#' positive series), outlier replacement, the extension of the series end
+#' with forecasts ([ar_extension()] by default), the cycle filter and the OECD
 #' normalisation (subtract the mean, divide by the mean absolute deviation).
 #' Every step is recorded in the `steps` slot.
 #'
@@ -72,15 +73,22 @@ cycle_one <- function(x, name, spec) {
   out <- treat_outliers(outliers, core)
   steps <- c(steps, out$step)
   core <- out$x
-  h <- length(out$forecast)
+  fc <- out$forecast
+  kind <- "outlier treatment"
+  if (length(fc) == 0L) {
+    ext <- spec_extension(spec)
+    fc <- extend_series(ext, core)
+    kind <- ext@label
+  }
+  h <- length(fc)
   if (h > 0L) {
-    ext <- stats::ts(c(as.numeric(core), out$forecast),
-                     start = stats::start(core),
+    ext <- stats::ts(c(as.numeric(core), fc), start = stats::start(core),
                      frequency = stats::frequency(core))
     cyc <- utils::head(as.numeric(extract_cycle(spec@filter, ext)),
                        length(core))
-    steps <- c(steps, sprintf("cycle: %s (series extended by %d-period %s)",
-                              spec@filter@label, h, "forecasts"))
+    steps <- c(steps, sprintf(
+      "cycle: %s (series extended by %d-period forecasts: %s)",
+      spec@filter@label, h, kind))
   } else {
     cyc <- extract_cycle(spec@filter, core)
     steps <- c(steps, sprintf("cycle: %s", spec@filter@label))
@@ -100,6 +108,12 @@ cycle_one <- function(x, name, spec) {
 spec_outliers <- function(spec) {
   if (methods::.hasSlot(spec, "outliers")) spec@outliers else
     robust_outliers(spec@outlier_threshold)
+}
+
+# End-of-series extension of a specification (none before 0.2.0).
+spec_extension <- function(spec) {
+  if (methods::.hasSlot(spec, "extension")) spec@extension else
+    no_extension()
 }
 
 apply_transform <- function(x, transform, name, engine = "auto") {

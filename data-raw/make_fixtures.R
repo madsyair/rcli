@@ -21,3 +21,17 @@ bbq_golden <- lapply(seeds, function(s) {
        troughs = as.integer(d@troughs))
 })
 saveRDS(bbq_golden, "tests/testthat/fixtures/bcdating_bbq.rds", version = 2)
+
+# Golden composite of rcli 0.1.3 (tests/testthat/fixtures/composite-0.1.3.rds),
+# used to check that cli_spec(aggregator = equal_weight(ragged_edge = "level"),
+# extension = no_extension()) reproduces 0.1.3. Run from the package root:
+#   d <- tempfile(); dir.create(d)
+#   system(sprintf("git archive a3b8181 | tar -x -C %s", d))
+#   devtools::load_all(d)
+#   sim <- simulate_cycles(seed = 4)
+#   meta <- data.frame(name = colnames(sim)[-1], rationale = "early_stage")
+#   res <- cli_build(cli_candidates(sim, "reference", meta = meta))
+#   saveRDS(list(version = "0.1.3", components = res@composite@components,
+#                index = as.numeric(res@composite@index),
+#                cycle = as.numeric(res@composite@cycle)),
+#           "tests/testthat/fixtures/composite-0.1.3.rds")

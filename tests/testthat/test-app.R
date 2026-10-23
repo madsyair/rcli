@@ -63,7 +63,8 @@ test_that("the interface builds in both languages", {
 })
 
 run_all_steps <- function(session, source = "example_m", mode = "auto",
-                          cutoffs = "2012, 2016", method = "rcli") {
+                          cutoffs = "2012, 2016", method = "rcli",
+                          aggregator = "equal", extend = TRUE) {
   session$setInputs(source = source, seed = 1, freq = "auto", start = "",
                     run1 = 1)
   session$setInputs(reference = "reference")
@@ -74,7 +75,7 @@ run_all_steps <- function(session, source = "example_m", mode = "auto",
   session$setInputs(typ_1 = "stock", typ_2 = "flow")
   session$setInputs(run2 = 1)
   session$setInputs(method = method, filter = "hp_double",
-                    aggregator = "equal",
+                    aggregator = aggregator, extend = extend,
                     transform = "auto", seasonal = FALSE, outlier = 5,
                     min_lead = 3, min_median_lead = 1, min_consistency = 0.5,
                     max_missed = 0.4, max_extra = 0.4, alpha = 0.05,
@@ -133,6 +134,28 @@ test_that("the server runs the nine steps in order", {
     expect_null(rv$cycles)
     expect_false(7L %in% rv$done)
   })
+})
+
+test_that("FR-003 AC-3: every aggregation x extension script reproduces", {
+  skip_if_not_installed("shiny")
+  combos <- expand.grid(aggregator = c("equal", "equal_level"),
+                        extend = c(TRUE, FALSE), stringsAsFactors = FALSE)
+  for (i in seq_len(nrow(combos))) {
+    shiny::testServer(rcli:::app_server("en"), {
+      session$userData$data <- function() rv$data
+      run_all_steps(session, mode = "manual", cutoffs = "",
+                    aggregator = combos$aggregator[i],
+                    extend = combos$extend[i])
+      script <- script()
+      expect_match(script, if (combos$extend[i]) "ar_extension()" else
+        "no_extension()", fixed = TRUE)
+      eval_env <- new.env()
+      out <- utils::capture.output(eval(parse(text = script),
+                                        envir = eval_env))
+      expect_equal(as.numeric(eval_env$cli@index),
+                   as.numeric(rv$composite@index))
+    })
+  }
 })
 
 test_that("the OECD method runs in the interface and in the script", {

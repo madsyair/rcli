@@ -211,7 +211,7 @@ spec_sa <- cli_spec(seasonal_adjust = TRUE, holidays = eid)
 which can differ from the official Indonesian dates by a day or two; use
 the official dates when you have them.
 
-## 8. The OECD method and why the defaults differ
+## 8. The OECD method and the defaults
 
 `oecd_spec()` sets every step as in the OECD system (Gyomai and Guidetti
 2012): TRAMO outliers with short forecasts before the filter
@@ -248,13 +248,40 @@ read.csv(system.file("calibration", "oecd-aggregation.csv",
                      package = "rcli"))
 ```
 
-The two aggregations are identical in sample, but when the longest-lead
-component misses its last two values the chained growth of the OECD stays
-much closer to the full-information composite; use `oecd_aggregate()` for
-real-time work. Lag-shifting makes the leads slightly more consistent and
-the composite misses fewer turning points, but it shortens the lead of the
-composite by about three months, to the shortest lead of the components;
-it is therefore off by default.
+The plain mean (`level`), the mean chained at the ragged edge (`chain`, the
+default since 0.2.0) and the full OECD chain (`oecd`) are identical in
+sample, but when the longest-lead component misses its last two values both
+chained forms stay much closer to the full-information composite.
+Lag-shifting makes the leads slightly more consistent and the composite
+misses fewer turning points, but it shortens the lead of the composite by
+about three months, to the shortest lead of the components; it is
+therefore off by default.
+
+Two OECD ideas became defaults in rcli 0.2.0 after a real-time study
+(`data-raw/realtime_defaults.R`): chaining at the ragged edge
+(`equal_weight()`, chained only after the last date at which all
+components are observed, so that a component that starts late changes
+nothing) and extending each series with one year of forecasts before the
+filter (`ar_extension()`, an autoregression of the changes instead of
+TRAMO, which needs no other software and did as well). The table compares
+the last value of pseudo real-time composites with the full-sample
+composite:
+
+```{r realtime-defaults}
+read.csv(system.file("calibration", "realtime-defaults.csv",
+                     package = "rcli"))
+```
+
+Chaining makes the direction of the last change right more often; the
+extension makes the revision of the last value smaller; 0.2.0 has both. The
+classification is hardly affected (section 4 shows the thresholds
+recalibrated with the extension), so the thresholds were kept. To reproduce
+rcli 0.1.x:
+
+```{r old-defaults, eval = FALSE}
+cli_spec(aggregator = equal_weight(ragged_edge = "level"),
+         extension = no_extension())
+```
 
 TRAMO-type outliers and the robust default classify the candidates
 equally well when spikes and a level shift are injected:

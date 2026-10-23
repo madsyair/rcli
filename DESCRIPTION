@@ -1,7 +1,7 @@
 Package: rcli
 Type: Package
 Title: Composite Leading Indicators from Component Selection to Validation
-Version: 0.1.3
+Version: 0.2.0
 Authors@R: c(
     person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
            role = c("aut", "cre"))
@@ -67,6 +67,7 @@ Collate:
     'classes-aggregator.R'
     'classes-classifier.R'
     'classes-outliers.R'
+    'classes-extension.R'
     'classes-core.R'
     'spec.R'
     'align.R'

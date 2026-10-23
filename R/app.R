@@ -116,8 +116,9 @@ filter_choices <- c("hp_double", "hp", "cf", "bk", "hamilton")
 names(filter_choices) <- c("OECD double Hodrick-Prescott", "Hodrick-Prescott",
                            "Christiano-Fitzgerald", "Baxter-King",
                            "Hamilton regression")
-aggregator_choices <- c("equal", "oecd", "pca", "cb", "dfm")
-names(aggregator_choices) <- c("Equal weights",
+aggregator_choices <- c("equal", "equal_level", "oecd", "pca", "cb", "dfm")
+names(aggregator_choices) <- c("Equal weights, chained at the ragged edge",
+                               "Equal weights, plain mean (rcli 0.1)",
                                "Chained average growth (OECD)",
                                "First principal component",
                                "Conference Board", "Dynamic factor model")
@@ -188,6 +189,7 @@ app_ui <- function(language = "id") {
               t("seasonal"), if (!has_seasonal) t("seasonal_missing")),
               FALSE),
             shiny::numericInput("outlier", t("outlier"), 5, min = 1),
+            shiny::checkboxInput("extend", t("extend"), TRUE),
             shiny::textInput("oos_cutoffs", t("oos_cutoffs"), "")
           ),
           shiny::column(6,
@@ -298,7 +300,9 @@ make_filter <- function(key) {
 }
 
 make_aggregator <- function(key) {
-  switch(key, equal = equal_weight(), oecd = oecd_aggregate(),
+  switch(key, equal = equal_weight(),
+         equal_level = equal_weight(ragged_edge = "level"),
+         oecd = oecd_aggregate(),
          pca = principal_component(), cb = conference_board(),
          dfm = dynamic_factor())
 }
@@ -437,7 +441,9 @@ spec_call <- function(input, freq) {
       freq, input$seasonal, input$alpha, input$min_auc,
       input$min_components, input$max_iter, deparse_value(cut)))
   }
-  agg <- c(equal = "equal_weight()", oecd = "oecd_aggregate()",
+  agg <- c(equal = "equal_weight()",
+           equal_level = "equal_weight(ragged_edge = \"level\")",
+           oecd = "oecd_aggregate()",
            pca = "principal_component()",
            cb = "conference_board()", dfm = "dynamic_factor()")
   flt <- c(hp_double = "hp_double_filter()", hp = "hp_filter()",
@@ -448,12 +454,21 @@ spec_call <- function(input, freq) {
     "  transform = \"%s\", seasonal_adjust = %s, outlier_threshold = %s,\n",
     "  min_lead = %s, min_median_lead = %s, min_consistency = %s,\n",
     "  max_missed = %s, max_extra = %s, alpha = %s, min_auc = %s,\n",
-    "  min_components = %s, max_iter = %s, oos_cutoffs = %s\n)"),
+    "  min_components = %s, max_iter = %s, oos_cutoffs = %s,\n",
+    "  extension = %s\n)"),
     freq, flt[[input$filter]], agg[[input$aggregator]], input$transform,
     input$seasonal, input$outlier, input$min_lead, input$min_median_lead,
     input$min_consistency, input$max_missed, input$max_extra, input$alpha,
     input$min_auc, input$min_components, input$max_iter,
-    deparse_value(cut))
+    deparse_value(cut), make_extension_call(input$extend))
+}
+
+make_extension <- function(on) {
+  if (isFALSE(on)) no_extension() else ar_extension()
+}
+
+make_extension_call <- function(on) {
+  if (isFALSE(on)) "no_extension()" else "ar_extension()"
 }
 
 # ---- server -------------------------------------------------------------
@@ -663,7 +678,8 @@ app_server <- function(language = "id") {
         max_missed = input$max_missed, max_extra = input$max_extra,
         alpha = input$alpha, min_auc = input$min_auc,
         min_components = input$min_components, max_iter = input$max_iter,
-        oos_cutoffs = parse_cutoffs(input$oos_cutoffs)
+        oos_cutoffs = parse_cutoffs(input$oos_cutoffs),
+        extension = make_extension(input$extend)
       ))
       if (is.null(spec)) return()
       rv$spec <- spec

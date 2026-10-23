@@ -43,6 +43,8 @@
 #' @slot outliers An [OutlierTreatment-class].
 #' @slot lag_shift Logical; shift the components so that their median leads
 #'   align before aggregation (OECD lag-shifting)?
+#' @slot extension An [Extension-class]: forecasts appended to each series
+#'   before the cycle filter.
 #' @seealso [cli_spec()]
 #' @exportClass CliSpec
 setClass("CliSpec", representation(
@@ -57,9 +59,11 @@ setClass("CliSpec", representation(
   granger_max_lag = "numeric", granger_dmax = "numeric",
   max_iter = "numeric", min_components = "numeric", horizon = "numeric",
   oos_cutoffs = "numeric", holidays = "list", classifier = "Classifier",
-  outliers = "OutlierTreatment", lag_shift = "logical"
+  outliers = "OutlierTreatment", lag_shift = "logical",
+  extension = "Extension"
 ), prototype(holidays = list(), classifier = rcli_classifier(),
-             outliers = robust_outliers(5), lag_shift = FALSE))
+             outliers = robust_outliers(5), lag_shift = FALSE,
+             extension = no_extension()))
 
 #' Reference and candidate series
 #'

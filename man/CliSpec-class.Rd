@@ -72,6 +72,9 @@ leading, coincident, lagging or rejected.}
 
 \item{\code{lag_shift}}{Logical; shift the components so that their median leads
 align before aggregation (OECD lag-shifting)?}
+
+\item{\code{extension}}{An [Extension-class]: forecasts appended to each series
+before the cycle filter.}
 }}
 
 \seealso{

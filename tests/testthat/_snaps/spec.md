@@ -6,7 +6,8 @@
       <CliSpec> monthly composite leading indicator
         filter:      OECD double Hodrick-Prescott
         dating:      Bry-Boschan
-        aggregation: Equal weights
+        aggregation: Equal weights, chained at the ragged edge
+        end:         AR forecasts of the changes, one year
         leading if:  cross-correlation lead >= 3 months, median lead >= 1, leads >= 50% of turning points,
                      missed and extra <= 40% and 40%, concordance and Granger causality significant at 0.05
         loop:        at most 10 iterations, at least 2 components
@@ -19,7 +20,8 @@
       <CliSpec> quarterly composite leading indicator
         filter:      Christiano-Fitzgerald
         dating:      Harding-Pagan BBQ
-        aggregation: Equal weights
+        aggregation: Equal weights, chained at the ragged edge
+        end:         AR forecasts of the changes, one year
         leading if:  cross-correlation lead >= 1 quarters, median lead >= 0.5, leads >= 50% of turning points,
                      missed and extra <= 40% and 40%, concordance and Granger causality significant at 0.05
         loop:        at most 10 iterations, at least 2 components
