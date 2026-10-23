@@ -74,6 +74,9 @@ used instead of discarded.
 
 ## Other changes
 
+* The printed validation summary shows the reason (`note`) for cut-off
+  dates without a composite, for example when no candidate was coincident
+  in the training window.
 * The test of the TRAMO/X-13 engine choice no longer needs 'seasonal'
   installed (it failed on machines without it).
 # rcli 0.2.0

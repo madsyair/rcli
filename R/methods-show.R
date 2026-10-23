@@ -247,9 +247,13 @@ setMethod("show", "CliValidation", function(object) {
   if (nrow(oos) > 0L) {
     cat("  selection bias (", if (coincident) "timing" else "lead",
         " in sample vs after cut-off):\n", sep = "")
-    print(oos[, c("cutoff", "n_components", "median_lead_in",
-                  "median_lead_out", "n_tp_out", "lead_gap")],
-          row.names = FALSE)
+    cols <- c("cutoff", "n_components", "median_lead_in", "median_lead_out",
+              "n_tp_out", "lead_gap")
+    # rows without a composite say why (objects before 0.1.4 have no note)
+    if ("note" %in% names(oos) && any(nzchar(oos$note))) {
+      cols <- c(cols, "note")
+    }
+    print(oos[, cols], row.names = FALSE)
   }
   invisible(object)
 })
