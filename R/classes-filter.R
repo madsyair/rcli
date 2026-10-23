@@ -11,7 +11,9 @@
 #'
 #' * `hp_filter()`: Hodrick-Prescott filter; the cycle is the deviation from
 #'   the HP trend. The default smoothing parameter is 1600 for quarterly and
-#'   129600 for monthly data (Ravn and Uhlig 2002).
+#'   129600 for monthly data (Ravn and Uhlig 2002). The trend solves the
+#'   pentadiagonal system of the filter with a banded LDL' factorisation in
+#'   O(n) time and memory (Golub and Van Loan 2013, sec. 4.3).
 #' * `hp_double_filter()`: the OECD double Hodrick-Prescott filter. A first HP
 #'   filter with a cut-off of `trend_period` removes the trend; a second one
 #'   with a cut-off of `smooth_period` removes high-frequency noise. Defaults:
@@ -36,6 +38,9 @@
 #' @references
 #' Christiano, L. J. and Fitzgerald, T. J. (2003). The band pass filter.
 #' *International Economic Review*, 44(2), 435--465.
+#'
+#' Golub, G. H. and Van Loan, C. F. (2013). *Matrix Computations*, 4th ed.
+#' Johns Hopkins University Press, Baltimore.
 #'
 #' Hamilton, J. D. (2018). Why you should never use the Hodrick-Prescott
 #' filter. *Review of Economics and Statistics*, 100(5), 831--843.

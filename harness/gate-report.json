@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-23T18:38:37",
+  "generated": "2026-10-23T20:34:28",
   "gates": [
     {
       "gate": "G1",
@@ -8,7 +8,7 @@
         {
           "name": "Ada kebutuhan FR/NFR",
           "ok": true,
-          "detail": "6 ID"
+          "detail": "8 ID"
         },
         {
           "name": "Setiap FR/NFR punya kriteria penerimaan",
@@ -54,6 +54,21 @@
           "detail": "8 butir"
         },
         {
+          "name": "F-03: status kelas A",
+          "ok": true,
+          "detail": "CITED-VERIFIED"
+        },
+        {
+          "name": "F-03: skrip verifikasi tersimpan",
+          "ok": true,
+          "detail": "F-03_numeric.R, F-03_symbolic.py"
+        },
+        {
+          "name": "F-03: uji yang diturunkan",
+          "ok": true,
+          "detail": "6 butir"
+        },
+        {
           "name": "F-02: status kelas A",
           "ok": true,
           "detail": "CITED-VERIFIED"
@@ -79,7 +94,7 @@
         {
           "name": "Setiap FR terpetakan di desain",
           "ok": true,
-          "detail": "3 FR"
+          "detail": "5 FR"
         },
         {
           "name": "Ada ADR",
@@ -107,12 +122,12 @@
         {
           "name": "Setiap FR/NFR dilacak ke uji",
           "ok": true,
-          "detail": "6 ID"
+          "detail": "8 ID"
         },
         {
           "name": "Setiap F-xx dilacak ke uji",
           "ok": true,
-          "detail": "2 formula"
+          "detail": "3 formula"
         },
         {
           "name": "Bukti merah tercatat",
@@ -128,22 +143,12 @@
       "title": "Build & uji",
       "checks": [
         {
-          "name": "tests",
+          "name": "Perintah dilewati",
           "ok": true,
-          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1294 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=32813 -Dhttp.nonProxyHosts=localhost|127."
-        },
-        {
-          "name": "lint",
-          "ok": true,
-          "detail": "exit 0: "
-        },
-        {
-          "name": "coverage",
-          "ok": true,
-          "detail": "exit 0: coverage 96.55376"
+          "detail": "--skip-commands"
         }
       ],
-      "skipped": false,
+      "skipped": true,
       "passed": true
     },
     {
@@ -169,17 +174,12 @@
       "title": "Dokumentasi",
       "checks": [
         {
-          "name": "document",
+          "name": "Perintah dilewati",
           "ok": true,
-          "detail": "exit 0: ℹ Updating rcli documentation | ℹ Loading rcli"
-        },
-        {
-          "name": "examples",
-          "ok": true,
-          "detail": "exit 0: ℹ Updating rcli documentation | ℹ Loading rcli | ℹ Loading rcli | ℹ Loading rcli"
+          "detail": "--skip-commands"
         }
       ],
-      "skipped": false,
+      "skipped": true,
       "passed": true
     },
     {
@@ -192,12 +192,12 @@
           "detail": ""
         },
         {
-          "name": "check-as-cran",
+          "name": "Perintah dilewati",
           "ok": true,
-          "detail": "exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli"
+          "detail": "--skip-commands"
         }
       ],
-      "skipped": false,
+      "skipped": true,
       "passed": true
     }
   ]

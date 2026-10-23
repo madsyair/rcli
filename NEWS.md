@@ -3,6 +3,21 @@
 The coincident index prepared as 0.1.4 (never released) is merged into
 the 0.2 series.
 
+## Faster HP filter
+
+* The HP trend (used by `hp_filter()`, `hp_double_filter()`, the default
+  filter, and `cli_presentation()`) is now computed with a banded LDL'
+  factorisation of its pentadiagonal system in O(n) time and memory instead
+  of a dense `solve()` in O(n^3) time and O(n^2) memory. Results agree with
+  0.2.0 to about 1e-10 relative; both are backward stable. `cli_cycles()`
+  now takes about 3 ms instead of about 80 ms per monthly series of 30
+  years, so the AR extension that became the default in 0.2.0 costs less
+  than the filter of 0.1.3 without it. Series of 100,000 observations no
+  longer need 80 GB of memory.
+* The timing band of a coincident index and the texts of its scorecard
+  rules are now internal methods of the classifier instead of a branch on
+  its class.
+
 ## Coincident index
 
 A coincident index summarises the current state of the cycle, as the
@@ -43,7 +58,9 @@ used instead of discarded.
   the default noise level 96 percent (monthly) and 99 percent (quarterly)
   of truly coincident composites pass and at most 1 percent of composites
   that lead or lag by 3 months; with twice the noise the quarterly rates
-  are 65 and 17 percent. Without the one-period floor of the timing band
+  are 65 and 15 percent. The rates were computed with the 0.2 defaults
+  (AR extension, chained ragged edge) and moved by at most 2 points
+  against those of the 0.1.x defaults. Without the one-period floor of the timing band
   only 82.5 percent of truly coincident quarterly composites passed.
 
 ## Graphical interface

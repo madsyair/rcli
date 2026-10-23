@@ -29,8 +29,8 @@
 #' truly coincident series at the default noise level, and at most 1 percent
 #' of composites that lead or lag by 3 months (1 quarter). With twice the
 #' noise the rule is less reliable, above all for quarterly data (65 percent
-#' of coincident composites pass, 17 percent of leading ones). A lead of
-#' exactly 2 months, which the OECD calls leading, passes in 12 to 25
+#' of coincident composites pass, 15 percent of leading ones). A lead of
+#' exactly 2 months, which the OECD calls leading, passes in 13 to 25
 #' percent of monthly replications. Without the one-period floor, only 82.5
 #' percent of truly coincident quarterly composites passed, because dating
 #' noise moves the median lead by one quarter.
@@ -55,14 +55,29 @@ setGeneric("coincident_criteria", function(classifier, row, spec) {
   standardGeneric("coincident_criteria")
 })
 
-# Half-width, in periods, of the timing band of a coincident index.
-timing_band <- function(classifier, spec) {
-  if (is(classifier, "OecdClassifier")) {
-    oecd_band(classifier, spec)[["coincident"]]
-  } else {
-    max(2 * spec@freq / 12, 1)
-  }
-}
+# Half-width, in periods, of the timing band of a coincident index, and the
+# texts of the scorecard rules that depend on the classifier. Internal
+# generics, so that a classifier sets its own band without branches here.
+setGeneric("timing_band", function(classifier, spec) {
+  standardGeneric("timing_band")
+})
+setMethod("timing_band", "Classifier", function(classifier, spec) {
+  max(2 * spec@freq / 12, 1)
+})
+setMethod("timing_band", "OecdClassifier", function(classifier, spec) {
+  oecd_band(classifier, spec)[["coincident"]]
+})
+
+setGeneric("timing_rules", function(classifier, band) {
+  standardGeneric("timing_rules")
+})
+setMethod("timing_rules", "Classifier", function(classifier, band) {
+  list(matched = ">= 3", timing = sprintf("within +/- %s", band))
+})
+setMethod("timing_rules", "OecdClassifier", function(classifier, band) {
+  list(matched = sprintf(">= %s", classifier@min_matched),
+       timing = sprintf("within (-%s, %s)", band, band))
+})
 
 #' @rdname coincident_criteria
 setMethod("coincident_criteria", "Classifier", function(classifier, row,
@@ -102,19 +117,13 @@ coincident_quality <- function(classifier, row, spec) {
   chk <- coincident_criteria(classifier, row, spec)
   band <- round(timing_band(classifier, spec), 3)
   share <- function(k) if (row$n_ref > 0L) k / row$n_ref else NA_real_
-  oecd <- is(classifier, "OecdClassifier")
-  min_matched <- if (oecd) classifier@min_matched else 3
+  rules <- timing_rules(classifier, band)
   known <- list(
-    matched = list("matched turning points", row$n_matched,
-                   sprintf(">= %s", min_matched)),
+    matched = list("matched turning points", row$n_matched, rules$matched),
     ccf = list("cross-correlation lag", row$ccf_lag,
                sprintf("within +/- %s, positive", spec@coincident_band)),
     timing = list("median lead at turning points", row$median_lead,
-                  if (oecd) {
-                    sprintf("within (-%s, %s)", band, band)
-                  } else {
-                    sprintf("within +/- %s", band)
-                  }),
+                  rules$timing),
     missed = list("share of missed turning points", share(row$missed),
                   sprintf("<= %s", spec@max_missed)),
     extra = list("share of extra turning points", share(row$extra),

@@ -1,3 +1,7 @@
+# FR-005 (rcli 0.2.1): the coincident index of PR #1 in the 0.2 series.
+# AC-FR-005.1 is this file with the 0.2 defaults; AC-FR-005.3 is in
+# test-app-e2e.R (the exported script reproduces the index).
+
 coin_leads <- c(lead_6 = 6, lead_3 = 3, coin_a = 0, coin_b = 0, lag_3 = -3)
 
 test_that("cci_build aggregates the coincident candidates", {
@@ -131,6 +135,14 @@ test_that("the OECD timing band is strict and the rcli band inclusive", {
   expect_named(coincident_criteria(plain, row, spec_r), c("matched", "timing"))
   q <- rcli:::coincident_quality(plain, row, spec_r)
   expect_equal(nrow(q), 2L)
+  # the rule texts follow the classifier (methods, not class branches)
+  rule <- function(cl, spec) {
+    rcli:::coincident_quality(cl, row, spec)$threshold
+  }
+  expect_true(all(c(">= 3", "within +/- 2") %in% rule(plain, spec_r)))
+  expect_true(all(c(">= 3", "within (-2, 2)") %in%
+                    rule(spec_o@classifier, spec_o)))
+  expect_true(">= 1" %in% rule(oecd_classifier(min_matched = 1), spec_o))
 })
 
 test_that("quarterly data use a one-period timing band", {
@@ -186,4 +198,13 @@ test_that("validations saved before 0.1.4 count as leading", {
   expect_equal(rcli:::validation_role(v), "leading")
   v@role <- character(0)
   expect_equal(rcli:::validation_role(v), "leading")
+})
+
+test_that("FR-005 AC-2: the calibration with the 0.2 defaults stands", {
+  cal <- utils::read.csv(system.file("calibration", "coincident.csv",
+                                     package = "rcli"))
+  base <- cal[cal$noise_sd == 0.4, ]
+  expect_true(all(base$pass_rate[base$truth == "coincident"] >= 0.9))
+  expect_true(all(base$pass_rate[base$truth %in%
+                                   c("leading", "lagging")] <= 0.05))
 })

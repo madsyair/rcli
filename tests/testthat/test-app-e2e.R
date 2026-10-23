@@ -129,6 +129,7 @@ test_that("a user completes the ten steps in the browser", {
   env <- new.env()
   utils::capture.output(source(app$get_download("dl_script"), local = env))
   expect_equal(components(env$res), components(res))
+  # FR-005 AC-3: the script reproduces the coincident index as well
   # the script carries the out-of-sample cut-offs, so it reaches the same
   # verdict as the interface
   expect_equal(cli_quality(env$res)@verdict, "good")

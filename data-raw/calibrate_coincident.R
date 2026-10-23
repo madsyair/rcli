@@ -1,4 +1,5 @@
-# Monte Carlo check of the coincident criteria (rcli 0.1.4).
+# Monte Carlo check of the coincident criteria (rcli 0.1.4; rerun with the
+# 0.2 defaults, AR extension and chained ragged edge, for 0.2.1).
 # Run from the package root:
 #   Rscript data-raw/calibrate_coincident.R
 # Output: inst/calibration/coincident.csv, the share of simulated composites

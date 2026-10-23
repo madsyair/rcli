@@ -39,6 +39,26 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 - AC-FR-003.3  GUI langkah 3: pilihan agregasi "Equal weights, chained at the ragged edge" dan "Equal weights, plain mean (rcli 0.1)", kotak centang perpanjangan AR (bawaan aktif); skrip ekspor mereproduksi komposit untuk kombinasi apa pun.
 - AC-FR-003.4  Cara mendapat hasil 0.1.x: `cli_spec(aggregator = equal_weight(ragged_edge = "level"), extension = no_extension())` memberi komposit identik dengan 0.1.3 (diuji terhadap nilai yang dihitung dengan cara lama).
 
+## Increment rcli 0.2.1 (keputusan pengguna 23 Oktober 2026: "Kinerja: pilihan b"; "iya" untuk menggabungkan PR #1)
+
+### FR-004 — Penyaring HP dengan penyelesai pita O(n)
+`hp_trend_core()` menyelesaikan (I + λD₂ᵀD₂)τ = x dengan faktorisasi LDLᵀ pita (F-03) alih-alih `solve()` matriks padat.
+- AC-FR-004.1  Untuk n ∈ {4, 5, 6, 50, 372} dan λ ∈ {0; 13,9; 1600; 133 107,9}, hasil sama dengan `solve(diag(n) + λ crossprod(D2), x)` (toleransi relatif 1e-9).
+- AC-FR-004.2  x linear → τ = x (toleransi 1e-8 relatif); untuk x acak Σ τ = Σ x dan Σ tτ = Σ tx (toleransi 1e-8 relatif).
+- AC-FR-004.3  Galat mundur ternorma η = ‖Aτ − x‖∞ / (‖A‖∞‖τ‖∞ + ‖x‖∞) ≤ 10u (u = `.Machine$double.eps`) untuk λ = 133 107,9, n = 372 (Higham 2002, §7.1). Revisi: batas semula ‖Aτ − x‖∞/‖x‖∞ ≤ 1e-10 lebih ketat daripada teori (≈ u‖A‖ ≈ 5e-10) dan juga dilanggar oleh `solve()` padat.
+- AC-FR-004.4  λ = 0 → τ = x; n < 4 → `rcli_error_short_series`.
+- AC-FR-004.5  Uji replikasi `mFilter::hpfilter` dan `neverhpfilter` tetap lolos.
+- AC-FR-004.6  n = 100 000 selesai dalam < 5 detik (cara padat butuh memori 80 GB).
+
+### FR-005 — Indeks koinsiden (PR #1) di seri 0.2
+- AC-FR-005.1  Semua uji PR #1 (`test-coincident.R`, `test-app.R`, `test-app-e2e.R`, `test-quality.R`, `test-selection-bias.R`) lolos dengan bawaan 0.2.0.
+- AC-FR-005.2  `data-raw/calibrate_coincident.R` dijalankan ulang dengan bawaan 0.2.0: pada noise 0,4 pangsa lolos komposit yang benar-benar koinsiden ≥ 0,9 (bulanan dan triwulanan), komposit pendahulu/tertinggal 3 bulan ≤ 0,05.
+- AC-FR-005.3  Skrip ekspor GUI mereproduksi indeks koinsiden (uji e2e).
+
+### NFR-002 (revisi 0.2.1) — Kinerja
+- AC-NFR-002.2  Waktu `cli_cycles()` per seri dengan perpanjangan AR (bawaan 0.2.1) ≤ waktu 0.1.3 tanpa perpanjangan, sehingga penyimpangan 0.2.0 (+16%) tertutup.
+  - Hasil ukur (2026-10-23, median 15 ulangan, 7 seri `simulate_cycles(seed = 1)`): 0.2.0 terpasang (solve() padat) tanpa perpanjangan 0,0727 detik, dengan AR 0,0793 detik; 0.2.1 tanpa perpanjangan 0,0021 detik, dengan AR 0,0033 detik. **Terpenuhi**: 0,0033 ≤ 0,0727.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.
@@ -53,6 +73,7 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 | ID | Nama | Sumber awal / "baru" | Dipakai oleh |
 |---|---|---|---|
 | F-01 | Agregasi bobot sama hibrida (rata-rata langsung, rantai rata-rata perubahan sesudah baris lengkap terakhir; revisi 2) | baru (gabungan Gyomai & Guidetti 2012, p. 9, dengan rata-rata langsung) | FR-001 |
+| F-03 | Penyaring HP dengan LDLᵀ pita O(n) | Hodrick & Prescott (1997); Golub & Van Loan (2013, §4.1–4.3); Higham (2002, bab 10) | FR-004 |
 | F-02 | Perpanjangan AR pada perubahan (Yule-Walker, orde AIC) dan prakiraan kumulatif | Brockwell & Davis (1991), *Time Series: Theory and Methods* (rujukan `?stats::ar`); Akaike (1974) untuk AIC | FR-002 |
 
 ## Di luar cakupan

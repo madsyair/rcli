@@ -54,8 +54,8 @@ passes 96 percent of monthly and 99 percent of quarterly composites of
 truly coincident series at the default noise level, and at most 1 percent
 of composites that lead or lag by 3 months (1 quarter). With twice the
 noise the rule is less reliable, above all for quarterly data (65 percent
-of coincident composites pass, 17 percent of leading ones). A lead of
-exactly 2 months, which the OECD calls leading, passes in 12 to 25
+of coincident composites pass, 15 percent of leading ones). A lead of
+exactly 2 months, which the OECD calls leading, passes in 13 to 25
 percent of monthly replications. Without the one-period floor, only 82.5
 percent of truly coincident quarterly composites passed, because dating
 noise moves the median lead by one quarter.
