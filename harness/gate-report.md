@@ -1,4 +1,4 @@
-# Gate report — 2026-10-23T20:34:28
+# Gate report — 2026-10-23T21:19:48
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -6,10 +6,10 @@
 | G2 Verifikasi matematis | LOLOS | 0 |
 | G3 Desain | LOLOS | 0 |
 | G4 Uji-dulu | LOLOS | 0 |
-| G5 Build & uji | LEWATI | 0 |
+| G5 Build & uji | LOLOS | 0 |
 | G6 Review | LOLOS | 0 |
-| G7 Dokumentasi | LEWATI | 0 |
-| G8 Rilis | LEWATI | 0 |
+| G7 Dokumentasi | LOLOS | 0 |
+| G8 Rilis | LOLOS | 0 |
 
 ## G1 Kebutuhan
 - [x] Ada kebutuhan FR/NFR — 8 ID
@@ -41,15 +41,18 @@
 - [x] Bukti merah tercatat — sebelum implementasi (2026-10-23): `devtools::test(filter = "ragged-edge|end-ext
 
 ## G5 Build & uji
-- [x] Perintah dilewati — --skip-commands
+- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1468 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46869 -Dhttp.nonProxyHosts=localhost|127.
+- [x] lint — exit 0: 
+- [x] coverage — exit 0: coverage 96.64306
 
 ## G6 Review
 - [x] Tidak ada temuan blocker/major terbuka
 - [x] Putusan APPROVE — APPROVE
 
 ## G7 Dokumentasi
-- [x] Perintah dilewati — --skip-commands
+- [x] document — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli
+- [x] examples — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli | ℹ Loading rcli | ℹ Loading rcli
 
 ## G8 Rilis
 - [x] Gerbang G1–G7 lolos
-- [x] Perintah dilewati — --skip-commands
+- [x] check-as-cran — exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli
