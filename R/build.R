@@ -77,6 +77,14 @@ audit_row <- function(iter, action, comps, val, score, spec) {
   )
 }
 
+empty_audit <- function(action) {
+  data.frame(iteration = 0L, action = action, n_components = 0L,
+             components = "", ccf_lag = NA_real_, median_lead = NA_real_,
+             pct_led = NA_real_, missed = NA_real_, extra = NA_real_,
+             concordance = NA_real_, passed = FALSE, score = NA_real_,
+             stringsAsFactors = FALSE)
+}
+
 # Backward-elimination loop over the leading candidates.
 select_components <- function(cycles, assessment, spec, reference) {
   ref <- cycles[[reference]]
@@ -84,14 +92,8 @@ select_components <- function(cycles, assessment, spec, reference) {
   if (length(comps) == 0L) {
     rcli_warn("No candidate was classified as leading; no composite built.",
               "rcli_warning_no_leaders")
-    audit <- data.frame(iteration = 0L, action = "no leading candidates",
-                        n_components = 0L, components = "",
-                        ccf_lag = NA_real_, median_lead = NA_real_,
-                        pct_led = NA_real_, missed = NA_real_,
-                        extra = NA_real_, concordance = NA_real_,
-                        passed = FALSE, score = NA_real_,
-                        stringsAsFactors = FALSE)
-    return(list(composite = NULL, validation = NULL, audit = audit))
+    return(list(composite = NULL, validation = NULL,
+                audit = empty_audit("no leading candidates")))
   }
   shift_on <- methods::.hasSlot(spec, "lag_shift") && isTRUE(spec@lag_shift)
   evaluate <- function(cs) {
@@ -100,9 +102,16 @@ select_components <- function(cycles, assessment, spec, reference) {
     val <- cli_validate(comp, ref, spec)
     list(composite = comp, validation = val, score = composite_score(val, spec))
   }
+  elimination_loop(comps, evaluate, spec,
+                   "initial composite of all leading candidates")
+}
+
+# Backward elimination shared by the leading and coincident composites:
+# `evaluate(components)` returns the composite, its validation and its score.
+elimination_loop <- function(comps, evaluate, spec, first_action) {
   current <- evaluate(comps)
-  rows <- list(audit_row(1L, "initial composite of all leading candidates",
-                         comps, current$validation, current$score, spec))
+  rows <- list(audit_row(1L, first_action, comps, current$validation,
+                         current$score, spec))
   iter <- 1L
   repeat {
     if (current$validation@passed) {

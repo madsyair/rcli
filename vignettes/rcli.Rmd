@@ -263,7 +263,56 @@ equally well when spikes and a level shift are injected:
 read.csv(system.file("calibration", "oecd-outliers.csv", package = "rcli"))
 ```
 
-## 9. Graphical interface
+## 9. A coincident index
+
+A coincident index summarises where the cycle is now. The Conference Board
+publishes one next to its leading index, and it is the natural monthly
+reference when the reference series is quarterly GDP. `cci_build()`
+aggregates the candidates that `cli_assess()` classified as coincident,
+with the same aggregator as the leading composite, and tests the index for
+timing instead of lead. Here two of the simulated series are truly
+coincident.
+
+```{r cci}
+sim_c <- simulate_cycles(
+  leads = c(lead_6 = 6, lead_3 = 3, coin_a = 0, coin_b = 0, lag_3 = -3),
+  seed = 2026
+)
+meta_c <- data.frame(name = colnames(sim_c)[-1], rationale = "rapid_response")
+res_c <- cli_build(cli_candidates(sim_c, "reference", meta = meta_c))
+cci <- cci_build(res_c)
+cci
+cli_quality(cci)
+```
+
+The criteria mirror the leading ones: a cross-correlation peak within
+`coincident_band` of lag 0, a median lead at turning points within
++/- 2 months (one quarter for quarterly data), few missed and extra turning
+points and significant concordance (`coincident_criteria()`). Granger
+causality is not required, and the prediction group scores the current
+contraction state. In the simulations the default rule passes 96 to 99
+percent of composites of coincident series and at most 1 percent of those
+that lead or lag by 3 months at the default noise level; with twice the
+noise it errs more often, above all for quarterly data:
+
+```{r cci-calibration}
+read.csv(system.file("calibration", "coincident.csv", package = "rcli"))
+```
+
+```{r cci-plot}
+plot(cci)
+```
+
+`cci_as_reference()` makes the index the reference series of a new
+candidate set, without the former reference and without the components of
+the index, and the leading composite is then built against it:
+
+```{r cci-reference}
+cand_c <- cci_as_reference(cci)
+leaders(cli_build(cand_c))
+```
+
+## 10. Graphical interface
 
 `run_app()` opens a Shiny application (package **shiny**) that walks
 through the same nine steps — data, candidate metadata, specification,
@@ -278,7 +327,7 @@ run_app()               # Indonesian interface
 run_app(language = "en")
 ```
 
-## 10. Extending rcli
+## 11. Extending rcli
 
 A new filter is a subclass of `CycleFilter` with a method for
 `extract_cycle()`:

@@ -23,8 +23,12 @@ directional test.}
 \item{\code{failed}}{Criteria that were not met.}
 
 \item{\code{quality}}{The [CliQuality-class] scorecard.}
+
+\item{\code{role}}{`"leading"` for a composite leading indicator ([cli_validate()])
+or `"coincident"` for a coincident index ([cci_validate()]); it decides
+which criteria the scorecard applies.}
 }}
 
 \seealso{
-[cli_validate()], [cli_quality()]
+[cli_validate()], [cci_validate()], [cli_quality()]
 }

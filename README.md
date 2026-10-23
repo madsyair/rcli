@@ -6,9 +6,9 @@
 [![lint](https://github.com/madsyair/rcli/actions/workflows/lint.yaml/badge.svg)](https://github.com/madsyair/rcli/actions/workflows/lint.yaml)
 <!-- badges: end -->
 
-`rcli` builds composite leading indicators (CLI) from the selection of
-candidate series to a tested composite, following the OECD system of
-composite leading indicators:
+`rcli` builds composite leading indicators (CLI), and the coincident index
+that goes with them, from the selection of candidate series to a tested
+composite, following the OECD system of composite leading indicators:
 
 1. **Candidates** – a reference series and candidate series with their
    economic rationale (`cli_candidates()`).
@@ -33,6 +33,10 @@ composite leading indicators:
 9. **Quality verdict** – a scorecard of turning-point, prediction and
    out-of-sample criteria returns *good*, *acceptable* or *weak*
    (`cli_quality()`).
+10. **Coincident index** – the coincident candidates aggregated the same
+    way and tested for timing instead of lead (`cci_build()`,
+    `cci_validate()`); `cci_as_reference()` makes the index the monthly
+    reference series.
 
 `oecd_spec()` follows the OECD method step by step instead: TRAMO
 outliers with forecasts, the log/level test, the median-lead
