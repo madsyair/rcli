@@ -48,7 +48,7 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 - AC-FR-004.3  Galat mundur ternorma η = ‖Aτ − x‖∞ / (‖A‖∞‖τ‖∞ + ‖x‖∞) ≤ 10u (u = `.Machine$double.eps`) untuk λ = 133 107,9, n = 372 (Higham 2002, §7.1). Revisi: batas semula ‖Aτ − x‖∞/‖x‖∞ ≤ 1e-10 lebih ketat daripada teori (≈ u‖A‖ ≈ 5e-10) dan juga dilanggar oleh `solve()` padat.
 - AC-FR-004.4  λ = 0 → τ = x; n < 4 → `rcli_error_short_series`.
 - AC-FR-004.5  Uji replikasi `mFilter::hpfilter` dan `neverhpfilter` tetap lolos.
-- AC-FR-004.6  n = 100 000 selesai dalam < 5 detik (cara padat butuh memori 80 GB).
+- AC-FR-004.6  n = 100 000 selesai (cara padat butuh memori 80 GB), dalam < 5 detik tanpa instrumentasi covr. Revisi: di CI cakupan, instrumentasi covr membuat loop R lebih lambat (5,47 detik), jadi batas waktu hanya berlaku tanpa covr.
 
 ### FR-005 — Indeks koinsiden (PR #1) di seri 0.2
 - AC-FR-005.1  Semua uji PR #1 (`test-coincident.R`, `test-app.R`, `test-app-e2e.R`, `test-quality.R`, `test-selection-bias.R`) lolos dengan bawaan 0.2.0.

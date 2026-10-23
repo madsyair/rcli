@@ -61,5 +61,8 @@ test_that("FR-004 AC-6: a long series needs no n x n matrix", {
   elapsed <- system.time(tau <- rcli:::hp_trend_core(x, 1600))[["elapsed"]]
   expect_length(tau, 1e5)
   expect_true(all(is.finite(tau)))
-  expect_lt(elapsed, 5)
+  # finishing at all is the evidence (the dense system fails to allocate);
+  # the time limit holds without coverage instrumentation, which slows
+  # the R loops several times
+  if (!identical(Sys.getenv("R_COVR"), "true")) expect_lt(elapsed, 5)
 })
