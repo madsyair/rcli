@@ -24,9 +24,11 @@ together with `start` and `frequency`.}
 
 \item{meta}{Optional data frame with a `name` column and any of
 `rationale` (one of `names(oecd_rationales)`), `source`,
-`release_lag` (publication delay in periods) and `type` (one of
-`names(series_types)`). When `data` comes from [cli_align()], the types
-and conversion steps recorded there are kept as well.}
+`release_lag` (publication delay in periods), `type` (one of
+`names(series_types)`) and `frequency`, the source frequency (one of
+`names(series_frequencies)`; a candidate cannot be semiannual or
+annual). When `data` comes from [cli_align()], the types, source
+frequencies and conversion steps recorded there are kept as well.}
 
 \item{vintages}{Optional named list of earlier releases, each shaped like
 `data`, for real-time evaluation.}

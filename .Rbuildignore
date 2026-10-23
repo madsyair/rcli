@@ -13,3 +13,5 @@
 ^harness$
 ^Rplots\.pdf$
 ^tests/testthat/Rplots\.pdf$
+^doc$
+^Meta$

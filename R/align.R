@@ -22,10 +22,39 @@ series_types <- c(
   average = "Average: mean level over the period (mean)"
 )
 
+#' Source frequencies of series
+#'
+#' The frequency at which a series is published, recorded in the metadata
+#' of [cli_candidates()] and checked by [cli_align()]:
+#'
+#' * `"daily"`, `"weekly"`, `"monthly"`, `"quarterly"`: candidates and
+#'   reference series; daily and weekly data are aggregated, quarterly
+#'   candidates are interpolated to months.
+#' * `"semiannual"`, `"annual"`: the reference series only, which is
+#'   disaggregated to the target frequency (Denton-Cholette or Chow-Lin).
+#'   A candidate needs at least quarterly data: one or two values a year
+#'   cannot show a lead of a few months, and the OECD uses monthly or
+#'   quarterly components only (Gyomai and Guidetti 2012).
+#'
+#' @format A named character vector.
+#' @seealso [cli_align()], [series_types]
+#' @examples
+#' series_frequencies
+#' @export
+series_frequencies <- c(
+  daily = "Daily",
+  weekly = "Weekly",
+  monthly = "Monthly (12 a year)",
+  quarterly = "Quarterly (4 a year)",
+  semiannual = "Semiannual (2 a year): reference series only",
+  annual = "Annual: reference series only"
+)
+
 #' Align series of mixed frequencies
 #'
-#' Converts daily, weekly, monthly and quarterly series to one target
-#' frequency, with the aggregation rule set by the type of each series
+#' Converts daily, weekly, monthly and quarterly series, and a semiannual or
+#' annual reference series, to one target frequency, with the aggregation
+#' rule set by the type of each series
 #' ([series_types]), so that they can enter [cli_candidates()]. The rules
 #' follow the temporal-aggregation constraints of national accounts (IMF
 #' 2017) and the OECD practice for composite leading indicators (Gyomai and
@@ -39,6 +68,9 @@ series_types <- c(
 #'   look 25 percent higher than months of four.
 #' * **Monthly to quarterly**: sum, mean or last month; incomplete quarters
 #'   are missing.
+#' * **Semiannual or annual reference series**: disaggregated like a
+#'   quarterly one (below), to months or quarters. Semiannual and annual
+#'   candidates are an error ([series_frequencies]).
 #' * **Quarterly to monthly, reference series**: temporal disaggregation that
 #'   keeps the quarterly constraint: `"denton-cholette"` (the smoothest
 #'   monthly path, Denton 1971 with the Cholette modification, computed
@@ -55,23 +87,29 @@ series_types <- c(
 #' flow is scaled up to the full period.
 #'
 #' @param series A list of series. Each element is a univariate `ts`
-#'   (quarterly or monthly), a multivariate `ts` (its columns are taken as
-#'   series of their own) or a data frame with columns `date` and `value`
-#'   (daily, weekly, monthly or quarterly observations). Elements other than
+#'   (monthly, quarterly, semiannual or annual), a multivariate `ts` (its
+#'   columns are taken as series of their own) or a data frame with columns
+#'   `date` and `value` (daily, weekly, monthly, quarterly, semiannual or
+#'   annual observations). Elements other than
 #'   multivariate `ts` must be named.
 #' @param freq Target frequency: 12 (monthly) or 4 (quarterly).
 #' @param type Named character vector of series types (`"flow"`, `"stock"`
 #'   or `"average"`); required for every series whose frequency changes.
 #' @param reference Name of the reference series, which is disaggregated
 #'   with `method` instead of interpolated.
-#' @param method Disaggregation method for a quarterly reference series.
-#' @param indicator Monthly `ts` used by `method = "chow-lin"`.
+#' @param method Disaggregation method for a quarterly, semiannual or annual
+#'   reference series.
+#' @param indicator `ts` at the target frequency used by
+#'   `method = "chow-lin"`.
 #' @param position Named integers (1 to 3): month of the quarter at which a
 #'   quarterly candidate is placed before interpolation.
 #' @param week_date Whether the dates of weekly data mark the first
 #'   (`"start"`) or the last (`"end"`) day of each week.
 #' @param min_coverage Smallest share of an edge period that daily or weekly
 #'   data must cover.
+#' @param frequency Optional named character vector of declared source
+#'   frequencies (`names(series_frequencies)`); a series whose dates show
+#'   another frequency is an error.
 #' @return A multivariate `ts` at frequency `freq`. Its attribute
 #'   `"alignment"` is a data frame (`name`, `from`, `type`, `method`) that
 #'   [cli_candidates()] stores with the candidate set.
@@ -110,12 +148,14 @@ series_types <- c(
 cli_align <- function(series, freq = 12, type = NULL, reference = NULL,
                       method = c("denton-cholette", "chow-lin", "linear"),
                       indicator = NULL, position = NULL,
-                      week_date = c("start", "end"), min_coverage = 0.7) {
+                      week_date = c("start", "end"), min_coverage = 0.7,
+                      frequency = NULL) {
   check_frequency(freq)
   method <- match.arg(method)
   week_date <- match.arg(week_date)
   series <- flatten_series(series)
   type <- check_types(type, names(series))
+  declared <- check_frequencies(frequency, names(series))
   check_number(min_coverage, "min_coverage", lower = 0, upper = 1)
   if (!is.null(reference) && !reference %in% names(series)) {
     rcli_abort("`reference` must name one of the series.",
@@ -125,6 +165,11 @@ cli_align <- function(series, freq = 12, type = NULL, reference = NULL,
   log <- list()
   for (nm in names(series)) {
     s <- as_dated(series[[nm]], nm, week_date)
+    if (nm %in% names(declared) && declared[[nm]] != s$from) {
+      rcli_abort(sprintf("Series '%s' is declared %s, but its data are %s.",
+                         nm, declared[[nm]], s$from),
+                 "rcli_error_frequency")
+    }
     tp <- if (nm %in% names(type)) type[[nm]] else NA_character_
     if (s$from != freq_name(freq) && is.na(tp)) {
       rcli_abort(
@@ -154,7 +199,45 @@ cli_align <- function(series, freq = 12, type = NULL, reference = NULL,
 }
 
 freq_name <- function(freq) {
-  c("4" = "quarterly", "12" = "monthly")[[as.character(freq)]]
+  c("1" = "annual", "2" = "semiannual", "4" = "quarterly",
+    "12" = "monthly")[[as.character(freq)]]
+}
+
+# Periods a year of the frequencies held as `ts`.
+per_year <- c(annual = 1, semiannual = 2, quarterly = 4, monthly = 12)
+
+check_frequencies <- function(frequency, names) {
+  if (is.null(frequency)) return(character(0))
+  if (!is.character(frequency) || is.null(names(frequency)) ||
+      any(!nzchar(names(frequency)))) {
+    rcli_abort("`frequency` must be a named character vector.",
+               "rcli_error_argument")
+  }
+  bad <- setdiff(frequency, names(series_frequencies))
+  if (length(bad) > 0L) {
+    rcli_abort(sprintf("Unknown frequency: %s. Use one of: %s.",
+                       paste(bad, collapse = ", "),
+                       paste(names(series_frequencies), collapse = ", ")),
+               "rcli_error_argument")
+  }
+  unknown <- setdiff(names(frequency), names)
+  if (length(unknown) > 0L) {
+    rcli_abort(sprintf("`frequency` names unknown series: %s.",
+                       paste(unknown, collapse = ", ")),
+               "rcli_error_argument")
+  }
+  frequency
+}
+
+# Error for a semiannual or annual candidate.
+abort_low_frequency <- function(nm, from) {
+  rcli_abort(
+    sprintf(paste("Series '%s' is %s: semiannual and annual data can only",
+                  "be the reference series. A candidate needs at least",
+                  "quarterly data to show a lead of a few months."),
+            nm, from),
+    "rcli_error_frequency"
+  )
 }
 
 flatten_series <- function(series) {
@@ -213,10 +296,11 @@ check_types <- function(type, names) {
 as_dated <- function(s, nm, week_date) {
   if (stats::is.ts(s)) {
     f <- stats::frequency(s)
-    if (!f %in% c(4, 12)) {
-      rcli_abort(sprintf(paste("Series '%s': a `ts` must be monthly or",
-                               "quarterly; give daily or weekly data as a",
-                               "data frame with `date` and `value`."), nm),
+    if (!f %in% per_year) {
+      rcli_abort(sprintf(paste("Series '%s': a `ts` must be monthly,",
+                               "quarterly, semiannual or annual; give daily",
+                               "or weekly data as a data frame with `date`",
+                               "and `value`."), nm),
                  "rcli_error_frequency")
     }
     return(list(from = freq_name(f), x = stats::ts(as.numeric(s),
@@ -251,16 +335,21 @@ as_dated <- function(s, nm, week_date) {
     "monthly"
   } else if (step >= 85 && step <= 95) {
     "quarterly"
+  } else if (step >= 175 && step <= 190) {
+    "semiannual"
+  } else if (step >= 360 && step <= 370) {
+    "annual"
   } else {
     NA_character_
   }
   if (is.na(from)) {
     rcli_abort(sprintf(paste("Series '%s': cannot tell the frequency of its",
-                             "dates (daily, weekly, monthly or quarterly)."),
+                             "dates (daily, weekly, monthly, quarterly,",
+                             "semiannual or annual)."),
                        nm), "rcli_error_frequency")
   }
-  if (from %in% c("monthly", "quarterly")) {
-    f <- if (from == "monthly") 12 else 4
+  if (from %in% names(per_year)) {
+    f <- per_year[[from]]
     key <- period_key(d, f)
     full <- seq(min(key), max(key))
     vals <- rep(NA_real_, length(full))
@@ -310,15 +399,20 @@ convert_one <- function(s, nm, tp, freq, is_ref, method, indicator,
     return(list(x = monthly_to_quarterly(s$x, tp),
                 method = sprintf("monthly to quarterly (%s)", rule_word(tp))))
   }
-  # quarterly to monthly
+  low <- s$from %in% c("semiannual", "annual")
+  if (low && !is_ref) abort_low_frequency(nm, s$from)
+  # quarterly to monthly, or semiannual and annual to the target
   if (is_ref) {
     x <- switch(method,
-      "denton-cholette" = denton_cholette(s$x, tp),
-      "chow-lin" = chow_lin(s$x, tp, indicator),
-      "linear" = interpolate_quarterly(s$x, tp, quarter_position(nm, tp,
-                                                                 position))
+      "denton-cholette" = denton_cholette(s$x, tp, freq),
+      "chow-lin" = chow_lin(s$x, tp, indicator, freq),
+      "linear" = if (low) {
+        interpolate_reference(s$x, tp, freq)
+      } else {
+        interpolate_quarterly(s$x, tp, quarter_position(nm, tp, position))
+      }
     )
-    return(list(x = x, method = sprintf("quarterly to monthly (%s)",
+    return(list(x = x, method = sprintf("%s to %s (%s)", s$from, target,
                                          method)))
   }
   pos <- quarter_position(nm, tp, position)
@@ -393,11 +487,38 @@ quarter_position <- function(nm, tp, position) {
   if (tp == "stock") 3L else 2L
 }
 
-# Monthly ts covering whole quarters of a quarterly ts `q`.
-monthly_frame <- function(q) {
+# Empty ts at frequency `to` covering whole periods of the lower-frequency
+# ts `q` (k = to / frequency(q) values per period).
+target_frame <- function(q, to) {
+  k <- as.integer(round(to / stats::frequency(q)))
   st <- stats::start(q)
-  stats::ts(rep(NA_real_, 3L * length(q)),
-            start = c(st[1], 3L * (st[2] - 1L) + 1L), frequency = 12)
+  stats::ts(rep(NA_real_, k * length(q)),
+            start = c(st[1], k * (st[2] - 1L) + 1L), frequency = to)
+}
+
+# Monthly ts covering whole quarters of a quarterly ts `q`.
+monthly_frame <- function(q) target_frame(q, 12)
+
+# Linear interpolation of a semiannual or annual reference series: the
+# value per subperiod (a flow divided by k) sits in the middle of its period
+# (flows, averages) or at its end (stocks); harness/02-math/F-04.md.
+interpolate_reference <- function(q, tp, to) {
+  frame <- target_frame(q, to)
+  k <- as.integer(round(to / stats::frequency(q)))
+  v <- as.numeric(q)
+  if (tp == "flow") v <- v / k
+  pos <- if (tp == "stock") k else (k + 1) / 2
+  at <- k * (seq_along(v) - 1L) + pos
+  ok <- !is.na(v)
+  if (sum(ok) < 2L) {
+    rcli_abort("A reference series needs at least two observations.",
+               "rcli_error_short_series")
+  }
+  y <- stats::approx(at[ok], v[ok], xout = seq_along(frame), rule = 2)$y
+  first <- k * (min(which(ok)) - 1L) + 1L
+  last <- k * max(which(ok))
+  y[seq_along(y) < first | seq_along(y) > last] <- NA_real_
+  as_ts_like(y, frame)
 }
 
 # OECD: linear interpolation with the quarterly value placed at month `pos`
@@ -419,51 +540,55 @@ interpolate_quarterly <- function(q, tp, pos) {
   as_ts_like(y, frame)
 }
 
-# Aggregation matrix of the quarterly constraint.
-constraint_matrix <- function(m, tp) {
-  w <- switch(tp, flow = c(1, 1, 1), average = c(1, 1, 1) / 3,
-              stock = c(0, 0, 1))
+# Aggregation matrix of the constraint: k subperiods per period
+# (harness/02-math/F-04.md).
+constraint_matrix <- function(m, tp, k = 3L) {
+  w <- switch(tp, flow = rep(1, k), average = rep(1 / k, k),
+              stock = c(rep(0, k - 1L), 1))
   kronecker(diag(m), t(w))
 }
 
 # Additive first-difference Denton-Cholette without indicator: the smoothest
-# monthly path (least squares of first differences) that satisfies the
-# quarterly constraint exactly.
-denton_cholette <- function(q, tp) {
+# path at frequency `to` (least squares of first differences) that satisfies
+# the constraint of the lower-frequency series exactly (F-04).
+denton_cholette <- function(q, tp, to = 12) {
   span <- non_na_span(q)
   if (anyNA(span) || anyNA(q[span[1]:span[2]])) {
-    rcli_abort("The quarterly reference series has missing values.",
+    rcli_abort("The reference series has missing values.",
                "rcli_error_argument")
   }
   core <- stats::window(q, start = stats::time(q)[span[1]],
                         end = stats::time(q)[span[2]])
   y <- as.numeric(core)
   m <- length(y)
-  n <- 3L * m
-  cm <- constraint_matrix(m, tp)
+  k <- as.integer(round(to / stats::frequency(q)))
+  n <- k * m
+  cm <- constraint_matrix(m, tp, k)
   dm <- diff(diag(n))
   a <- rbind(cbind(2 * crossprod(dm), t(cm)),
              cbind(cm, matrix(0, m, m)))
   sol <- solve(a, c(rep(0, n), y))
-  as_ts_like(sol[seq_len(n)], monthly_frame(core))
+  as_ts_like(sol[seq_len(n)], target_frame(core, to))
 }
 
-chow_lin <- function(q, tp, indicator) {
+chow_lin <- function(q, tp, indicator, to = 12) {
   if (!requireNamespace("tempdisagg", quietly = TRUE)) {
     rcli_abort("`method = \"chow-lin\"` needs the 'tempdisagg' package.",
                "rcli_error_dependency")
   }
   if (is.null(indicator) || !stats::is.ts(indicator) ||
-      stats::frequency(indicator) != 12) {
-    rcli_abort("`method = \"chow-lin\"` needs a monthly `indicator` ts.",
+      stats::frequency(indicator) != to) {
+    rcli_abort(sprintf(paste("`method = \"chow-lin\"` needs an `indicator`",
+                             "ts at the target frequency (%s)."), to),
                "rcli_error_argument")
   }
   conv <- c(flow = "sum", stock = "last", average = "average")[[tp]]
   y <- stats::na.omit(q)
+  k <- as.integer(round(to / stats::frequency(q)))
   ind <- stats::ts(as.numeric(indicator), start = stats::start(indicator),
-                   frequency = 12)
+                   frequency = to)
   ind <- stats::window(ind, start = c(stats::start(y)[1],
-                                      3L * (stats::start(y)[2] - 1L) + 1L))
+                                      k * (stats::start(y)[2] - 1L) + 1L))
   fit <- tempdisagg::td(y ~ ind, conversion = conv,
                         method = "chow-lin-maxlog")
   stats::predict(fit)

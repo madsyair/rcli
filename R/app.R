@@ -440,18 +440,19 @@ candidate_lines <- function(state, data) {
   c("# 2. Candidates and their economic rationale",
     sprintf(paste0("meta <- data.frame(\n  name = %s,\n",
                    "  rationale = %s,\n  source = %s,\n",
-                   "  type = %s\n)"),
+                   "  type = %s,\n  frequency = %s\n)"),
             deparse_value(meta$name),
             deparse_value(meta$rationale),
             deparse_value(meta$source),
-            deparse_value(if (is.null(meta$type)) {
-              rep(NA_character_, nrow(meta))
-            } else {
-              meta$type
-            })),
+            deparse_value(meta_column(meta, "type")),
+            deparse_value(meta_column(meta, "frequency"))),
     sprintf(paste0("cand <- cli_candidates(%s, reference = ",
                    "\"%s\", meta = meta)"),
             data, state$reference))
+}
+
+meta_column <- function(meta, col) {
+  if (is.null(meta[[col]])) rep(NA_character_, nrow(meta)) else meta[[col]]
 }
 
 # Steps 3 to 9 of the script.
@@ -675,9 +676,15 @@ app_server <- function(language = "id") {
       # metadata already given is kept by candidate name (the order of the
       # candidates changes with the reference); otherwise by position
       known <- shiny::isolate(rv$meta)
+      freq_keys <- names(series_frequencies)
+      freq_choices <- c(stats::setNames("", t("none")),
+                        stats::setNames(freq_keys,
+                                        vapply(paste0("freq_", freq_keys), t,
+                                               character(1))))
       keep <- function(id, default) {
         i <- as.integer(sub("^[a-z]+_", "", id))
-        col <- c(rat = "rationale", typ = "type", src = "source")[[
+        col <- c(rat = "rationale", typ = "type", src = "source",
+                 frq = "frequency")[[
           sub("_[0-9]+$", "", id)]]
         if (!is.null(known) && col %in% names(known) &&
             cands[i] %in% known$name) {
@@ -689,24 +696,28 @@ app_server <- function(language = "id") {
       }
       rows <- lapply(seq_along(cands), function(i) {
         shiny::fluidRow(
-          shiny::column(3, shiny::tags$p(shiny::strong(cands[i]),
+          shiny::column(2, shiny::tags$p(shiny::strong(cands[i]),
                                          style = "margin-top: 8px;")),
-          shiny::column(4, shiny::selectInput(
+          shiny::column(3, shiny::selectInput(
             paste0("rat_", i), NULL, choices,
             selected = keep(paste0("rat_", i),
                             if (example) "early_stage" else ""))),
           shiny::column(2, shiny::selectInput(
             paste0("typ_", i), NULL, type_choices,
             selected = keep(paste0("typ_", i), ""))),
+          shiny::column(2, shiny::selectInput(
+            paste0("frq_", i), NULL, freq_choices,
+            selected = keep(paste0("frq_", i), ""))),
           shiny::column(3, shiny::textInput(
             paste0("src_", i), NULL, keep(paste0("src_", i), ""),
             placeholder = t("data_source")))
         )
       })
       shiny::tagList(
-        shiny::fluidRow(shiny::column(3, shiny::strong("")),
-                        shiny::column(4, shiny::strong(t("rationale"))),
+        shiny::fluidRow(shiny::column(2, shiny::strong("")),
+                        shiny::column(3, shiny::strong(t("rationale"))),
                         shiny::column(2, shiny::strong(t("var_type"))),
+                        shiny::column(2, shiny::strong(t("var_freq"))),
                         shiny::column(3, shiny::strong(t("data_source")))),
         rows
       )
@@ -727,10 +738,18 @@ app_server <- function(language = "id") {
           v <- input[[paste0("typ_", i)]]
           if (is.null(v) || !nzchar(v)) NA_character_ else v
         }, character(1)),
+        frequency = vapply(seq_along(cands), function(i) {
+          v <- input[[paste0("frq_", i)]]
+          if (is.null(v) || !nzchar(v)) NA_character_ else v
+        }, character(1)),
         stringsAsFactors = FALSE
       )
       cand <- safely(cli_candidates(rv$data, input$reference, meta = meta))
-      if (is.null(cand)) return()
+      if (is.null(cand)) {
+        # a refused metadata set leaves no stale candidate set behind
+        reset_from(2L)
+        return()
+      }
       rv$cand <- cand
       rv$meta <- meta
       rv$cand_rebuilt <- !is.null(rv$prelude)

@@ -15,6 +15,29 @@
   metadata is edited again). Loading data in step 1 starts from scratch.
 * The candidate metadata of step 2 is kept by candidate name when the
   list of candidates changes, instead of by position.
+* Step 2 gains a *Source frequency* column (daily to annual); the values
+  enter the metadata and the exported script. A semiannual or annual
+  candidate is refused with a message, and a refused step 2 clears its
+  earlier result.
+
+## Source frequencies
+
+* New `series_frequencies`: daily, weekly, monthly, quarterly, semiannual
+  and annual. `cli_candidates()` keeps the source frequency of every
+  candidate in the metadata (`frequency`), from `meta` or from the record
+  of `cli_align()`; a semiannual or annual candidate is an error
+  (`rcli_error_frequency`), because one or two values a year cannot show a
+  lead of a few months.
+* `cli_align()` recognises semiannual and annual data (dated data frames,
+  or `ts` of frequency 2 and 1). Such a series can be the reference and is
+  disaggregated to months or quarters: the Denton-Cholette method now
+  takes any aggregation ratio (harness/02-math/F-04.md; it agrees with
+  `tempdisagg` and, for quarters to months, with 0.2.1), Chow-Lin takes an
+  indicator at the target frequency, and `method = "linear"` places each
+  value in the middle (flows, averages) or at the end (stocks) of its
+  period.
+* `cli_align(frequency = )` declares source frequencies; a series whose
+  dates show another frequency is an error naming both.
 
 # rcli 0.2.1
 
