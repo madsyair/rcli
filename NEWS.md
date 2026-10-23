@@ -38,6 +38,8 @@
   period.
 * `cli_align(frequency = )` declares source frequencies; a series whose
   dates show another frequency is an error naming both.
+* The printed candidate set shows the source frequencies when any is
+  known, as it does for the types.
 
 # rcli 0.2.1
 

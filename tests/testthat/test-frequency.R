@@ -172,3 +172,17 @@ test_that("FR-007 AC-6: the metadata keeps the source frequency", {
                                            rationale = "early_stage"))
   expect_equal(cand@meta$frequency, c("monthly", "quarterly"))
 })
+
+test_that("FR-007: the printed candidate set shows given source frequencies", {
+  sim <- simulate_cycles(seed = 1)
+  plain <- cli_candidates(sim, "reference",
+                          meta = data.frame(name = "lead_6",
+                                            rationale = "early_stage"))
+  expect_false(any(grepl("frequency", capture.output(show(plain)))))
+  meta <- data.frame(name = "lead_6", rationale = "early_stage",
+                     frequency = "weekly")
+  cand <- cli_candidates(sim, "reference", meta = meta)
+  out <- capture.output(show(cand))
+  expect_true(any(grepl("frequency", out)))
+  expect_true(any(grepl("lead_6.*weekly", out)))
+})
