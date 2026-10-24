@@ -30,9 +30,14 @@ oecd_rationales <- c(
 #' @param reference Name of the reference column.
 #' @param meta Optional data frame with a `name` column and any of
 #'   `rationale` (one of `names(oecd_rationales)`), `source`,
-#'   `release_lag` (publication delay in periods) and `type` (one of
-#'   `names(series_types)`). When `data` comes from [cli_align()], the types
-#'   and conversion steps recorded there are kept as well.
+#'   `release_lag` (publication delay in periods), `type` (one of
+#'   `names(series_types)`) and `frequency`, the source frequency (one of
+#'   `names(series_frequencies)`; a candidate cannot be semiannual or
+#'   annual). When `data` comes from [cli_align()], the types, source
+#'   frequencies and conversion steps recorded there are kept as well, and a
+#'   source frequency in `meta` must agree with the recorded one. (The
+#'   `frequency` column of `meta` is the source frequency of a candidate; the
+#'   argument `frequency` below is the number of periods a year of `data`.)
 #' @param vintages Optional named list of earlier releases, each shaped like
 #'   `data`, for real-time evaluation.
 #' @param start,frequency Time attributes when `data` is a data frame.
@@ -89,10 +94,16 @@ cli_candidates <- function(data, reference, meta = NULL, vintages = list(),
 complete_meta <- function(meta, names, alignment = data.frame()) {
   base <- data.frame(name = names, rationale = NA_character_,
                      source = NA_character_, release_lag = NA_real_,
-                     type = NA_character_, stringsAsFactors = FALSE)
-  if (nrow(alignment) > 0L && "type" %in% names(alignment)) {
-    hit <- match(names, alignment$name)
-    base$type[!is.na(hit)] <- alignment$type[hit[!is.na(hit)]]
+                     type = NA_character_, frequency = NA_character_,
+                     stringsAsFactors = FALSE)
+  hit <- match(names, alignment$name)
+  detected <- rep(NA_character_, length(names))
+  if ("from" %in% names(alignment)) {
+    detected[!is.na(hit)] <- alignment$from[hit[!is.na(hit)]]
+  }
+  for (col in intersect(c("type", "from"), names(alignment))) {
+    to <- if (col == "from") "frequency" else col
+    base[[to]][!is.na(hit)] <- alignment[[col]][hit[!is.na(hit)]]
   }
   if (!is.null(meta)) {
     if (!is.data.frame(meta) || !"name" %in% names(meta)) {
@@ -105,8 +116,8 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
                             paste(unknown, collapse = ", ")),
                     "rcli_error_argument")
     }
-    for (col in intersect(c("rationale", "source", "release_lag", "type"),
-                          names(meta))) {
+    for (col in intersect(c("rationale", "source", "release_lag", "type",
+                            "frequency"), names(meta))) {
       base[[col]][match(meta$name, names)] <- meta[[col]]
     }
   }
@@ -119,6 +130,28 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
       "rcli_error_argument"
     )
   }
+  bad_freq <- !is.na(base$frequency) &
+    !base$frequency %in% names(series_frequencies)
+  if (any(bad_freq)) {
+    rcli_abort(
+      sprintf("Unknown frequency: %s. Use one of: %s.",
+              paste(unique(base$frequency[bad_freq]), collapse = ", "),
+              paste(names(series_frequencies), collapse = ", ")),
+      "rcli_error_argument"
+    )
+  }
+  clash <- which(!is.na(detected) & !is.na(base$frequency) &
+                   detected != base$frequency)
+  if (length(clash) > 0L) {
+    i <- clash[1]
+    rcli_abort(sprintf(paste("Candidate '%s' is given as %s in `meta`, but",
+                             "cli_align() found %s data."),
+                       base$name[i], base$frequency[i], detected[i]),
+               "rcli_error_frequency")
+  }
+  low <- which(base$frequency %in% c("semiannual", "annual"))
+  if (length(low) > 0L) abort_low_frequency(base$name[low[1]],
+                                            base$frequency[low[1]])
   bad <- !is.na(base$rationale) & !base$rationale %in% names(oecd_rationales)
   if (any(bad)) {
     rcli_abort(

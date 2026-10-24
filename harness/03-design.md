@@ -24,3 +24,13 @@
 Keputusan 0.2.1:
 - Penyelesai pita ditulis dalam R murni (tanpa 'Matrix' dan tanpa kode C), karena tidak boleh ada Imports baru tanpa persetujuan dan waktunya sudah 0,4 ms per panggilan pada n = 372.
 - Pita lebar batas klasifikasi koinsiden diatur oleh metode kelas `Classifier` (generic internal), sesuai aturan CLAUDE.md "tanpa cabang `if (class == ...)` di inti"; kode PR #1 semula memakai `is(classifier, "OecdClassifier")`.
+
+## Increment 0.3.0
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-006 | Judul `titlePanel(sprintf("rcli %s: %s", packageVersion, t("title")))`; tombol `cci_ref` dan observer yang memanggil `cci_as_reference()`; nilai reaktif `prelude` (skrip analisis sebelumnya) dan `cand_rebuilt`; `app_script()` dipecah menjadi `candidate_lines()` dan `analysis_lines()`; metadata langkah 2 dipertahankan menurut nama | `R/app.R`, `R/app-text.R` |
+
+Keputusan: skrip ekspor menyimpan analisis pertama secara utuh (prelude) agar `cci` dapat dibentuk ulang di R; tanpa itu skrip tidak dapat mereproduksi seri acuan "cci".
+| FR-007 | `series_frequencies`; `cli_align(frequency = )` dengan `check_frequencies()`; deteksi semesteran/tahunan di `as_dated()`; `convert_one()` menolak kandidat semesteran/tahunan (`abort_low_frequency()`); `denton_cholette(q, tp, to)`, `constraint_matrix(m, tp, k)`, `target_frame()`, `interpolate_reference()`, `chow_lin(..., to)`; kolom `frequency` di `complete_meta()`; GUI isian `frq_i` | `R/align.R`, `R/candidates.R`, `R/app.R`, `R/app-text.R` |
+
+Keputusan FR-007: frekuensi semesteran dan tahunan hanya untuk seri acuan (keputusan pengguna menerima usulan); kandidat ditolak dengan galat, bukan peringatan, agar komposit tidak memuat komponen yang tak mungkin menunjukkan *lead* beberapa bulan. Frekuensi asal dideteksi dari tanggal dan hanya diperiksa bila dinyatakan.

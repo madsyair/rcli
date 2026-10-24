@@ -126,9 +126,11 @@ setMethod("show", "CandidateSet", function(object) {
   m <- object@meta
   m$rationale[is.na(m$rationale)] <- "(none)"
   cols <- c("name", "rationale")
-  if ("type" %in% names(m) && any(!is.na(m$type))) {
-    m$type[is.na(m$type)] <- ""
-    cols <- c(cols, "type")
+  for (col in c("type", "frequency")) {
+    if (col %in% names(m) && any(!is.na(m[[col]]))) {
+      m[[col]][is.na(m[[col]])] <- ""
+      cols <- c(cols, col)
+    }
   }
   print(m[, cols], row.names = FALSE)
   al <- alignment_of(object)

@@ -1,3 +1,62 @@
+# rcli 0.3.0
+
+New exported functions and arguments (the source frequency of every series)
+and interface features, so the minor version changes; no default changes.
+
+## Graphical interface
+
+* The title shows the package version and names both indices ("rcli
+  0.3.0: Composite Leading and Coincident Indicators"; in Indonesian
+  "Indikator Komposit Pendahulu dan Sejalan").
+* Step 9 gains a button that makes the coincident index the reference
+  series of a new analysis (`cci_as_reference()`): steps 1 and 2 are filled
+  with the new candidate set, without the former reference and the
+  components of the index, the candidate metadata is kept, and the user
+  continues from step 3. The exported R script reproduces the whole chain:
+  the first analysis, `cand <- cci_as_reference(cci)`, and the analysis
+  against the index (with `cli_candidates(cand@data, ...)` when the
+  metadata is edited again). Loading data in step 1 starts from scratch.
+* The entries of step 2 follow the candidate names when the list of
+  candidates changes (another reference series, or the coincident index
+  as reference), instead of their position.
+* The exported script uses the data source and seed as they were when
+  step 1 ran, and a manual composite from before a reset of the later
+  steps no longer leaks into it.
+* Step 2 gains a *Source frequency* column (daily to annual); the values
+  enter the metadata and the exported script. A semiannual or annual
+  candidate is refused with a message, and a refused step 2 clears its
+  earlier result.
+
+## Source frequencies
+
+* New `series_frequencies`: daily, weekly, monthly, quarterly, semiannual
+  and annual. `cli_candidates()` keeps the source frequency of every
+  candidate in the metadata (`frequency`), from `meta` or from the record
+  of `cli_align()`; a semiannual or annual candidate is an error
+  (`rcli_error_frequency`), because one or two values a year cannot show a
+  lead of a few months.
+* `cli_align()` recognises semiannual and annual data (dated data frames,
+  or `ts` of frequency 2 and 1). Such a series can be the reference and is
+  disaggregated to months or quarters: the Denton-Cholette method now
+  takes any aggregation ratio (harness/02-math/F-04.md; it agrees with
+  `tempdisagg` and, for quarters to months, with 0.2.1), Chow-Lin takes an
+  indicator at the target frequency, and `method = "linear"` places each
+  value in the middle (flows, averages) or at the end (stocks) of its
+  period.
+* `cli_align(frequency = )` declares source frequencies; a series whose
+  dates show another frequency is an error naming both.
+* The printed candidate set shows the source frequencies when any is
+  known, as it does for the types.
+* A source frequency given in `meta` must agree with the one `cli_align()`
+  found; a semiannual or annual candidate is refused before its type is
+  asked for.
+* `position` also places the values of a semiannual or annual reference
+  for `method = "linear"` (1 to k subperiods).
+* `cli_quality()` notes a disaggregated reference of any source frequency:
+  its turning-point dates are uncertain by about one month (quarterly),
+  3 months (semiannual) or 6 months (annual). It used to note only the
+  quarterly case.
+
 # rcli 0.2.1
 
 The coincident index prepared as 0.1.4 (never released) is merged into

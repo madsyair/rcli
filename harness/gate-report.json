@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-23T21:19:48",
+  "generated": "2026-10-24T13:04:49",
   "gates": [
     {
       "gate": "G1",
@@ -8,7 +8,7 @@
         {
           "name": "Ada kebutuhan FR/NFR",
           "ok": true,
-          "detail": "8 ID"
+          "detail": "10 ID"
         },
         {
           "name": "Setiap FR/NFR punya kriteria penerimaan",
@@ -69,6 +69,21 @@
           "detail": "6 butir"
         },
         {
+          "name": "F-04: status kelas A",
+          "ok": true,
+          "detail": "CITED-VERIFIED"
+        },
+        {
+          "name": "F-04: skrip verifikasi tersimpan",
+          "ok": true,
+          "detail": "F-04_numeric.R"
+        },
+        {
+          "name": "F-04: uji yang diturunkan",
+          "ok": true,
+          "detail": "4 butir"
+        },
+        {
           "name": "F-02: status kelas A",
           "ok": true,
           "detail": "CITED-VERIFIED"
@@ -94,7 +109,7 @@
         {
           "name": "Setiap FR terpetakan di desain",
           "ok": true,
-          "detail": "5 FR"
+          "detail": "7 FR"
         },
         {
           "name": "Ada ADR",
@@ -122,12 +137,12 @@
         {
           "name": "Setiap FR/NFR dilacak ke uji",
           "ok": true,
-          "detail": "8 ID"
+          "detail": "10 ID"
         },
         {
           "name": "Setiap F-xx dilacak ke uji",
           "ok": true,
-          "detail": "3 formula"
+          "detail": "4 formula"
         },
         {
           "name": "Bukti merah tercatat",
@@ -145,7 +160,7 @@
         {
           "name": "tests",
           "ok": true,
-          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1468 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=46869 -Dhttp.nonProxyHosts=localhost|127."
+          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1646 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=32949 -Dhttp.nonProxyHosts=localhost|127."
         },
         {
           "name": "lint",
@@ -155,7 +170,7 @@
         {
           "name": "coverage",
           "ok": true,
-          "detail": "exit 0: coverage 96.64306"
+          "detail": "exit 0: coverage 96.89223"
         }
       ],
       "skipped": false,

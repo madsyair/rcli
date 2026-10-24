@@ -8,6 +8,9 @@
 
 ## Tafsiran dan keputusan pengguna
 - 2026-10-23: pengguna meminta "Lanjutkan ke versi 0.2.0 sesuai kajian" (kajian: agregasi hibrida dan perpanjangan AR menjadi bawaan).
+- 2026-10-24 07:20: pengguna menyetujui saran reviewer: versi menjadi 0.3.0 (ekspor dan argumen baru), bukan 0.2.2 ("Iya. Ganti ke 0.3.0").
+- 2026-10-24 06:15: pengguna menyetujui usulan frekuensi asal ("Iya. Kerjakan usulan frekuensi"): metadata `frequency`, GUI, acuan semesteran/tahunan, kandidat semesteran/tahunan ditolak; dikerjakan bersama FR-006 di 0.2.2.
+- 2026-10-24 06:03: pengguna meminta judul GUI berversi dan tombol indeks sejalan sebagai seri acuan ("Iya. Kerjakan"); versi 0.2.2.
 - 2026-10-23 20:16: pengguna memilih "Kinerja: pilihan b" (penyelesai HP O(n)) dan "iya" untuk menggabungkan PR #1 ke seri 0.2 (versi 0.2.1).
 - Tafsiran: bentuk rantai diubah dari laju pertumbuhan (kajian) ke rata-rata perubahan siklus (aditif) atas temuan A2c C1; dukungan empiris diulang dengan kode paket (selisih ≤ 0,001).
 
@@ -19,6 +22,8 @@
 | INC-03 | Spesifikasi, OECD, GUI, kalibrasi, dokumen | FR-003, NFR-001–003 | — | selesai (G1–G8; rilis 0.2.0) |
 | INC-04 | Penyaring HP pita O(n) | FR-004, NFR-002 | F-03 | selesai |
 | INC-05 | Indeks koinsiden (PR #1) ke 0.2.1 | FR-005 | — | selesai |
+| INC-06 | GUI: judul berversi, indeks sejalan sebagai acuan (0.3.0) | FR-006 | — | selesai (G1–G8) |
+| INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -37,6 +42,10 @@
 | 2026-10-23 22:40 | INC-04/05 | A5 | G5 | R1–R14 ditindaklanjuti (lihat 06-review) | 2/3 | gerbang penuh G5–G8 |
 | 2026-10-23 23:00 | INC-04/05 | A0 | G1–G8 | LOLOS semua (cakupan 96,6%); CI PR #1 hijau | 2/3 | A6 putaran 2 |
 | 2026-10-24 05:50 | INC-04/05 | A6 | G6 | APPROVE putaran 2 (R1–R14 tertutup; nit R15–R17) | 2/3 | R16–R17 diperbaiki, merge PR #1 |
+| 2026-10-24 07:40 | INC-06/07 | A6 | G6 | CHANGES-REQUESTED (R1–R3 major, R4–R7 minor, R8–R14 nit) | 1/3 | A5 perbaiki |
+| 2026-10-24 08:20 | INC-06/07 | A5 | G4–G5 | R1–R14 ditindaklanjuti; uji merah dibuktikan pada kode 31c2d41 | 2/3 | A6 putaran 2 |
+| 2026-10-24 12:40 | INC-06/07 | A0 | G5, G7, G8 | LOLOS (cakupan 96,9%; check 0/0); versi 0.3.0 | 2/3 | A6 putaran 2 |
+| 2026-10-24 13:10 | INC-06/07 | A6 | G6 | APPROVE putaran 2 (R1–R14 tertutup; nit R15–R17) | 2/3 | R15–R17 diperbaiki, PR ke main |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

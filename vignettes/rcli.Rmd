@@ -198,6 +198,25 @@ When the reference series was disaggregated, the quality scorecard adds a
 line saying that its turning-point dates, and so the lead, are uncertain by
 about one month: the monthly path inside each quarter is an estimate.
 
+The source frequency of every series (`series_frequencies`) is detected
+from its dates and recorded with the candidates (`cand_mf@meta$frequency`);
+`cli_align(frequency = )` checks a declared frequency against the data. A
+semiannual or annual series can only be the reference: it is disaggregated
+like a quarterly one; with Denton-Cholette (the default) or Chow-Lin every
+year (or half-year) is kept exactly, and the scorecard notes that its
+turning-point dates are uncertain by about half a source period. A
+candidate needs at least quarterly data, since one value a year cannot show
+a lead of a few months.
+
+```{r align-annual}
+gdp_a <- aggregate(sim[, "reference"], nfrequency = 1, FUN = sum)
+x_a <- cli_align(list(gdp = gdp_a, sim[, -1]), type = c(gdp = "flow"),
+                 reference = "gdp", frequency = c(gdp = "annual"))
+attr(x_a, "alignment")[1, ]
+all.equal(as.numeric(aggregate(x_a[, "gdp"], nfrequency = 1, FUN = sum)),
+          as.numeric(gdp_a))
+```
+
 Moving holidays such as Idulfitri shift through the calendar, so fixed
 seasonal factors miss them. `holiday_effect()` turns their dates into
 regressors for X-13ARIMA-SEATS (package **seasonal**):

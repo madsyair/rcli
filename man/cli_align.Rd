@@ -13,14 +13,16 @@ cli_align(
   indicator = NULL,
   position = NULL,
   week_date = c("start", "end"),
-  min_coverage = 0.7
+  min_coverage = 0.7,
+  frequency = NULL
 )
 }
 \arguments{
 \item{series}{A list of series. Each element is a univariate `ts`
-(quarterly or monthly), a multivariate `ts` (its columns are taken as
-series of their own) or a data frame with columns `date` and `value`
-(daily, weekly, monthly or quarterly observations). Elements other than
+(monthly, quarterly, semiannual or annual), a multivariate `ts` (its
+columns are taken as series of their own) or a data frame with columns
+`date` and `value` (daily, weekly, monthly, quarterly, semiannual or
+annual observations). Elements other than
 multivariate `ts` must be named.}
 
 \item{freq}{Target frequency: 12 (monthly) or 4 (quarterly).}
@@ -31,18 +33,26 @@ or `"average"`); required for every series whose frequency changes.}
 \item{reference}{Name of the reference series, which is disaggregated
 with `method` instead of interpolated.}
 
-\item{method}{Disaggregation method for a quarterly reference series.}
+\item{method}{Disaggregation method for a quarterly, semiannual or annual
+reference series.}
 
-\item{indicator}{Monthly `ts` used by `method = "chow-lin"`.}
+\item{indicator}{`ts` at the target frequency used by
+`method = "chow-lin"`.}
 
-\item{position}{Named integers (1 to 3): month of the quarter at which a
-quarterly candidate is placed before interpolation.}
+\item{position}{Named integers: subperiod at which a value is placed
+before linear interpolation, 1 to 3 (month of the quarter) for a
+quarterly candidate, 1 to k for a semiannual or annual reference with
+`method = "linear"` (k = 6 or 12 months, 2 or 4 quarters).}
 
 \item{week_date}{Whether the dates of weekly data mark the first
 (`"start"`) or the last (`"end"`) day of each week.}
 
 \item{min_coverage}{Smallest share of an edge period that daily or weekly
 data must cover.}
+
+\item{frequency}{Optional named character vector of declared source
+frequencies (`names(series_frequencies)`); a series whose dates show
+another frequency is an error.}
 }
 \value{
 A multivariate `ts` at frequency `freq`. Its attribute
@@ -50,8 +60,9 @@ A multivariate `ts` at frequency `freq`. Its attribute
   [cli_candidates()] stores with the candidate set.
 }
 \description{
-Converts daily, weekly, monthly and quarterly series to one target
-frequency, with the aggregation rule set by the type of each series
+Converts daily, weekly, monthly and quarterly series, and a semiannual or
+annual reference series, to one target frequency, with the aggregation
+rule set by the type of each series
 ([series_types]), so that they can enter [cli_candidates()]. The rules
 follow the temporal-aggregation constraints of national accounts (IMF
 2017) and the OECD practice for composite leading indicators (Gyomai and
@@ -66,6 +77,9 @@ Guidetti 2012):
   look 25 percent higher than months of four.
 * **Monthly to quarterly**: sum, mean or last month; incomplete quarters
   are missing.
+* **Semiannual or annual reference series**: disaggregated like a
+  quarterly one (below), to months or quarters. Semiannual and annual
+  candidates are an error ([series_frequencies]).
 * **Quarterly to monthly, reference series**: temporal disaggregation that
   keeps the quarterly constraint: `"denton-cholette"` (the smoothest
   monthly path, Denton 1971 with the Cholette modification, computed

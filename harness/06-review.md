@@ -1,407 +1,494 @@
 # 06 — Review
 
-- Increment: rcli 0.2.1 (FR-004 penyelesai HP O(n), F-03; FR-005 penggabungan
-  PR #1 indeks koinsiden; NFR-002 revisi)
+- Increment: rcli 0.3.0, semula 0.2.2 (FR-006, FR-007)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 2 (putaran 1 terhadap 59c330e; putaran 2 terhadap 4d060d8)
-- Keadaan yang direview: cabang `rcli-0.2.1`, HEAD 59c330e, terhadap basis
-  99d1a2c (0.2.0 di main). Komit yang dibaca: 44b5654 (merge PR #1),
-  c8ed1dd (HP pita, kalibrasi koinsiden), 59c330e (Rplots.pdf), serta
-  66b98da dan 7894ebc dari PR. Semua uji, mutasi, dan `R CMD check`
-  dijalankan pada salinan di direktori sementara (`git archive HEAD`).
-  Selama review, pohon kerja diubah agen lain (belum dikomit: NEWS.md,
-  R/methods-show.R, tests/testthat/test-selection-bias.R; kolom `note` di
-  `show()`). Perubahan itu tidak termasuk dalam review ini. Perubahan
-  tersebut kemudian dikomit sebagai 161fa87 dan e948273 (yang terakhir
-  melonggarkan batas waktu AC-FR-004.6 di bawah covr). Kedua komit itu
-  belum direview pada putaran ini.
+- Putaran: 2 (putaran 1 terhadap 31c2d41; putaran 2 terhadap a95fda9)
+- Keadaan yang direview: putaran 1 pada cabang `rcli-0.2.2`, HEAD 31c2d41,
+  terhadap basis 5be0d5a (0.2.1 di main). Komit yang dibaca:
+  - c7f66e5: judul berversi dan indeks sejalan sebagai acuan (FR-006);
+  - 11e6928: frekuensi asal, acuan semesteran/tahunan, kolom GUI (FR-007);
+  - f913e3b: skrip verifikasi numerik F-04, keterlacakan FR-006;
+  - 31c2d41: kolom `frequency` di `show()` untuk `CandidateSet` (masuk
+    selama review atas pemberitahuan koordinator; ikut direview).
+
+  Putaran 2 pada cabang `rcli-0.3.0` (nama baru), HEAD a95fda9; lihat
+  bagian "Review putaran 2".
+
+  Semua uji, mutasi, dan `R CMD check` dijalankan pada salinan
+  `git archive` di direktori sementara. Uji peramban memakai pustaka
+  sementara (`R CMD INSTALL -l <tmp>`, `R_LIBS`); pustaka sistem tidak
+  disentuh. Kode paket dan uji di repositori tidak diubah.
 
 ## Yang diperiksa
 
-### FR-004 / F-03 (R/filters.R:23-69)
-- Baris demi baris terhadap F-03 §1, §3, dan §7:
-  - pita a0 = 1 + λ(1, 5, 6, …, 6, 5, 1), a1 = λ(−2, −4, …, −4, −2),
-    a2 = λ(1, …, 1); untuk n = 4 dan 5 hasil `rep(·, 0)` dan
-    `rep(·, 1)` memberi (1, 5, 5, 1) dan (1, 5, 6, 5, 1), sesuai D₂ᵀD₂.
-  - d_i, l1_{i+1} dan l2_{i+2} sama dengan rekursi §3.3. l2_{i+1} sudah
-    tersedia saat dipakai, karena dihitung pada iterasi i − 1.
-  - Substitusi maju Lw = x, z = w/d, lalu substitusi mundur Lᵀτ = z dengan
-    l1_{i+1} dan l2_{i+2}. Benar.
-  - Tanpa matriks n × n, tanpa dependensi baru, tanpa inversi eksplisit.
+### FR-007 / F-04 (R/align.R, R/candidates.R)
+- Baris demi baris terhadap F-04 §1, §3 dan §7:
+  - `constraint_matrix(m, tp, k)`: w = (1, …, 1), (1/k, …, 1/k) dan
+    (0, …, 0, 1); C = I_m ⊗ wᵀ lewat `kronecker(diag(m), t(w))`. Sesuai §1.
+  - `denton_cholette(q, tp, to)`: k = to/f, D = `diff(diag(n))`, sistem KKT
+    [2DᵀD Cᵀ; C 0][x; λ] = [0; y] diselesaikan dengan `solve()` (LU), tanpa
+    inversi eksplisit. Sesuai §3 langkah 1 dan §6. Untuk k = 3, C, D dan
+    `target_frame(q, 12)` sama dengan `monthly_frame()` 0.2.1 (§3 langkah 3).
+  - `target_frame(q, to)`: awal = subperiode pertama dari periode rendah
+    pertama, `k·(st[2] − 1) + 1`. Sesuai §1 ("dimulai pada subperiode
+    pertama").
+  - `interpolate_reference()`: v = y/k untuk aliran; posisi (k + 1)/2 atau k;
+    `approx(rule = 2)` (konstan di luar ujung); NA di luar rentang periode
+    rendah; minimal dua nilai. Sesuai §1 dan §3 langkah 4.
+  - `chow_lin(..., to)`: indikator harus berfrekuensi `to`; jendela mulai
+    pada subperiode pertama periode rendah pertama.
+  - `convert_one()`: kandidat semesteran/tahunan → `abort_low_frequency()`
+    (`rcli_error_frequency`); acuan memilih jalur menurut `method`. Sesuai
+    §7.
 - Verifikasi independen (skrip saya sendiri, bukan skrip harness):
-  - Terhadap `solve()` padat, n ∈ {4, 5, 6, 7, 8, 13, 100, 372, 612, 1000}
-    dan λ ∈ {0; 10⁻³; 1; 13,9; 1600; 129 600; 133 107,9; 10⁶; 10⁸}:
-    selisih relatif maksimum 4,7·10⁻¹¹ untuk λ ≤ 133 107,9 dan
-    ≤ 1,6·10⁻⁸ untuk λ = 10⁸.
-  - Terhadap solusi eksak rasional (`gmp::solve.bigq`, n = 30), galat maju
-    relatif:
-    - λ = 133 107,9: pita 1,8·10⁻¹¹, padat 4,4·10⁻¹²;
-    - λ = 10⁸: pita 1,3·10⁻⁸, padat 5,1·10⁻⁹.
+  - Terhadap `tempdisagg::td(method = "denton-cholette")`, 30 kombinasi
+    f ∈ {1, 2, 4}, to ∈ {4, 12}, tiga tipe, awal pada periode pertama dan
+    terakhir tahun (termasuk `ts` semesteran mulai `c(2003, 2)`): selisih
+    maksimum 7,8·10⁻¹²; `start()` sama dengan `td()` di semua kasus.
+  - Terhadap penyelesaian kuadrat terkecil berkendala lewat ruang nol
+    (`MASS::Null`, `qr.solve`), implementasi ketiga yang tidak memakai KKT:
+    selisih maksimum 6,3·10⁻¹³.
+  - k = 3 terhadap `denton_cholette()` 0.2.1 yang dimuat dari
+    `git show 5be0d5a:R/align.R` (12 kasus, NA di kedua ujung, awal triwulan
+    1–4): selisih tepat 0.
+- Kasus tepi lewat `cli_align()`:
+  - Data frame semesteran bertanggal akhir periode (30 Juni/31 Desember),
+    mulai pada semester kedua, NA di kedua ujung, target bulanan dan
+    triwulanan, ketiga tipe: awal jatuh pada subperiode pertama semester,
+    galat kendala ≤ 2,4·10⁻¹³.
+  - `ts` tahunan dengan NA di kedua ujung ke triwulanan: kendala
+    1,4·10⁻¹⁴. Chow–Lin tahunan ke bulanan dan ke triwulanan: kendala
+    ≤ 5,7·10⁻¹³; indikator berfrekuensi salah ditolak dengan pesan yang
+    menyebut frekuensi target.
+  - `period_key()`/`key_start()` untuk f = 1 dan 2 benar (Januari/Juni →
+    semester 1, Juli/Desember → semester 2). Tanggal tahunan 31 Desember
+    dan 1 Juli, serta semesteran 1 Januari/1 Juli, terdeteksi benar.
+  - Mingguan dan harian tetap berjalan (termasuk `frequency = c(wk =
+    "weekly", dy = "daily")`); `position` untuk kandidat triwulanan tetap
+    berlaku.
+  - Frekuensi yang dinyatakan: salah → `rcli_error_frequency` yang menyebut
+    keduanya; nama/nilai tak dikenal, vektor tanpa nama, `list`, `NA` →
+    `rcli_error_argument`.
+  - Acuan tahunan satu nilai: Denton memberi seri datar (m = 1, KKT tetap
+    tak singular); `"linear"` → `rcli_error_short_series`. NA di tengah →
+    `rcli_error_argument`.
+- `cli_candidates()`: kolom `frequency` diisi dari `alignment$from` lalu
+  ditimpa `meta`; nilai tak dikenal → `rcli_error_argument`; semesteran/
+  tahunan → `rcli_error_frequency`. Acuan tidak masuk metadata, jadi acuan
+  tahunan tidak ditolak. `cci_as_reference()` membawa kolom ini.
+- 31c2d41: `show()` menampilkan kolom `frequency` bila ada nilai; objek lama
+  tanpa kolom itu tetap aman (`col %in% names(m)`).
 
-    Galat pita sekitar 3–4 kali galat padat, tetapi masih jauh di bawah
-    batas κ(A)·u pada F-03 §3.6. Klaim NEWS "agree with 0.2.0 to about
-    1e-10 relative" benar.
-  - Terhadap `mFilter::hpfilter` (n = 360, λ = 129 600): selisih absolut
-    tren maksimum 5,8·10⁻¹⁰.
-  - λ = 0 memberi x persis (`identical`). n = 4 dan 5 dengan data bulat
-    berselisih ≤ 5,3·10⁻¹⁵ dari solusi padat.
-  - NA di x menghasilkan NA, sama seperti 0.2.0. λ = Inf menghasilkan NaN,
-    juga sama seperti 0.2.0 (lihat R7).
-- Mutasi pada salinan (filter `hp-solver|filters`, baseline 62 lulus):
-  15 dari 15 mutan mati, masing-masing dengan 20–21 kegagalan:
-  - pita: koefisien 5→4 dan −4→−3, a2 dikali 2;
-  - indeks: `d[i−2]`→`d[i−1]` di d_i; `l2[i+1]`→`l2[i]` di l1;
-    `w[i−2]`→`w[i−1]`; `l2[i+2]`→`l2[i+1]` di substitusi mundur;
-  - tanda: substitusi mundur `−`→`+`;
-  - substitusi: z = w tanpa dibagi d; suku l2 di d_i dihapus;
-  - batas loop: `i < n − 1`→`i < n − 2` (dua tempat), `i > 2`→`i > 3`,
-    `i < n`→`i < n − 1`;
-  - arah: substitusi mundur dijalankan maju.
+### FR-006 (R/app.R, R/app-text.R)
+- Judul `sprintf("rcli %s: %s", packageVersion, t("title"))`, kunci
+  `title`, `cci_ref*`, `var_freq`, `freq_*` ada di kedua bahasa. `shiny`
+  hanya dipanggil sebagai `shiny::`; server hanya memanggil fungsi paket.
+- Skenario keadaan yang saya jalankan dengan `shiny::testServer()` dan
+  `eval()` skrip ekspor, membandingkan indeks skrip dengan indeks GUI
+  (`composite(res)` atau `cli` untuk mode manual):
 
-  Uji FR-004 cukup tajam.
-- Waktu (median 15 ulangan, `simulate_cycles(seed = 1)`, 8 seri termasuk
-  acuan, mesin tanpa beban lain):
+  | Skenario | Hasil |
+  |---|---|
+  | Tombol tanpa indeks sejalan | peringatan, `prelude` tetap NULL |
+  | Auto → acuan `cci` → langkah 3–7 | skrip = GUI |
+  | Sesudah peralihan, acuan diganti `lead_6`, langkah 2 diulang (`cand_rebuilt`) | skrip = GUI (`cli_candidates(cand@data, reference = "lead_6")`) |
+  | Komposit manual di kedua analisis | skrip = GUI |
+  | Peralihan dua kali (prelude bersarang, dua `cci_as_reference`) | skrip = GUI |
+  | Metode OECD (mesin TRAMO dimatikan dengan mock, karena rJava di mesin ini rusak), manual, dua kali | skrip = GUI |
+  | Langkah 2 gagal (kandidat semesteran) | langkah 2 dikosongkan |
+  | Langkah 1 diulang | `prelude` dan `cand_rebuilt` dihapus |
+  | Komposit manual di analisis 1, langkah 9 tanpa langkah 7 di analisis 2, peralihan kedua | **skrip galat** (R3) |
+  | Data dimuat, langkah 2 selesai, acuan diganti | **metadata pindah menurut posisi** (R1; juga di Chrome) |
 
-  | Versi | Tanpa perpanjangan | Dengan AR | `hp_trend_core`, n = 360 |
-  |---|---|---|---|
-  | 0.2.0 (99d1a2c) | 63 ms per seri | 70 ms per seri | 36 ms |
-  | 0.2.1 | 2,0 ms per seri | 2,6 ms per seri | 0,35 ms |
-
-  Klaim NEWS (±3 ms vs ±80 ms per seri) cocok bila dibagi 7 kandidat (lihat
-  R12). Klaim `?Extension-class` (±1 ms per seri) cocok: selisih AR vs tanpa
-  AR 0,6 ms. AC-NFR-002.2 terpenuhi dengan selisih besar, jadi penyimpangan
-  AC-NFR-002.1 dari 0.2.0 tertutup.
-
-### FR-005 (merge PR #1)
-- Resolusi konflik:
-  - DESCRIPTION memakai judul dari cabang PR dan versi 0.2.1; Imports tidak
-    berubah.
-  - NEWS menjadikan entri 0.1.4 sebagai 0.2.1 di atas 0.2.0, dengan
-    catatan 0.1.4 tidak dirilis.
-  - Tidak ada sisa penanda konflik.
-- Interaksi semantik dengan bawaan 0.2.0:
-  - `cci_build()` memakai `cli_composite(cycles, cs, spec, ref)`, jadi
-    agregator spesifikasi (EqualWeight "chain") dipakai tanpa pergeseran
-    lag. Saya uji ujung compang-camping, 3 komponen dengan `coin_b` hilang
-    3 bulan terakhir: "chain" dan "level" berbeda di tiga nilai terakhir
-    (98,70 vs 99,14), jadi rantai benar-benar berlaku pada indeks koinsiden.
-  - Perpanjangan: siklus dari `CliResult` dipakai ulang; tanpa `CliResult`,
-    `cli_cycles(candidates, spec)` memakai `spec_extension()`. Konsisten.
-  - `oecd_spec()` (`lag_shift = TRUE`): indeks koinsiden tidak digeser
-    (`@shifts` kosong), sesuai dokumentasi.
-  - Objek lama yang disimulasikan (tanpa atribut `role` di `CliValidation`,
-    tanpa `extension` dan `lag_shift` di `CliSpec`, tanpa `ragged_edge` di
-    `EqualWeight`, dengan `oos_cutoffs = 2015`):
-    - `cli_quality()`, `show()` dan `cci_build(old)` berjalan, dan
-      `cci_build(old)` memberi indeks identik dengan objek baru;
-    - `cci_build(old, spec = old@spec)` juga berjalan.
-- GUI:
-  - langkah 9 membangun `CliResult` dari `rv$cycles_used` (siklus terbalik
-    langkah 6) dan spesifikasi langkah 3;
-  - skrip ekspor menulis `cci_build(res)` atau
-    `cci_build(res, components = …, select = FALSE)` setelah
-    `spec_call()`/`make_extension_call()`, jadi spesifikasi dan
-    perpanjangannya sama;
-  - `cci` disimpan sebagai field langkah 7, dan `finish(7)` hanya mengosongkan
-    langkah ≥ 8, jadi membangun ulang komposit tetap mempertahankan indeks
-    (sesuai komentar dan uji).
-
-  `test-app.R` membandingkan `@index` dari skrip dan GUI (mode otomatis).
-  `test-app-e2e.R` membandingkan skrip dengan CSV unduhan.
-
-### Refaktor `timing_band()`/`timing_rules()`
-- Generic internal dengan metode untuk `Classifier` dan `OecdClassifier`,
-  sehingga tidak ada lagi cabang `is(classifier, …)` di R/coincident.R.
-  Perilakunya sama dengan versi PR (band 2/3 untuk OECD triwulanan,
-  1 untuk rcli triwulanan, teks aturan).
-
-### Gerbang yang dijalankan sendiri
-- `devtools::test()` lengkap pada salinan: 0 gagal, 0 galat, 1 dilewati
-  (seasonal), termasuk `test-app-e2e.R` di Chrome headless.
+### Gerbang yang dijalankan sendiri (HEAD 31c2d41)
+- `devtools::test()` lengkap: 0 gagal, 0 galat, 1 dilewati (seasonal),
+  3 peringatan tak tertangani (R8), termasuk `test-app-e2e.R` di Chrome
+  headless (uji baru "the coincident index becomes the reference in the
+  browser" lulus).
 - `lintr::lint_package()`: 0 temuan.
-- `roxygen2::roxygenise()` pada salinan HEAD: `man/` dan `NAMESPACE` sinkron.
-- `R CMD build` + `R CMD check --as-cran --no-manual`: 0 galat, 0 peringatan,
-  2 NOTE. Keduanya berasal dari lingkungan: "unable to verify current time"
-  dan pesan `JAVA_TOOL_OPTIONS` yang dibaca sebagai NOTE dependensi. Contoh
-  `cci_build` 0,25 detik.
-- Mutasi R/coincident.R, R/quality.R, R/selection-bias.R, R/classes-core.R,
-  dan R/app.R (filter `coincident|selection-bias|quality|^app$`): 6 dari 10
-  mutan mati.
-  - Mati:
-    - `pct_timely_out` dengan `<`;
-    - lantai satu periode dihapus;
-    - pita OECD inklusif;
-    - pergeseran lag di `cci_build()`;
-    - teks aturan OECD;
-    - skrip ekspor `select = FALSE`.
-  - **Bertahan**: (C1) cabang `.hasSlot` di `validation_role()` dihapus,
-    (C5) ambang waktu luar sampel diganti 2 × band, (C6) kriteria pangsa
-    tepat waktu diganti `TRUE`, (C8) suku median lead dihapus dari
-    `coincident_score()`. Lihat R1, R2 dan R6.
-
-## Temuan
-- [x] [R1][minor] tests/testthat/test-coincident.R:196-201 — Uji
-  "validations saved before 0.1.4 count as leading" memakai
-  `new("CliValidation")`, yang mendapat slot `role = "leading"` dari
-  prototipe. Uji itu tidak membuat objek tanpa slot `role`, sehingga cabang
-  `methods::.hasSlot()` di R/classes-core.R:156-158 tidak pernah
-  dijalankan. Mutan C1 (cabang `.hasSlot` dihapus) lulus semua uji. Polanya
-  sama dengan R1 di review 0.2.0. Kodenya sendiri benar: saya uji objek
-  dengan `attr(v, "role") <- NULL` dan `cli_quality()`/`show()` berjalan.
-  Saran: `attr(v, "role") <- NULL`, lalu
-  `expect_false(methods::.hasSlot(v, "role"))`,
-  `expect_equal(validation_role(v), "leading")`, dan uji juga
-  `cli_quality(v, spec)` serta `show(v)`. Klaim NEWS "Objects saved by
-  earlier versions count as leading" bergantung pada jalur ini.
-  - Perbaikan (A5, putaran 2): test-coincident.R "R1: a validation object without the role slot counts as leading" (atribut `role` dihapus, `.hasSlot()` FALSE).
-- [x] [R2][minor] R/coincident.R:144-161 dan
-  tests/testthat/test-coincident.R:69-79 — Kriteria luar sampel indeks
-  koinsiden tidak terkunci uji. Uji hanya memeriksa vonis "good". Mutan C5
-  (ambang `abs(timing_out) <= 2 * band`) dan C6 (kriteria pangsa tepat
-  waktu selalu `TRUE`) lulus. Saran: uji `coincident_out_of_sample()`
-  langsung dengan data frame buatan, mis. median lead keluar 1,5 dan 2,5
-  untuk band 2, `pct_timely_out` 0,5 dan 0,9 terhadap `min_consistency`,
-  lalu periksa `passed` per baris.
-  - Perbaikan (A5, putaran 2): test-coincident.R "R2/R3": ketiga baris luar sampel diuji di tepi pita (2 lolos, 2,5 gagal; 0,5 lolos, 0,4 gagal; |gap| = min_lead lolos, +0,5 gagal).
-- [x] [R3][minor] R/coincident.R:152-154 dan R/selection-bias.R:109-114 —
-  Untuk `OecdClassifier`, kriteria waktu dalam sampel memakai pita terbuka
-  (`abs(median_lead) < band`, "within (-b, b)"), tetapi kriteria luar
-  sampel dan `pct_timely_out` memakai `<=` dengan teks "within +/- b".
-  Lead tepat ±2 bulan dianggap koinsiden di luar sampel, tetapi tidak di
-  dalam sampel. Definisi OECD koinsiden menjadi tidak konsisten dalam satu
-  kartu skor. Saran: generic internal kecil (mis. `in_timing_band(classifier,
-  lead, band)`) yang juga dipakai `coincident_criteria()`, lalu pakai
-  `timing_rules()$timing` untuk teks baris luar sampel.
-  - Perbaikan (A5, putaran 2): generic internal `in_timing_band()` (inklusif untuk `Classifier`, ketat untuk `OecdClassifier`) dipakai di `coincident_criteria()`, `coincident_out_of_sample()` dan `pct_timely_out`; teks ambang luar sampel dari `timing_rules()`; uji R2/R3. Ketiga generic pindah ke R/classes-classifier.R.
-- [x] [R4][minor] R/quality.R:105,125,210,237, R/selection-bias.R:73 dan
-  R/methods-plot.R:88 — Refaktor 0.2.1 menghapus cabang kelas untuk
-  pengklasifikasi, tetapi inti masih bercabang pada `role == "coincident"`
-  di lima tempat, dan `plot()` bercabang pada `is(x, "CciResult")`. Ini
-  bukan pelanggaran harfiah CLAUDE.md, karena `role` adalah data. Namun
-  setiap peran baru akan menyentuh lima fungsi. NEWS 0.2.1 juga menyatakan
-  cabang kelas sudah diganti, padahal `plot()` masih memakainya. Saran:
-  setidaknya ganti label `plot()` dengan metode `plot` untuk `CciResult`
-  (atau `callNextMethod()` dengan argumen label). Untuk `role`,
-  pertimbangkan satu tabel fungsi per peran, atau catat keputusannya di
-  03-design.
-  - Perbaikan (A5, putaran 2): legenda `plot()` dari generic internal `index_label()` (metode `CliResult`/`CciResult`); `role` adalah nilai slot, bukan kelas, dan tetap memilih kriteria. NEWS kini menyebut keduanya dengan tepat.
-- [x] [R5][minor] NEWS.md:59-63 dan data-raw/calibrate_coincident.R:1-2 —
-  NEWS menyatakan bahwa laju lolos "were computed with the 0.2 defaults (AR
-  extension, chained ragged edge)". Data simulasi kalibrasi lengkap (tanpa
-  ujung compang-camping), sehingga "chain" sama persis dengan "level", dan
-  yang berubah hanya perpanjangan AR. Tidak ada uji `cci_build()` dengan
-  ujung compang-camping, padahal itulah interaksi utama dengan bawaan 0.2.0
-  (saya memeriksanya manual, lihat di atas). Saran: tulis "AR extension;
-  the chained ragged edge plays no role with complete simulated data", lalu
-  tambahkan satu uji `cci_build(..., select = FALSE)` dengan komponen yang
-  terlambat, yang membandingkan "chain" dan "level".
-  - Perbaikan (A5, putaran 2): NEWS menyebut panel simulasi lengkap sehingga hanya perpanjangan AR yang berpengaruh; uji baru "R5: a coincident index chains at the ragged edge" (agregator diteruskan, selisih hanya di ujung).
-- [x] [R6][minor] R/coincident.R:163-172 — Mutan C8 (suku `- med`
-  dihapus dari `coincident_score()`) lulus semua uji. Skor ini menentukan
-  komponen yang dibuang pada eliminasi mundur, tetapi rumusnya tidak
-  didokumentasikan (`?cli_build` mendokumentasikan skor indikator
-  pendahulu) dan tidak diuji. Saran: dokumentasikan skor di `?cci_build`
-  seperti di `?cli_build`, dan tambahkan uji kecil yang membandingkan dua
-  validasi buatan yang hanya berbeda pada median lead.
-  - Perbaikan (A5, putaran 2): uji "R6": skor = 10·Σcek − |lag| − |median| + 5·konkordansi − 5·pangsa; median dan lag masing-masing mengurangi 1.
-- [x] [R7][minor] R/classes-filter.R:90 dan R/filters.R:29 — F-03 §6
-  mensyaratkan λ berhingga, tetapi `check_number(lambda, "lambda", lower =
-  0)` di `hp_filter()` menerima `lambda` di [0, Inf]. `hp_trend_core(x, Inf)` dan
-  `extract_cycle(hp_filter(lambda = Inf), x)` diam-diam menghasilkan NaN.
-  Perilakunya sama dengan 0.2.0, jadi bukan regresi, tetapi prasyarat yang
-  tertulis tidak ditegakkan. Saran: tolak `Inf` di validasi
-  (`rcli_error_argument`). Alternatifnya, tangani batas λ → ∞ sebagai tren
-  linear kuadrat terkecil dan dokumentasikan.
-  - Perbaikan (A5, putaran 2): `hp_filter(Inf)` → `rcli_error_argument`; uji di test-filters.R.
-- [x] [R8][minor] harness/01-requirements.md:50 dan
-  harness/02-math/F-03.md:55,76 — AC-FR-004.5 dan F-03 §5 menyebut
-  "replikasi `mFilter::hpfilter` dan `neverhpfilter`". Uji `neverhpfilter`
-  di test-filters.R:34-44 mereplikasi penyaring **Hamilton**, bukan HP,
-  jadi uji itu tidak menyumbang bukti untuk FR-004. Replikasi HP hanya ada
-  satu, yaitu `mFilter` dengan λ = 1600 pada data triwulanan. Saran:
-  perbaiki teks AC/F-03, dan tambahkan replikasi `mFilter::hpfilter` pada
-  λ OECD bulanan (133 107,9 atau 129 600; saya mendapat selisih 5,8·10⁻¹⁰).
-  - Perbaikan (A5, putaran 2): uji replikasi mFilter bulanan λ = 129 600 (test-filters.R); AC-FR-004.5 dan F-03 §5/§8 diperbaiki.
-- [x] [R9][minor] harness/gate-report.md (20:34) — G6 "Putusan APPROVE"
-  dibaca dari 06-review.md milik 0.2.0. Gate report dibuat sebelum review
-  0.2.1, dan G5/G7/G8 dilewati (`--skip-commands`). Saran: jalankan ulang
-  gerbang setelah review ini, dengan perintah, sebelum rilis 0.2.1.
-  - Perbaikan (A5, putaran 2): gerbang G5–G8 dijalankan penuh dengan perintah (lihat gate-report.md putaran 2).
-- [x] [R10][minor] DESCRIPTION:3 — Judul dari PR berisi 72 karakter.
-  "Writing R Extensions" meminta judul tidak lebih dari 65 karakter, dan
-  tim CRAN biasanya menegur judul yang lebih panjang (`R CMD check` tidak
-  menandainya). Saran: mis. "Composite Leading and Coincident Indicators"
-  (43 karakter).
-  - Perbaikan (A5, putaran 2): Title: "Composite Leading and Coincident Indicators" (43 karakter).
-- [x] [R11][nit] NEWS.md — (a) baris 63 berisi 86 karakter, tidak seperti
-  baris lain yang dibungkus pada 80; (b) tidak ada baris kosong sebelum
-  `# rcli 0.2.0` (baris 82); (c) butir refaktor `timing_band()` (baris 17)
-  berada di bawah "Faster HP filter", padahal seharusnya di bawah
-  "Coincident index" atau "Other changes". Semantic versioning: fitur baru
-  sebesar indeks koinsiden lazimnya menaikkan versi minor (0.3.0), bukan
-  patch. Keputusan "0.2.1" ada di tangan pengelola dan sudah tercatat di
-  STATE, tetapi sebaiknya disebut di 08-release.
-  - Perbaikan (A5, putaran 2): baris panjang dipecah, baris kosong sebelum `# rcli 0.2.0`, butir refaktor pindah ke "Other changes"; alasan versi 0.2.1 dicatat di NEWS (tidak ada bawaan yang berubah, keputusan pemelihara).
-- [x] [R12][nit] harness/01-requirements.md (AC-NFR-002.2) — Hasil ukur
-  menyebut "7 seri `simulate_cycles(seed = 1)`", padahal `cli_cycles()`
-  memproses 8 seri (7 kandidat dan acuan). Per seri saya mendapat
-  2,6 ms (AR) dan 70 ms (0.2.0); "±3 ms vs ±80 ms" cocok bila dibagi 7.
-  Kesimpulannya tidak berubah. Saran: tulis "per kandidat (7) dari satu
-  panggilan dengan 8 seri" atau bagi dengan 8.
-  - Perbaikan (A5, putaran 2): AC-NFR-002.2 menyebut pembagi 7 kandidat dan 8 seri.
-- [x] [R13][nit] tests/testthat/test-app.R:92 dan
-  tests/testthat/test-app-e2e.R:132 — Nama uji masih "the server runs the
-  nine steps in order", padahal sekarang ada sepuluh langkah. Komentar
-  "FR-005 AC-3" di e2e terletak di atas ekspektasi lain (verdict `res`),
-  bukan di atas perbandingan `env$cci` (baris 136-137). Selain itu, uji
-  skrip manual di test-app.R hanya mencocokkan teks `select = FALSE`,
-  tidak membandingkan `@index`. Saran: ganti nama uji, pindahkan komentar,
-  dan bandingkan indeks juga untuk mode manual.
-  - Perbaikan (A5, putaran 2): nama uji "ten steps"; komentar FR-005 AC-3 dipindah ke atas pemeriksaan indeks; mode manual kini membandingkan indeks skrip dengan indeks GUI.
-- [x] [R14][nit] harness/STATE.md:31,37 — Baris kosong di tengah tabel "Log
-  putaran" memutus tabel Markdown. Baris 19:00 dan sesudahnya tidak tampil
-  sebagai bagian tabel.
-
-  - Perbaikan (A5, putaran 2): baris kosong di tabel log dihapus.
-
-## Catatan di luar cakupan (sudah ada sejak 0.1.3, bukan dari increment ini)
-- R/selection-bias.R:92 — Untuk peran "leading", `one_cutoff()` membangun
-  komposit sampel penuh dengan `cli_composite(cycles, comps, spec, ref)`
-  tanpa `shifts`. Komposit latihnya (`cli_build()`) digeser bila
-  `spec@lag_shift = TRUE`, yaitu bawaan `oecd_spec()`. Akibatnya
-  `median_lead_in` berasal dari komposit yang digeser, sedangkan
-  `median_lead_out` dari komposit yang tidak digeser, sehingga `lead_gap`
-  untuk spesifikasi OECD berat sebelah. Saran: buka isu terpisah; terapkan
-  `lag_shifts(comps, train@assessment)` hanya untuk peran "leading".
-
-## Review putaran 2
-- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang lokal `cci-0.1.4`,
-  HEAD 4d060d8. Komit yang dibaca sejak 59c330e:
-  - 161fa87: kolom `note` di `show()`;
-  - e948273: batas waktu n = 10⁵ tidak berlaku di bawah covr;
-  - e3bcd37: perbaikan R1–R14;
-  - 4d060d8: gate report.
-
-  Semua pemeriksaan dijalankan pada salinan `git archive HEAD`.
-- Kotak `[x]` di atas dicentang oleh A5. Status di bawah ini adalah
-  verifikasi saya.
-- Gerbang yang saya jalankan sendiri:
-  - `devtools::test()` lengkap: 1468 lulus, 0 gagal, 0 galat, 1 dilewati
-    (seasonal), termasuk e2e Chrome;
-  - `lintr::lint_package()`: 0 temuan;
-  - `roxygenise()`: `man/` dan `NAMESPACE` sinkron;
-  - tidak ada baris > 80 karakter di berkas R yang diubah (yang tersisa
-    hanya test-app-e2e.R:123-124 dari versi pertama).
-
-  Menurut koordinator, CI GitHub untuk 4d060d8 hijau (R-CMD-check di 3 OS,
-  lint, cakupan, gui-e2e). Saya tidak memverifikasinya sendiri.
-- Mutasi (filter
-  `coincident|selection-bias|quality|^app$|filters|plot|methods`):
+- `roxygen2::roxygenise()`: `man/` dan `NAMESPACE` sinkron.
+- `R CMD build` + `R CMD check --as-cran --no-manual`: 0 galat,
+  0 peringatan, 3 NOTE dari lingkungan (URL GitHub 403 lewat proksi,
+  "unable to verify current time", `JAVA_TOOL_OPTIONS`). Vignette (termasuk
+  chunk `align-annual`) dibangun ulang tanpa masalah.
+- Mutasi (filter `frequency|align|app-reference`, baseline 167 lulus):
 
   | Mutan | Uraian | Status |
   |---|---|---|
-  | C1 | cabang `.hasSlot` di `validation_role()` dihapus | **mati** (1 galat) |
-  | C5 | ambang waktu luar sampel 2 × band | **mati** (2 gagal) |
-  | C6 | kriteria pangsa tepat waktu selalu `TRUE` | **mati** (1 gagal) |
-  | C8 | suku median dihapus dari `coincident_score()` | **mati** (1 gagal) |
-  | C11 | `in_timing_band` OECD `<` → `<=` | mati (3 gagal) |
-  | C12 | `in_timing_band` bawaan `<=` → `<` | mati (5 gagal) |
-  | C15 | penolakan `hp_filter(Inf)` dihapus | mati (1 gagal) |
-  | C16 | teks ambang luar sampel tetap "within +/-" | mati (1 gagal) |
-  | C13 | `pct_timely_out` kembali ke `abs(leads) <= band` | **bertahan** (R15) |
-  | C14 | `index_label()` untuk `CciResult` → label pendahulu | **bertahan** (R16) |
+  | M4 | aliran tidak dibagi k di `interpolate_reference()` | mati (3) |
+  | M6 | kandidat tahunan diterima `cli_align()` | mati (1) |
+  | M7 | frekuensi yang dinyatakan tidak diperiksa | mati (1) |
+  | M8 | bobot stok pada subperiode pertama | mati (8) |
+  | M9 | kandidat semesteran diterima di metadata | mati (3) |
+  | M10 | `from` tidak disalin ke `frequency` | mati (1) |
+  | M11 | langkah 1 tidak menghapus `prelude` | mati (1) |
+  | M12 | `cand_rebuilt` tidak pernah TRUE | mati (2) |
+  | M13 | langkah 2 gagal tanpa `reset_from(2)` | mati (2) |
+  | M16 | isian `frq_i` tidak dibaca | mati (4) |
+  | M1 | `target_frame()` memakai 3 alih-alih k untuk awal | **bertahan** (R4) |
+  | M5 | jendela indikator Chow–Lin memakai 3 alih-alih k | **bertahan** (R4) |
+  | M2 | stok ditempatkan di tengah periode (`"linear"`) | **bertahan** (R4) |
+  | M3 | NA di luar rentang periode rendah tidak dipasang | **bertahan** (R4) |
+  | M17 | batas akhir `last` digeser k | **bertahan** (R4) |
+  | M18 | Denton tanpa pemotongan NA di ujung | **bertahan** (R4) |
+  | M14 | `keep()` hanya menurut posisi (`known <- NULL`) | **bertahan** (R1) |
+  | M15 | jendela semesteran 175–182 hari | bertahan (R13) |
+
+## Temuan
+- [x] [R1][major] R/app.R:643-647 (observer `input$reference`),
+  R/app.R:681-695 (`keep()`), NEWS.md:16-17 dan
+  tests/testthat/test-app-frequency.R:29-34 — NEWS menyatakan "The candidate
+  metadata of step 2 is kept by candidate name when the list of candidates
+  changes, instead of by position". Dalam alur biasa itu tidak terjadi.
+  Penggantian acuan menjalankan `reset_from(2L)`, yang mengosongkan
+  `rv$meta`, sehingga `known` bernilai NULL saat `meta_ui` digambar ulang
+  dan `keep()` kembali memakai `input[[id]]` menurut posisi. Selain itu,
+  nama yang tidak ada di `known` selalu mewarisi isian posisi yang sama.
+  Bukti (testServer dan Chrome headless): data contoh, `typ_1 = "stock"`
+  (lead_6), `typ_2 = "flow"`, `frq_2 = "quarterly"` (lead_3), langkah 2
+  dijalankan, lalu acuan diganti `noise_2`. Baris `reference` mendapat
+  stock milik lead_6, baris `lead_6` mendapat flow/quarterly milik lead_3,
+  dan baris `lead_3` kosong. Tipe dan frekuensi asal yang salah lalu masuk
+  metadata dan skrip ekspor tanpa peringatan. Uji "kept by name when the
+  reference changes" tidak membedakan nama dari posisi, karena lead_3 tetap
+  di posisi 2 sebelum dan sesudah penggantian acuan ke `lead_6`; mutan M14
+  (`known <- NULL`) lulus semua uji. Hal yang sama berlaku untuk uji lead_3
+  di test-app-reference.R. Saran: simpan metadata menurut nama di nilai
+  reaktif tersendiri (mis. `rv$meta_by_name`) yang diperbarui di `run2` dan
+  tidak dikosongkan oleh `reset_from(2)`, atau rekam semua isian `rat_`,
+  `typ_`, `frq_`, `src_` per nama sebelum digambar ulang. Untuk nama yang
+  tidak dikenal, pakai nilai bawaan, bukan isian posisi yang sama. Uji
+  dengan acuan yang menggeser posisi (mis. `noise_2`), dan periksa baris
+  `reference` serta `lead_6`.
+  - Perbaikan (A5, putaran 2): `meta_ui` mencari isian menurut nama: pertama isian kandidat yang sama pada tampilan terakhir (`shown_cands`), lalu metadata himpunan kandidat terakhir (`rv$meta_known`, tidak dihapus oleh `reset_from(2)`), lalu bawaan. Uji "R1: step-2 entries follow the candidate names, not positions" (test-app-frequency.R) memakai pergantian acuan ke `lead_3` sehingga posisi dan nama berbeda; merah sebelum perbaikan.
+- [x] [R2][major] R/quality.R:111-115 dan 227-234, `?cli_quality`,
+  vignettes/rcli.Rmd:197-199 (catatan acuan triwulanan) — Baris informasi dan catatan "reference
+  disaggregated … uncertain by about one month" hanya muncul bila metode
+  diawali `"quarterly to monthly"`. Acuan tahunan atau semesteran yang
+  didisagregasi ke bulan atau triwulan (`"annual to monthly
+  (denton-cholette)"`, dst.) tidak mendapat catatan apa pun. Saya uji
+  `cli_build()` dengan acuan tahunan dari `simulate_cycles(seed = 1)`:
+  kartu skor tanpa baris disagregasi, sedangkan acuan triwulanan dari data
+  yang sama mendapatkannya. Padahal ketidakpastian titik balik acuan
+  tahunan jauh lebih besar (jalur bulanan di dalam tahun sepenuhnya hasil
+  penghalusan), dan alasan paket sendiri untuk menolak kandidat tahunan
+  ("one or two values a year cannot show a lead of a few months",
+  `?series_frequencies`, NEWS) berlaku juga untuk acuan. Kartu skor menjadi
+  menyesatkan tepat untuk fitur baru ini. Saran: umumkan
+  `quality_reference()` untuk setiap baris `alignment` acuan dengan
+  `from` lebih rendah dari target; tulis ketidakpastian sekitar k/2
+  subperiode (± 1 bulan untuk triwulanan, ± 3 untuk semesteran, ± 6 untuk
+  tahunan; atau teks per frekuensi); perbarui teks catatan, `?cli_quality`,
+  vignette, dan `app_phrases_id`. Pertimbangkan juga `rcli_warn()` di
+  `cli_align()` saat acuan semesteran/tahunan didisagregasi ke bulan. Uji
+  untuk acuan tahunan dan semesteran.
+  - Perbaikan (A5, putaran 2): `disaggregation()` di R/quality.R mengenali acuan triwulanan, semesteran, dan tahunan; baris informasi dan catatan menyebut ±1, ±3, atau ±6 bulan; terjemahan Indonesia ditambah; `?cli_quality` diperbarui. Uji "R2" (tahunan dan semesteran); merah sebelum perbaikan.
+- [x] [R3][major] R/app.R:1093 (`state <- current_state()` di
+  observer `cci_ref`) dan R/app.R:550-554 (`fields`) — `rv$mode` dan
+  `rv$components` bukan bagian dari `fields`, sehingga tidak ikut
+  dikosongkan oleh `reset_from()`. Langkah 9 hanya mensyaratkan langkah 6,
+  sedangkan `script()` mensyaratkan langkah 7. Akibatnya prelude dapat
+  dibuat dari mode komposit analisis sebelumnya. Reproduksi
+  (testServer): analisis 1 dengan komposit manual `c("lead_6",
+  "coincident")` dan indeks sejalan manual `c("coincident", "lag_3")`;
+  beralih; analisis 2 menjalankan langkah 3–6 dan 9 tanpa langkah 7;
+  beralih lagi; analisis 3 menjalankan langkah 3–7. Skrip ekspor menulis
+  `cli_composite(cycles(res), c("lead_6", "coincident"), …)` untuk analisis
+  2, padahal `coincident` sudah keluar dari kandidat, sehingga `eval()`
+  gagal dengan "`components` must name at least one element of `cycles`".
+  Ini melanggar AC-FR-006.4 dan aturan CLAUDE.md "the exported R script
+  must reproduce the composite built in the app". Saran: masukkan `mode`
+  dan `components` ke `fields$7` (dengan nilai bawaan "auto" dan
+  `character(0)` saat dikosongkan), atau tulis baris komposit di
+  `analysis_lines()` hanya bila langkah 7 selesai (mis. `state$step7 =
+  7L %in% rv$done`). Tambahkan uji untuk langkah 9 tanpa langkah 7 sebelum
+  peralihan.
+  - Perbaikan (A5, putaran 2): `mode` dan `components` masuk kelompok langkah 7 di `fields`, sehingga ikut dihapus `reset_from()`. Uji "R3: a manual composite from before a reset does not leak"; merah sebelum perbaikan.
+- [x] [R4][minor] tests/testthat/test-frequency.R — Enam mutan bertahan pada
+  inti FR-007:
+  - M1 (`target_frame()` dengan 3 alih-alih k) dan M5 (jendela Chow–Lin):
+    tidak ada uji dengan seri rendah yang mulai di periode kedua (mis.
+    `ts(…, start = c(2001, 2), frequency = 2)` atau data frame semesteran
+    mulai Juli), satu-satunya kasus ketika k·(st[2] − 1) berbeda;
+  - M2 (posisi stok `"linear"`), M3 dan M17 (NA di luar rentang): uji
+    interpolasi linear hanya memakai aliran tahunan tanpa NA;
+  - M18: tidak ada acuan semesteran/tahunan dengan NA di ujung untuk
+    Denton.
+
+  Perilaku saat ini benar (saya periksa manual di atas). Saran: tambahkan
+  (a) `ts` semesteran mulai `c(y, 2)` terhadap `tempdisagg::td()` termasuk
+  `start()`; (b) Chow–Lin semesteran mulai semester kedua; (c) interpolasi
+  linear stok dengan nilai hitungan tangan; (d) acuan tahunan dengan NA di
+  kedua ujung, untuk Denton dan `"linear"`, dengan posisi NA yang diperiksa.
+  - Perbaikan (A5, putaran 2): uji baru: acuan yang mulai di periode kedua (Denton bulanan/triwulanan dan linear), NA di ujung (Denton dan linear) serta NA di tengah, stok linear, jendela Chow–Lin.
+- [x] [R5][minor] R/candidates.R:97-114 dan R/app.R:741-744 (isian `frq_i`) — Kolom
+  `frequency` dari `meta` menimpa catatan `cli_align()` tanpa pemeriksaan.
+  `cli_candidates(x, meta = data.frame(name = "lead_6", frequency =
+  "weekly"))` diterima untuk seri yang terdeteksi bulanan, dan isian GUI
+  `frq_i` juga tidak dibandingkan dengan apa pun. Di `cli_align()`
+  ketidakcocokan yang sama adalah galat (AC-FR-007.5). Saran: bila
+  `alignment` punya `from` untuk nama itu dan berbeda dari `meta`, galat
+  `rcli_error_frequency` dengan pesan yang sama seperti `cli_align()`; atau
+  dokumentasikan bahwa `meta` menang.
+  - Perbaikan (A5, putaran 2): `complete_meta()` membandingkan `frequency` di `meta` dengan `from` catatan `cli_align()`; beda → `rcli_error_frequency` yang menyebut keduanya. Uji "R5"; merah sebelum perbaikan.
+- [x] [R6][minor] R/align.R:174-180 dan 403 — Kandidat semesteran atau
+  tahunan tanpa `type` mendapat galat "give its type in `type`"
+  (`rcli_error_argument`). Setelah tipe diberikan, barulah pengguna diberi
+  tahu bahwa seri itu tidak boleh menjadi kandidat. Saran: periksa
+  `s$from %in% c("semiannual", "annual") && !identical(nm, reference)`
+  sebelum pemeriksaan tipe, lalu panggil `abort_low_frequency()`.
+  - Perbaikan (A5, putaran 2): `cli_align()` menolak kandidat semesteran/tahunan sebelum memeriksa tipe. Uji "R6"; merah sebelum perbaikan.
+- [x] [R7][minor] R/align.R:500-541 — `interpolate_quarterly(q, tp, pos)`
+  adalah kasus khusus `interpolate_reference()` (k = 3, posisi dapat
+  diatur), dengan rumus yang sama tetapi ditulis dua kali (DRY,
+  software-principles §2). `monthly_frame()` tinggal pembungkus satu baris.
+  Saran: satu fungsi `interpolate_low(q, tp, to, pos = NULL)` yang dipakai
+  kedua jalur, dengan uji lama sebagai pengaman.
+  - Perbaikan (A5, putaran 2): `interpolate_quarterly()` kini memanggil `interpolate_reference(q, tp, 12, pos)`; rumus tinggal satu. Uji lama interpolasi triwulanan tetap lolos.
+- [x] [R8][nit] tests/testthat/test-frequency.R:160, 178 dan 184 — Tiga
+  peringatan `rcli_warning_rationale` tidak ditangani dan muncul di laporan
+  uji. Saran: beri `rationale` untuk semua kandidat atau bungkus dengan
+  `expect_warning(…, class = "rcli_warning_rationale")`.
+  - Perbaikan (A5, putaran 2): peringatan rasional di test-frequency.R diredam dengan `suppressWarnings(classes = "rcli_warning_rationale")`.
+- [x] [R9][nit] tests/testthat/test-app-reference.R:72 — 81 karakter;
+  CLAUDE.md meminta ≤ 80 (lintr tidak menandai baris yang berakhir dengan
+  literal string).
+  - Perbaikan (A5, putaran 2): baris dipecah.
+- [x] [R10][nit] R/align.R:406-412 dan `?cli_align` (`@param position`) —
+  `position` diam-diam diabaikan untuk acuan semesteran/tahunan dengan
+  `method = "linear"`. Saran: sebutkan di `@param position` bahwa argumen
+  ini hanya untuk seri triwulanan, atau tolak nama acuan rendah.
+  - Perbaikan (A5, putaran 2): `period_position()` (1 sampai k) dipakai untuk acuan semesteran/tahunan dengan `method = "linear"`; di luar rentang → `rcli_error_argument`; `?cli_align` diperbarui. Uji "R4/R10"; merah sebelum perbaikan.
+- [x] [R11][nit] tests/testthat/test-frequency.R:120 — Uji Chow–Lin memakai
+  toleransi 1e-6, sedangkan AC-FR-007.2 menyebut 1e-8; galat sebenarnya
+  5,7·10⁻¹³. Saran: `tolerance = 1e-8`.
+  - Perbaikan (A5, putaran 2): toleransi uji Chow–Lin 1e-8, sesuai AC-FR-007.2 (lolos).
+- [x] [R12][nit] R/candidates.R:31-40 — `cli_candidates()` kini punya dua
+  "frequency" yang berbeda arti: argumen `frequency` (bilangan, atribut
+  waktu data frame) dan kolom `meta$frequency` (frekuensi asal, teks).
+  Saran: satu kalimat di `@param start,frequency` yang membedakannya dari
+  kolom metadata.
+  - Perbaikan (A5, putaran 2): dokumentasi `meta` di `?cli_candidates` membedakan kolom `frequency` (frekuensi asal) dari argumen `frequency` (periode per tahun). Nama argumen tidak diubah agar kompatibel.
+- [x] [R13][nit] R/align.R:338 — Mutan M15 (jendela semesteran 175–182)
+  bertahan, karena uji hanya memakai tanggal 1 Januari/1 Juli. Saran: uji
+  tanggal akhir periode (30 Juni/31 Desember) dan tahun kabisat untuk
+  semesteran dan tahunan.
+  - Perbaikan (A5, putaran 2): uji "R13" untuk jendela tanggal: 175 dan 190 hari → semesteran, 360 dan 370 → tahunan, 150/200/300/380 → galat.
+- [x] [R14][nit] vignettes/rcli.Rmd:204-205 dan NEWS.md — Kalimat "with
+  every year (or half-year) kept exactly" hanya benar untuk Denton–Cholette
+  dan Chow–Lin, tidak untuk `"linear"`. Penambahan objek ekspor dan argumen
+  baru lazimnya menaikkan versi minor menurut semantic versioning;
+  keputusan 0.2.2 ada pada pemelihara (STATE), tetapi sebaiknya dicatat di
+  08-release.
+
+  - Perbaikan (A5, putaran 2): vinyet menyebut bahwa kendala dipenuhi persis untuk Denton–Cholette dan Chow–Lin, serta catatan ketidakpastian di kartu skor. Versi tetap 0.2.2 sesuai keputusan pemelihara ("dikerjakan sebagai versi 0.2.2"); saran 0.3.0 dicatat untuk dilaporkan ke pemelihara.
+
+## Catatan di luar cakupan (sudah ada sebelum increment ini)
+- R/app.R `current_state()` membaca `input$seed`, `input$source` dan
+  `input$start` saat skrip dibuat, bukan saat langkah 1 dijalankan. Bila
+  pengguna mengubah benih di langkah 1 tanpa menekan tombol lagi, skrip
+  memakai benih baru. Dengan prelude, nilai itu kini juga dibekukan pada
+  saat peralihan. Saran: simpan nilai langkah 1 di `rv` saat `run1`.
+- Eskalasi lama (`lag_shift` di uji bias seleksi) masih terbuka di
+  STATE.md.
+
+Tindak lanjut A5: skrip ekspor kini memakai sumber data dan benih saat langkah 1 dijalankan (`rv$loaded`); uji "the script uses the data as loaded in step 1".
+
+## Review putaran 2
+- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang `rcli-0.3.0`, HEAD
+  a95fda9. Komit yang dibaca sejak 31c2d41:
+  - 1671c02: perbaikan R1–R14 dan masalah benih/sumber di luar cakupan;
+  - a95fda9: hanya string versi (DESCRIPTION 0.3.0, judul dan satu kalimat
+    NEWS, komentar tiga berkas uji, tiga judul harness). Saya periksa
+    `git diff 1671c02..a95fda9`: tidak ada perubahan di R/, man/ atau
+    vignettes/; `diff -r` R/ kedua salinan identik.
+
+  Semua pemeriksaan dijalankan pada salinan `git archive`.
+- Kotak `[x]` di atas dicentang oleh A5. Status di bawah ini adalah
+  verifikasi saya.
+- Gerbang yang saya jalankan sendiri:
+  - `devtools::test()` lengkap (1671c02, kode R sama dengan a95fda9):
+    0 gagal, 0 galat, 0 peringatan, 1 dilewati (seasonal), termasuk e2e
+    Chrome;
+  - `lintr::lint_package()`: 0 temuan;
+  - `roxygenise()`: `man/` dan `NAMESPACE` sinkron;
+  - `R CMD build` + `R CMD check --as-cran --no-manual` pada a95fda9
+    (0.3.0): 0 galat, 0 peringatan, 3 NOTE dari lingkungan (sama dengan
+    putaran 1); contoh, `\donttest{}`, uji, dan vignette lolos;
+  - tidak ada baris > 80 karakter di berkas R, uji, dan NEWS yang diubah
+    (selain test-app-e2e.R:124-125 dari versi pertama).
+- Skenario keadaan putaran 1 diulang (testServer, `eval()` skrip ekspor):
+  - reproduksi R3 (komposit manual di analisis 1, langkah 9 tanpa langkah 7
+    di analisis 2, peralihan kedua): `rv$mode` kosong sesudah langkah 3,
+    dan skrip kini berjalan;
+  - acuan diganti sesudah peralihan, peralihan dua kali, komposit manual,
+    dan metode OECD (TRAMO dimatikan dengan mock): indeks skrip = indeks
+    GUI.
+- Chrome headless (pustaka sementara): data contoh, isian berbeda untuk
+  lead_6 (stock/weekly), lead_3 (flow/quarterly), coincident
+  (rapid_response) dan noise_2 (average), langkah 2 dijalankan.
+  - Acuan diganti `noise_2`: setiap baris tetap pada namanya; baris baru
+    `reference` mendapat bawaan.
+  - Langkah 3–6 dan 9, lalu `cci_ref`: lead_6, lead_3 dan noise_2 tetap
+    pada namanya, dan coincident (komponen indeks) keluar.
+- Kartu skor R2 (`simulate_cycles(seed = 1)`, `cli_build()` dengan
+  `cli_spec(freq = to)`):
+
+  | Asal → target | Baris informasi | Catatan |
+  |---|---|---|
+  | tahunan → bulanan | annual, ± 6 months | about 6 months |
+  | tahunan → triwulanan | annual, ± 6 months | about 6 months |
+  | semesteran → bulanan | semiannual, ± 3 months | about 3 months |
+  | semesteran → triwulanan | semiannual, ± 3 months | about 3 months |
+  | triwulanan → bulanan | quarterly, ± 1 month | about one month |
+
+  Keempat frasa baru ada di `app_phrases_id`.
+- Mutasi (filter `frequency|align|app-reference|quality`, baseline
+  234 lulus):
+
+  | Mutan | Uraian | Status |
+  |---|---|---|
+  | M1 | `target_frame()` dengan 3 alih-alih k | **mati** (3 gagal) |
+  | M2 | stok di tengah periode (`interpolate_reference()`) | **mati** (1) |
+  | M3 | NA di luar rentang tidak dipasang | **mati** (2) |
+  | M17 | batas akhir `last` digeser k | **mati** (1) |
+  | M18 | Denton tanpa pemotongan NA di ujung | **mati** (3) |
+  | M14 | `keep()` tanpa pencarian di tampilan terakhir | **mati** (2) |
+  | M15 | jendela semesteran 175–182 hari | **mati** (1 galat) |
+  | M19 | `rv$meta_known` tidak dipakai | mati (1) |
+  | M21 | semesteran ± 1 bulan | mati (2) |
+  | M22 | pola hanya "quarterly to monthly" | mati (6) |
+  | M23 | catatan disagregasi dihapus | mati (3) |
+  | M24 | `mode`/`components` tidak ikut di-reset | mati (2) |
+  | M25 | pemeriksaan frekuensi `meta` vs `cli_align()` dihapus | mati (1) |
+  | M26 | penolakan dini kandidat rendah dihapus | mati (1 galat) |
+  | M28 | `position` diabaikan untuk acuan rendah | mati (2) |
+  | M29 | skrip kembali membaca `input$seed` | mati (1) |
+  | M30 | posisi bawaan `interpolate_quarterly()` diubah | mati (1) |
+  | M5 | jendela indikator Chow–Lin dengan 3 alih-alih k | **bertahan** (R16) |
+  | M2b | posisi bawaan stok di `period_position()` ke tengah | **bertahan** (R16) |
+  | M27 | rentang `position` 1–3 alih-alih 1–k | **bertahan** (R16) |
+  | M20 | nama baru kembali mewarisi isian menurut posisi | **bertahan** (R15) |
 
 ### Status temuan putaran 1
-- R1 tertutup. Uji membuat objek tanpa slot `role` (`.hasSlot` FALSE), dan
-  C1 kini mati. `cli_quality()`/`show()` pada objek itu belum diuji;
-  saya sudah memeriksanya manual di putaran 1.
-- R2 tertutup. `coincident_out_of_sample()` diuji di tepi pita untuk ketiga
-  baris; C5 dan C6 mati.
-- R3 tertutup di kode. `in_timing_band()` (inklusif untuk `Classifier`,
-  ketat untuk `OecdClassifier`) dipakai di kriteria dalam sampel, di baris
-  luar sampel, dan di `pct_timely_out`; teks ambang berasal dari
-  `timing_rules()` (C11, C12, C16 mati). Sisa celah uji kecil dicatat
-  di R15.
-- R4 tertutup. Legenda `plot()` memakai generic `index_label()`. Cabang
-  `role` dipertahankan sebagai keputusan yang dicatat di NEWS ("a value and
-  still selects the criteria"); saya terima. Metodenya tidak diuji (R16).
-- R5 tertutup. NEWS menjelaskan bahwa panel simulasi lengkap, sehingga hanya
-  perpanjangan AR yang berpengaruh. Uji "R5" membandingkan "chain" dan
-  "level" pada ujung compang-camping: badan seri identik sampai transformasi
-  afin, dan nilai terakhir berbeda.
-- R6 tertutup. Uji "R6" mengunci rumus skor (median dan lag masing-masing
-  −1), dan C8 mati. Rumusnya masih belum didokumentasikan di `?cci_build`,
-  tetapi itu nit dan saya tidak membuka temuan baru.
-- R7 tertutup untuk `hp_filter()`: `Inf` ditolak dengan
-  `rcli_error_argument` dan diuji (C15 mati). Sisa di
-  `hp_double_filter()` dicatat di R17.
-- R8 tertutup. Ada replikasi `mFilter` bulanan (λ = 129 600, toleransi
-  1e-8), dan AC-FR-004.5 serta F-03 §5/§8 sudah diperbaiki.
-- R9 tertutup. Gate report 4d060d8 menjalankan G5–G8 dengan perintah:
-  - uji: 1468 lulus;
-  - lint: bersih;
-  - cakupan: 96,6%;
-  - `R CMD check --as-cran`: 0 galat, 0 peringatan, 2 NOTE.
-
-  G6 di laporan itu masih membaca putusan putaran 1 (APPROVE). Gerbang ini
-  perlu dijalankan sekali lagi setelah putusan ini.
-- R10 tertutup. Judul menjadi "Composite Leading and Coincident Indicators"
-  (43 karakter).
-- R11 tertutup. Baris panjang dipecah, ada baris kosong sebelum
-  `# rcli 0.2.0`, butir refaktor pindah ke "Other changes", dan alasan
-  versi 0.2.1 dicatat di NEWS.
-- R12 tertutup. AC-NFR-002.2 menjelaskan pembagi 7 kandidat dan 8 seri.
-- R13 tertutup. Uji diberi nama "ten steps", komentar AC-3 dipindahkan,
-  dan mode manual kini membandingkan `@index` dari skrip dengan GUI.
-- R14 tertutup. Tabel log di STATE.md utuh. Catatan di luar cakupan
-  (`lag_shift` di uji bias seleksi) masuk "Eskalasi terbuka" di STATE.md.
-- Komit 161fa87 (kolom `note`) dan e948273 (AC-FR-004.6 tanpa covr) juga
-  saya periksa. Keduanya wajar dan diuji. Revisi AC-FR-004.6 tercatat di
-  01-requirements. Bukti O(n) tetap ada, karena n = 10⁵ selesai tanpa
-  matriks padat.
+- R1 tertutup. `keep()` mencari isian menurut nama: pertama pada tampilan
+  terakhir (`shown_cands`), lalu `rv$meta_known` (tidak dihapus
+  `reset_from(2)`), lalu bawaan. Tidak ada lagi jalan balik menurut posisi.
+  Uji baru memakai acuan `lead_3`, sehingga posisi dan nama berbeda; M14
+  dan M19 kini mati. Saya juga membuktikannya di Chrome, untuk penggantian
+  acuan maupun peralihan `cci_ref`. NEWS kini menyebut kedua kasus. Sisa
+  celah uji kecil dicatat di R15.
+- R2 tertutup. `disaggregation()` mengenali asal triwulanan, semesteran,
+  dan tahunan ke bulanan atau triwulanan, dengan ± 1, 3 atau 6 bulan
+  (setengah periode asal). Baris informasi, catatan, `?cli_quality`,
+  vignette, NEWS, dan terjemahan Indonesia sudah konsisten. Agregasi
+  bulanan ke triwulanan tidak ditandai, dan itu benar. M21–M23 mati.
+  Peringatan di `cli_align()` tidak ditambahkan; catatan di kartu skor
+  cukup.
+- R3 tertutup. `mode` dan `components` masuk kelompok langkah 7, sehingga
+  dikosongkan oleh `reset_from()`. `analysis_lines()` memperlakukan
+  `mode = NULL` sebagai otomatis. Reproduksi putaran 1 kini menghasilkan
+  skrip yang berjalan, dan M24 mati.
+- R4 tertutup sebagian. M1, M2, M3, M17 dan M18 kini mati, berkat uji
+  acuan semesteran yang mulai di semester kedua (Denton bulanan dan
+  triwulanan, linear), NA di kedua ujung, NA di tengah, dan stok linear.
+  Uji "Chow-Lin uses the indicator from the start of the reference" memakai
+  acuan tahunan yang mulai di periode 1. Di situ k·(st[2] − 1) + 1 =
+  3·0 + 1, jadi M5 tetap bertahan. Sisa ini saya turunkan menjadi nit R16.
+- R5 tertutup. `complete_meta()` membandingkan `meta$frequency` dengan
+  `from` catatan `cli_align()` (`rcli_error_frequency`, menyebut
+  keduanya). Data tanpa catatan (CSV GUI, `cci_as_reference()`) tidak
+  terpengaruh. M25 mati.
+- R6 tertutup. Kandidat semesteran/tahunan ditolak sebelum pemeriksaan
+  tipe (sesudah pemeriksaan frekuensi yang dinyatakan). M26 mati.
+- R7 tertutup. `interpolate_quarterly()` memanggil
+  `interpolate_reference(q, tp, 12, pos)`. Batas NA lama
+  (`min(at) − pos + 1`, `max(at) − pos + 3`) setara dengan rumus baru
+  `k·(i_min − 1) + 1` dan `k·i_max` untuk k = 3. Uji lama `test-align.R`
+  lulus, dan M30 mati. Hanya pesan galat `rcli_error_short_series` yang
+  menjadi umum.
+- R8 tertutup. Laporan uji tanpa peringatan.
+- R9 tertutup. Baris dipecah.
+- R10 tertutup. `period_position()` (1 sampai k) dipakai untuk acuan
+  semesteran/tahunan dengan `method = "linear"`; nilai di luar rentang →
+  `rcli_error_argument` yang menyebut nama dan k; `?cli_align` diperbarui.
+  M28 mati. Batas atas rentang belum diuji (R16).
+- R11 tertutup. Toleransi 1e-8.
+- R12 tertutup. `?cli_candidates` membedakan kolom `meta$frequency` dari
+  argumen `frequency`.
+- R13 tertutup. Uji jendela tanggal pada kedua tepi (175/190 dan 360/370
+  hari) dan di luarnya; M15 mati.
+- R14 tertutup. Vignette membatasi "kept exactly" pada Denton–Cholette dan
+  Chow–Lin, dan menyebut catatan kartu skor. Versi menjadi 0.3.0
+  (a95fda9) atas keputusan pemelihara, dengan alasan di NEWS.
+- Catatan di luar cakupan (benih/sumber langkah 1) tertutup. `rv$loaded`
+  disimpan saat `run1` dan dipakai `current_state()`; uji "the script uses
+  the data as loaded in step 1"; M29 mati.
 
 ### Temuan baru
-- [ ] [R15][nit] tests/testthat/test-coincident.R ("R2/R3") — `pct_timely_out`
-  di R/selection-bias.R:112 hanya teruji lewat `in_timing_band()`
-  langsung. Mutan C13 (kembali ke `abs(leads) <= band`) bertahan, karena
-  tidak ada uji `cli_selection_bias(role = "coincident")` dengan
-  `oecd_classifier()` dan lead tepat di tepi pita. Saran: uji
-  `one_cutoff()` dengan pasangan titik balik buatan atau
-  `local_mocked_bindings()` untuk lead ±band.
-- [ ] [R16][nit] R/methods-plot.R — `index_label()` tidak diuji (mutan C14
-  bertahan). Saran:
-  `expect_equal(rcli:::index_label(cci), "coincident index")` dan label
-  pendahulu untuk `CliResult`.
-- [ ] [R17][nit] R/classes-filter.R:99-101 —
-  `hp_double_filter(trend_period = Inf)` lolos validasi, dan
-  `hp_lambda(Inf)` = Inf menghasilkan siklus NaN. Ini sisa R7 yang sama
-  dengan perilaku 0.2.0. Saran: tolak periode tak berhingga di
-  `hp_double_filter()`, dan di `cf_filter()`/`bk_filter()` bila relevan.
+- [ ] [R15][nit] tests/testthat/test-app-frequency.R ("R1") — Mutan M20
+  bertahan. M20 mengembalikan jalan balik lama: nama yang tidak ada di
+  tampilan terakhir maupun di `rv$meta_known` mewarisi isian posisi yang
+  sama. Uji R1 tidak memeriksa baris kandidat baru (`reference`). Perilaku
+  saat ini benar (baris itu mendapat bawaan; diperiksa di Chrome). Saran:
+  di uji R1, isi `typ_1`/`frq_1` untuk lead_6 lalu ganti acuan ke lead_6
+  atau lead_3, dan periksa bahwa baris `reference` tidak mendapat stock atau
+  weekly.
+- [ ] [R16][nit] tests/testthat/test-frequency.R ("R4: Chow-Lin …",
+  "R4/R10") — Tiga mutan bertahan; perilaku saat ini benar:
+  - M5: uji Chow–Lin memakai acuan tahunan yang mulai di periode 1, jadi
+    tidak membedakan k dari 3. Saran: acuan semesteran
+    `start = c(y, 2)` dengan indikator bulanan, lalu periksa `start(x)` =
+    `c(y, 7)` dan kendala.
+  - M2b: posisi bawaan stok di `period_position()` (dipakai `cli_align()`
+    untuk acuan rendah dan kandidat triwulanan) tidak diuji lewat
+    `cli_align()`. Saran: acuan tahunan stok dengan `method = "linear"`
+    tanpa `position`, lalu periksa nilai Desember.
+  - M27: hanya `position = 1` (sah) dan 13 (tidak sah dalam kedua kasus)
+    yang diuji. Saran: `position = c(gdp = 12)` untuk acuan tahunan harus
+    diterima.
+- [ ] [R17][nit] harness/STATE.md:45 — Baris kosong sebelum log 07:40
+  memutus tabel "Log putaran" (sama dengan R14 di review 0.2.1). Saran:
+  hapus baris kosong itu.
 
 ### Ringkasan putaran 2
-R1–R14 tertutup. Mutan C1, C5, C6 dan C8 yang bertahan di putaran 1 kini
-mati. Ada tiga nit baru (R15–R17); tidak ada blocker, major, atau minor
-yang terbuka. Catatan di luar cakupan (`lag_shift` di uji bias seleksi)
-tercatat sebagai eskalasi di STATE.md.
+R1–R14 tertutup. Ketiga major terbukti diperbaiki: R1 di testServer dan
+Chrome, R2 untuk lima kombinasi frekuensi, R3 dengan reproduksi putaran 1.
+R4 tertutup kecuali satu mutan, yang diturunkan menjadi nit. 7 dari 8
+mutan yang bertahan di putaran 1 kini mati (M1, M2, M3, M14, M15, M17,
+M18); M5 masih bertahan. Masalah benih/sumber di luar cakupan juga
+diperbaiki. Ada tiga nit baru (R15–R17); tidak ada blocker, major, atau
+minor yang terbuka.
 
 ## Putusan
-Putaran 1 — Inti numerik FR-004 benar dan sesuai F-03 baris demi baris.
-Hasilnya diverifikasi independen terhadap `solve()` padat, solusi eksak
-rasional, dan `mFilter`. 15 dari 15 mutan solver mati, dan klaim waktu di
-NEWS serta `?Extension-class` terbukti. Penggabungan PR #1 bersih: agregator,
-perpanjangan, objek lama, dan skrip GUI konsisten dengan bawaan 0.2.0.
-Uji lengkap, lint, roxygen, dan `R CMD check --as-cran` bersih. Tidak ada
-blocker atau major. Ada sepuluh minor: R1, R2 dan R6 adalah celah uji
-(mutan bertahan); R3 inkonsistensi pita OECD luar sampel; R4, R5, R7 dan R8
-menyangkut desain dan dokumentasi; R9 gerbang usang; R10 judul. Ada pula
-empat nit. Sebaiknya R1, R2, R3 dan R9 ditutup sebelum rilis 0.2.1.
+Putaran 1 — Inti numerik FR-007 benar dan sesuai F-04 baris demi baris.
+Hasilnya diverifikasi independen terhadap `tempdisagg`, terhadap solusi
+ruang nol, dan terhadap implementasi 0.2.1 (selisih 0 untuk k = 3).
+Deteksi frekuensi, `period_key()`/`key_start()`, data bertanggal mulai
+semester kedua, NA di ujung, Chow–Lin, mingguan/harian, dan `position`
+semuanya berjalan benar. Rangkaian prelude FR-006 mereproduksi indeks
+dalam enam skenario, termasuk peralihan dua kali dan metode OECD. Uji
+lengkap (dengan e2e Chrome), lint, roxygen, dan `R CMD check --as-cran`
+bersih.
 
-Putaran 2 — R1–R14 tertutup dan terverifikasi; hanya nit R15–R17 yang
-terbuka. Jalankan ulang G6 agar gate report membaca putusan ini.
+Ada tiga major:
+- R1: klaim "metadata menurut nama" tidak berlaku saat acuan diganti, dan
+  ujinya tidak membedakan nama dari posisi;
+- R2: kartu skor diam untuk acuan tahunan/semesteran yang didisagregasi;
+- R3: skrip ekspor gagal bila langkah 9 dijalankan tanpa langkah 7
+  sesudah komposit manual sebelumnya.
+
+Ada empat minor (R4 celah uji inti FR-007, R5–R7) dan tujuh nit. R1–R3 dan
+R4 sebaiknya ditutup sebelum rilis 0.2.2. Putusan putaran 1:
+CHANGES-REQUESTED.
+
+Putaran 2 — R1–R14 tertutup dan terverifikasi (R4 dengan sisa nit R16).
+Versi kini 0.3.0. Hanya nit R15–R17 yang terbuka. Jalankan ulang G6 agar
+gate report membaca putusan ini.
 
 Putusan: APPROVE
 
 ## Tindak lanjut A5 sesudah putaran 2
-- [x] R16 (nit): uji "R16: the plot legend names the kind of index" (test-coincident.R).
-- [x] R17 (nit): `hp_double_filter()` menolak periode tak berhingga (`rcli_error_argument`); uji "R17" di test-filters.R; NEWS diperbarui.
-- [ ] R15 (nit): dibiarkan terbuka; `pct_timely_out` dengan pengklasifikasi OECD di tepi pita belum diuji lewat `one_cutoff()` (aturan intinya diuji langsung pada `in_timing_band()`).
+- [x] R15 (nit): uji R1 kini juga memeriksa bahwa kandidat yang baru muncul (`reference`) mendapat isian bawaan (tipe kosong, rasional contoh `early_stage`).
+- [x] R16 (nit): uji "R16" untuk Chow–Lin dengan acuan semesteran yang mulai di semester kedua (k = 6), posisi stok bawaan lewat `cli_align()`, dan `position = 12` untuk acuan tahunan.
+- [x] R17 (nit): baris kosong di tabel log STATE.md dihapus.

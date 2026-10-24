@@ -2,7 +2,7 @@
 
 app_text <- list(
   id = list(
-    title = "rcli: Indikator Komposit Pendahulu",
+    title = "Indikator Komposit Pendahulu dan Sejalan",
     progress = "Kemajuan",
     need_prev = "Selesaikan langkah sebelumnya terlebih dahulu.",
     next_step = "Langkah berikutnya",
@@ -53,6 +53,11 @@ app_text <- list(
     data_source = "Sumber", none = "(belum diisi)",
     var_type = "Tipe variabel", type_flow = "Aliran",
     type_stock = "Stok", type_average = "Rata-rata",
+    var_freq = "Frekuensi asal", freq_daily = "Harian",
+    freq_weekly = "Mingguan", freq_monthly = "Bulanan",
+    freq_quarterly = "Triwulanan",
+    freq_semiannual = "Semesteran (hanya seri acuan)",
+    freq_annual = "Tahunan (hanya seri acuan)",
     method = "Metode",
     method_rcli = "rcli (bawaan, ambang terkalibrasi)",
     method_oecd = "Persis OECD (Gyomai dan Guidetti 2012)",
@@ -116,6 +121,16 @@ app_text <- list(
                                 "luar sampel sebelum mengandalkan ketepatan",
                                 "waktunya."),
     need_cci = "Bentuk indeks sejalan terlebih dahulu.",
+    cci_ref_heading = "Indeks sejalan sebagai seri acuan",
+    cci_ref_help = paste("Membentuk himpunan kandidat baru dengan indeks",
+                         "sejalan sebagai seri acuan, tanpa seri acuan lama",
+                         "dan komponen indeks. Langkah 1 dan 2 terisi dan",
+                         "metadata kandidat dipertahankan; lanjutkan dari",
+                         "langkah 3. Skrip R yang diekspor memuat seluruh",
+                         "rangkaian analisis."),
+    cci_ref = "Jadikan indeks sejalan seri acuan",
+    cci_ref_done = paste("Indeks sejalan menjadi seri acuan 'cci';",
+                         "lanjutkan dari langkah 3."),
     no_coincident = paste(
       "Tidak ada kandidat sejalan; ubah spesifikasi atau pilih komponen",
       "secara manual."),
@@ -125,7 +140,7 @@ app_text <- list(
     loaded = "Data dimuat", error = "Galat"
   ),
   en = list(
-    title = "rcli: Composite Leading Indicator",
+    title = "Composite Leading and Coincident Indicators",
     progress = "Progress",
     need_prev = "Complete the previous step first.",
     next_step = "Next step",
@@ -176,6 +191,11 @@ app_text <- list(
     data_source = "Source", none = "(not given)",
     var_type = "Variable type", type_flow = "Flow",
     type_stock = "Stock", type_average = "Average",
+    var_freq = "Source frequency", freq_daily = "Daily",
+    freq_weekly = "Weekly", freq_monthly = "Monthly",
+    freq_quarterly = "Quarterly",
+    freq_semiannual = "Semiannual (reference only)",
+    freq_annual = "Annual (reference only)",
     method = "Method",
     method_rcli = "rcli (default, calibrated thresholds)",
     method_oecd = "Exactly as the OECD (Gyomai and Guidetti 2012)",
@@ -242,6 +262,16 @@ app_text <- list(
                                 "out-of-sample check before relying on the",
                                 "timing."),
     need_cci = "Build the coincident index first.",
+    cci_ref_heading = "The coincident index as reference",
+    cci_ref_help = paste("Builds a new candidate set with the coincident",
+                         "index as reference, without the former reference",
+                         "and the components of the index. Steps 1 and 2",
+                         "are filled and the candidate metadata is kept;",
+                         "continue from step 3. The exported R script holds",
+                         "the whole chain of analyses."),
+    cci_ref = "Use the coincident index as reference",
+    cci_ref_done = paste("The coincident index is now the reference 'cci';",
+                         "continue from step 3."),
     no_coincident = paste(
       "No candidate is coincident; change the specification or choose",
       "components manually."),
@@ -333,6 +363,12 @@ app_phrases_id <- c(
   "reference disaggregated from quarterly data" =
     "seri acuan hasil disagregasi data triwulanan",
   "turning points +/- 1 month" = "titik balik \u00b11 bulan",
+  "reference disaggregated from semiannual data" =
+    "seri acuan hasil disagregasi data semesteran",
+  "reference disaggregated from annual data" =
+    "seri acuan hasil disagregasi data tahunan",
+  "turning points +/- 3 months" = "titik balik \u00b13 bulan",
+  "turning points +/- 6 months" = "titik balik \u00b16 bulan",
   score = "skor", cutoff = "titik potong", median_lead_in = "lead dalam sampel",
   median_lead_out = "lead sesudahnya", pct_led_out = "didahului sesudahnya",
   n_tp_out = "titik balik sesudahnya", lead_gap = "selisih lead",

@@ -59,6 +59,25 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 - AC-NFR-002.2  Waktu `cli_cycles()` per seri dengan perpanjangan AR (bawaan 0.2.1) ≤ waktu 0.1.3 tanpa perpanjangan, sehingga penyimpangan 0.2.0 (+16%) tertutup.
   - Hasil ukur (2026-10-23, median 15 ulangan, 7 seri `simulate_cycles(seed = 1)`): 0.2.0 terpasang (solve() padat) tanpa perpanjangan 0,0727 detik, dengan AR 0,0793 detik; 0.2.1 tanpa perpanjangan 0,0021 detik, dengan AR 0,0033 detik. Waktu dibagi 7 kandidat; `cli_cycles()` juga memproses seri acuan (8 seri), sehingga per seri sekitar 0,0029 detik. **Terpenuhi**: 0,0033 ≤ 0,0727.
 
+## Increment rcli 0.3.0 (keputusan pengguna 24 Oktober 2026: "Iya. Kerjakan")
+
+### FR-006 — GUI: judul dengan versi dan indeks sejalan sebagai seri acuan
+- AC-FR-006.1  Judul GUI berbunyi "rcli <versi>: Indikator Komposit Pendahulu dan Sejalan" (id) dan "rcli <versi>: Composite Leading and Coincident Indicators" (en), dengan versi dari `utils::packageVersion("rcli")`.
+- AC-FR-006.2  Langkah 9 punya tombol `cci_ref`. Tanpa indeks sejalan, tombol hanya memberi peringatan. Dengan indeks, `cci_as_reference()` dijalankan; langkah 1–2 berisi himpunan kandidat baru (acuan "cci", tanpa acuan lama dan komponen indeks), langkah 3 dan sesudahnya dikosongkan, panel pindah ke langkah 3.
+- AC-FR-006.3  Metadata kandidat (rasional, tipe, sumber) dipertahankan menurut nama kandidat, termasuk di isian langkah 2.
+- AC-FR-006.4  Skrip R ekspor mereproduksi komposit yang dibentuk terhadap indeks sejalan (indeks sama persis), baik tanpa maupun dengan pengulangan langkah 2; memuat analisis pertama, `cand <- cci_as_reference(cci)`, dan analisis kedua.
+- AC-FR-006.5  Langkah 1 yang dijalankan ulang menghapus rangkaian ini.
+
+### FR-007 — Frekuensi asal setiap seri (keputusan pengguna 24 Oktober 2026: "Iya. Kerjakan usulan frekuensi")
+Ekspor `series_frequencies` (daily, weekly, monthly, quarterly, semiannual, annual); argumen `frequency` pada `cli_align()`; kolom `frequency` pada metadata `cli_candidates()`; isian frekuensi asal di GUI langkah 2.
+- AC-FR-007.1  `cli_align()` mengenali data semesteran dan tahunan, baik data frame bertanggal (jarak 175–190 dan 360–370 hari) maupun `ts` berfrekuensi 2 dan 1.
+- AC-FR-007.2  Seri acuan semesteran atau tahunan didisagregasi ke frekuensi target (bulanan atau triwulanan) dengan kendala agregasi sesuai tipenya: Denton–Cholette dengan rasio k umum (F-04, bawaan) atau Chow–Lin (tempdisagg); untuk keduanya kendala dipenuhi persis (toleransi 1e-8): jumlah k nilai = nilai asal (aliran), rata-rata k nilai (rata-rata), nilai ke-k (stok). Interpolasi linear (pilihan) menempatkan nilai di tengah periode (aliran, rata-rata) atau di akhir periode (stok).
+- AC-FR-007.3  Untuk k = 3 (triwulanan ke bulanan), hasil Denton–Cholette identik dengan versi 0.2.1 (toleransi 1e-10).
+- AC-FR-007.4  Kandidat semesteran atau tahunan → galat `rcli_error_frequency` yang menyebut bahwa frekuensi itu hanya boleh untuk seri acuan, baik di `cli_align()` maupun di metadata `cli_candidates()`.
+- AC-FR-007.5  Frekuensi yang dinyatakan di `cli_align(frequency = )` berbeda dari frekuensi yang terdeteksi → galat `rcli_error_frequency` yang menyebut keduanya; nilai atau nama yang tidak dikenal → `rcli_error_argument`.
+- AC-FR-007.6  `cli_candidates()` menyimpan kolom `frequency` di metadata: dari `meta`, atau dari catatan `cli_align()` bila tidak diisi; nilai tidak dikenal → `rcli_error_argument`.
+- AC-FR-007.7  GUI langkah 2 punya isian "Frekuensi asal" per kandidat; nilainya masuk metadata dan skrip ekspor; kandidat semesteran/tahunan memberi pesan galat dan langkah 2 tidak selesai.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.
@@ -74,6 +93,7 @@ Kelas strategi `Extension` dengan `ar_extension(h = NULL, order_max = NULL)` dan
 |---|---|---|---|
 | F-01 | Agregasi bobot sama hibrida (rata-rata langsung, rantai rata-rata perubahan sesudah baris lengkap terakhir; revisi 2) | baru (gabungan Gyomai & Guidetti 2012, p. 9, dengan rata-rata langsung) | FR-001 |
 | F-03 | Penyaring HP dengan LDLᵀ pita O(n) | Hodrick & Prescott (1997); Golub & Van Loan (2013, §4.1–4.3); Higham (2002, bab 10) | FR-004 |
+| F-04 | Denton–Cholette aditif selisih pertama dengan rasio agregasi k umum, dan interpolasi linear per k | Denton (1971); Dagum & Cholette (2006, bab 6); IMF (2017, bab 6) | FR-007 |
 | F-02 | Perpanjangan AR pada perubahan (Yule-Walker, orde AIC) dan prakiraan kumulatif | Brockwell & Davis (1991), *Time Series: Theory and Methods* (rujukan `?stats::ar`); Akaike (1974) untuk AIC | FR-002 |
 
 ## Di luar cakupan

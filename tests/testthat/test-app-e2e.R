@@ -8,7 +8,8 @@ test_that("a user completes the ten steps in the browser", {
   on.exit(app$stop(), add = TRUE)
 
   # 1. Data
-  expect_match(app$get_html("h2"), "Composite Leading Indicator")
+  expect_match(app$get_html("h2"),
+               "rcli [0-9.]+: Composite Leading and Coincident Indicators")
   app$set_inputs(source = "example_m", wait_ = FALSE)
   app$click("run1")
   app$wait_for_idle()
@@ -169,7 +170,8 @@ test_that("an uploaded quarterly CSV runs through the Indonesian interface", {
 
   app <- start_app("upload-id", "id")
   on.exit(app$stop(), add = TRUE)
-  expect_match(app$get_html("h2"), "Indikator Komposit Pendahulu")
+  expect_match(app$get_html("h2"),
+               "rcli [0-9.]+: Indikator Komposit Pendahulu dan Sejalan")
   app$set_inputs(source = "upload", wait_ = FALSE)
   app$upload_file(file = path)
   app$click("run1")
@@ -241,5 +243,54 @@ test_that("a malformed CSV gives an error message and the app keeps working", {
   app$click("run1")
   app$wait_for_idle()
   expect_match(app$get_value(output = "data_summary"), "Q1")
+  expect_no_browser_errors(app)
+})
+
+test_that("the coincident index becomes the reference in the browser", {
+  skip_if_no_browser()
+  app <- start_app("cci-reference", "en")
+  on.exit(app$stop(), add = TRUE)
+  app$set_inputs(source = "example_m", wait_ = FALSE)
+  app$click("run1")
+  app$wait_for_idle()
+  go_to(app, 2L)
+  app$set_inputs(typ_2 = "flow", wait_ = FALSE)
+  app$click("run2")
+  app$wait_for_idle()
+  for (k in 3:6) {
+    go_to(app, k)
+    app$click(paste0("run", k))
+    app$wait_for_idle()
+  }
+  go_to(app, 7L)
+  go_to(app, 8L)
+  go_to(app, 9L)
+  app$click("run9")
+  app$wait_for_idle(timeout = 120000)
+  app$click("cci_ref")
+  app$wait_for_idle()
+  expect_match(notifications(app), "reference 'cci'")
+  expect_equal(app$get_value(input = "step"), "s3")
+  expect_equal(app$get_value(input = "reference"), "cci")
+  # the metadata follows the candidate names: lead_3 keeps its type
+  ids <- vapply(1:6, function(i) app$get_value(input = paste0("typ_", i)),
+                character(1))
+  expect_equal(sum(ids == "flow"), 1L)
+  for (k in 3:7) {
+    if (k > 3L) go_to(app, k)
+    app$click(paste0("run", k))
+    app$wait_for_idle(timeout = 60000)
+  }
+  expect_plot(app, "composite_plot")
+  go_to(app, 8L)
+  go_to(app, 9L)
+  go_to(app, 10L)
+  script <- readLines(app$get_download("dl_script"))
+  expect_true(any(grepl("cand <- cci_as_reference(cci)", script,
+                        fixed = TRUE)))
+  env <- new.env()
+  utils::capture.output(source(app$get_download("dl_script"), local = env))
+  expect_equal(as.numeric(composite(env$res)@index),
+               utils::read.csv(app$get_download("dl_cli"))$index)
   expect_no_browser_errors(app)
 })
