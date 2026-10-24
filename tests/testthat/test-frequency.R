@@ -310,3 +310,25 @@ test_that("R13: the date windows of the frequencies", {
                  class = "rcli_error_frequency", regexp = "cannot tell")
   }
 })
+
+test_that("R16: Chow-Lin and linear placement for annual and semiannual", {
+  skip_if_not_installed("tempdisagg")
+  set.seed(77)
+  ind <- ts(100 + cumsum(rnorm(300)), start = 2001, frequency = 12)
+  # a semiannual reference starting in its second half: k = 6, not 3
+  sem <- ts(aggregate_k(window(ind, start = c(2001, 7), end = c(2024, 12)),
+                        6, "flow") * 1.05, start = c(2001, 2), frequency = 2)
+  x <- rcli:::chow_lin(sem, "flow", ind, 12)
+  expect_equal(start(x), c(2001, 7))
+  expect_equal(aggregate_k(window(x, end = c(2024, 12)), 6, "flow"),
+               as.numeric(sem), tolerance = 1e-8)
+  # a stock sits at the last month by default; position = 12 is accepted
+  y <- ts(c(10, 20, 30), start = 2001, frequency = 1)
+  m <- ts(rnorm(36), start = 2001, frequency = 12)
+  for (pos in list(NULL, c(gdp = 12))) {
+    z <- cli_align(list(gdp = y, lead = m), type = c(gdp = "stock"),
+                   reference = "gdp", method = "linear", position = pos)
+    expect_equal(as.numeric(z[c(12, 24, 36), "gdp"]), c(10, 20, 30))
+    expect_equal(as.numeric(z[18, "gdp"]), 15)
+  }
+})

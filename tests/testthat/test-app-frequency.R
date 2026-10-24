@@ -50,5 +50,12 @@ test_that("R1: step-2 entries follow the candidate names, not positions", {
     expect_match(row, 'value="stock" selected', fixed = TRUE)
     row <- regmatches(html, regexpr("lead_6.*?frq_[0-9]+.*?</select>", html))
     expect_match(row, 'value="weekly" selected', fixed = TRUE)
+    # R15: the former reference, newly listed, gets the defaults
+    row <- regmatches(html, regexpr(">reference<.*?typ_[0-9]+.*?</select>",
+                                    html))
+    expect_match(row, 'value="" selected', fixed = TRUE)
+    row <- regmatches(html, regexpr(">reference<.*?rat_[0-9]+.*?</select>",
+                                    html))
+    expect_match(row, 'value="early_stage" selected', fixed = TRUE)
   })
 })

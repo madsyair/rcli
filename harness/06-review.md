@@ -1,15 +1,18 @@
 # 06 — Review
 
-- Increment: rcli 0.2.2 (FR-006, FR-007)
+- Increment: rcli 0.3.0, semula 0.2.2 (FR-006, FR-007)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 1
-- Keadaan yang direview: cabang `rcli-0.2.2`, HEAD 31c2d41, terhadap basis
-  5be0d5a (0.2.1 di main). Komit yang dibaca:
+- Putaran: 2 (putaran 1 terhadap 31c2d41; putaran 2 terhadap a95fda9)
+- Keadaan yang direview: putaran 1 pada cabang `rcli-0.2.2`, HEAD 31c2d41,
+  terhadap basis 5be0d5a (0.2.1 di main). Komit yang dibaca:
   - c7f66e5: judul berversi dan indeks sejalan sebagai acuan (FR-006);
   - 11e6928: frekuensi asal, acuan semesteran/tahunan, kolom GUI (FR-007);
   - f913e3b: skrip verifikasi numerik F-04, keterlacakan FR-006;
   - 31c2d41: kolom `frequency` di `show()` untuk `CandidateSet` (masuk
     selama review atas pemberitahuan koordinator; ikut direview).
+
+  Putaran 2 pada cabang `rcli-0.3.0` (nama baru), HEAD a95fda9; lihat
+  bagian "Review putaran 2".
 
   Semua uji, mutasi, dan `R CMD check` dijalankan pada salinan
   `git archive` di direktori sementara. Uji peramban memakai pustaka
@@ -291,6 +294,172 @@
 
 Tindak lanjut A5: skrip ekspor kini memakai sumber data dan benih saat langkah 1 dijalankan (`rv$loaded`); uji "the script uses the data as loaded in step 1".
 
+## Review putaran 2
+- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang `rcli-0.3.0`, HEAD
+  a95fda9. Komit yang dibaca sejak 31c2d41:
+  - 1671c02: perbaikan R1–R14 dan masalah benih/sumber di luar cakupan;
+  - a95fda9: hanya string versi (DESCRIPTION 0.3.0, judul dan satu kalimat
+    NEWS, komentar tiga berkas uji, tiga judul harness). Saya periksa
+    `git diff 1671c02..a95fda9`: tidak ada perubahan di R/, man/ atau
+    vignettes/; `diff -r` R/ kedua salinan identik.
+
+  Semua pemeriksaan dijalankan pada salinan `git archive`.
+- Kotak `[x]` di atas dicentang oleh A5. Status di bawah ini adalah
+  verifikasi saya.
+- Gerbang yang saya jalankan sendiri:
+  - `devtools::test()` lengkap (1671c02, kode R sama dengan a95fda9):
+    0 gagal, 0 galat, 0 peringatan, 1 dilewati (seasonal), termasuk e2e
+    Chrome;
+  - `lintr::lint_package()`: 0 temuan;
+  - `roxygenise()`: `man/` dan `NAMESPACE` sinkron;
+  - `R CMD build` + `R CMD check --as-cran --no-manual` pada a95fda9
+    (0.3.0): 0 galat, 0 peringatan, 3 NOTE dari lingkungan (sama dengan
+    putaran 1); contoh, `\donttest{}`, uji, dan vignette lolos;
+  - tidak ada baris > 80 karakter di berkas R, uji, dan NEWS yang diubah
+    (selain test-app-e2e.R:124-125 dari versi pertama).
+- Skenario keadaan putaran 1 diulang (testServer, `eval()` skrip ekspor):
+  - reproduksi R3 (komposit manual di analisis 1, langkah 9 tanpa langkah 7
+    di analisis 2, peralihan kedua): `rv$mode` kosong sesudah langkah 3,
+    dan skrip kini berjalan;
+  - acuan diganti sesudah peralihan, peralihan dua kali, komposit manual,
+    dan metode OECD (TRAMO dimatikan dengan mock): indeks skrip = indeks
+    GUI.
+- Chrome headless (pustaka sementara): data contoh, isian berbeda untuk
+  lead_6 (stock/weekly), lead_3 (flow/quarterly), coincident
+  (rapid_response) dan noise_2 (average), langkah 2 dijalankan.
+  - Acuan diganti `noise_2`: setiap baris tetap pada namanya; baris baru
+    `reference` mendapat bawaan.
+  - Langkah 3–6 dan 9, lalu `cci_ref`: lead_6, lead_3 dan noise_2 tetap
+    pada namanya, dan coincident (komponen indeks) keluar.
+- Kartu skor R2 (`simulate_cycles(seed = 1)`, `cli_build()` dengan
+  `cli_spec(freq = to)`):
+
+  | Asal → target | Baris informasi | Catatan |
+  |---|---|---|
+  | tahunan → bulanan | annual, ± 6 months | about 6 months |
+  | tahunan → triwulanan | annual, ± 6 months | about 6 months |
+  | semesteran → bulanan | semiannual, ± 3 months | about 3 months |
+  | semesteran → triwulanan | semiannual, ± 3 months | about 3 months |
+  | triwulanan → bulanan | quarterly, ± 1 month | about one month |
+
+  Keempat frasa baru ada di `app_phrases_id`.
+- Mutasi (filter `frequency|align|app-reference|quality`, baseline
+  234 lulus):
+
+  | Mutan | Uraian | Status |
+  |---|---|---|
+  | M1 | `target_frame()` dengan 3 alih-alih k | **mati** (3 gagal) |
+  | M2 | stok di tengah periode (`interpolate_reference()`) | **mati** (1) |
+  | M3 | NA di luar rentang tidak dipasang | **mati** (2) |
+  | M17 | batas akhir `last` digeser k | **mati** (1) |
+  | M18 | Denton tanpa pemotongan NA di ujung | **mati** (3) |
+  | M14 | `keep()` tanpa pencarian di tampilan terakhir | **mati** (2) |
+  | M15 | jendela semesteran 175–182 hari | **mati** (1 galat) |
+  | M19 | `rv$meta_known` tidak dipakai | mati (1) |
+  | M21 | semesteran ± 1 bulan | mati (2) |
+  | M22 | pola hanya "quarterly to monthly" | mati (6) |
+  | M23 | catatan disagregasi dihapus | mati (3) |
+  | M24 | `mode`/`components` tidak ikut di-reset | mati (2) |
+  | M25 | pemeriksaan frekuensi `meta` vs `cli_align()` dihapus | mati (1) |
+  | M26 | penolakan dini kandidat rendah dihapus | mati (1 galat) |
+  | M28 | `position` diabaikan untuk acuan rendah | mati (2) |
+  | M29 | skrip kembali membaca `input$seed` | mati (1) |
+  | M30 | posisi bawaan `interpolate_quarterly()` diubah | mati (1) |
+  | M5 | jendela indikator Chow–Lin dengan 3 alih-alih k | **bertahan** (R16) |
+  | M2b | posisi bawaan stok di `period_position()` ke tengah | **bertahan** (R16) |
+  | M27 | rentang `position` 1–3 alih-alih 1–k | **bertahan** (R16) |
+  | M20 | nama baru kembali mewarisi isian menurut posisi | **bertahan** (R15) |
+
+### Status temuan putaran 1
+- R1 tertutup. `keep()` mencari isian menurut nama: pertama pada tampilan
+  terakhir (`shown_cands`), lalu `rv$meta_known` (tidak dihapus
+  `reset_from(2)`), lalu bawaan. Tidak ada lagi jalan balik menurut posisi.
+  Uji baru memakai acuan `lead_3`, sehingga posisi dan nama berbeda; M14
+  dan M19 kini mati. Saya juga membuktikannya di Chrome, untuk penggantian
+  acuan maupun peralihan `cci_ref`. NEWS kini menyebut kedua kasus. Sisa
+  celah uji kecil dicatat di R15.
+- R2 tertutup. `disaggregation()` mengenali asal triwulanan, semesteran,
+  dan tahunan ke bulanan atau triwulanan, dengan ± 1, 3 atau 6 bulan
+  (setengah periode asal). Baris informasi, catatan, `?cli_quality`,
+  vignette, NEWS, dan terjemahan Indonesia sudah konsisten. Agregasi
+  bulanan ke triwulanan tidak ditandai, dan itu benar. M21–M23 mati.
+  Peringatan di `cli_align()` tidak ditambahkan; catatan di kartu skor
+  cukup.
+- R3 tertutup. `mode` dan `components` masuk kelompok langkah 7, sehingga
+  dikosongkan oleh `reset_from()`. `analysis_lines()` memperlakukan
+  `mode = NULL` sebagai otomatis. Reproduksi putaran 1 kini menghasilkan
+  skrip yang berjalan, dan M24 mati.
+- R4 tertutup sebagian. M1, M2, M3, M17 dan M18 kini mati, berkat uji
+  acuan semesteran yang mulai di semester kedua (Denton bulanan dan
+  triwulanan, linear), NA di kedua ujung, NA di tengah, dan stok linear.
+  Uji "Chow-Lin uses the indicator from the start of the reference" memakai
+  acuan tahunan yang mulai di periode 1. Di situ k·(st[2] − 1) + 1 =
+  3·0 + 1, jadi M5 tetap bertahan. Sisa ini saya turunkan menjadi nit R16.
+- R5 tertutup. `complete_meta()` membandingkan `meta$frequency` dengan
+  `from` catatan `cli_align()` (`rcli_error_frequency`, menyebut
+  keduanya). Data tanpa catatan (CSV GUI, `cci_as_reference()`) tidak
+  terpengaruh. M25 mati.
+- R6 tertutup. Kandidat semesteran/tahunan ditolak sebelum pemeriksaan
+  tipe (sesudah pemeriksaan frekuensi yang dinyatakan). M26 mati.
+- R7 tertutup. `interpolate_quarterly()` memanggil
+  `interpolate_reference(q, tp, 12, pos)`. Batas NA lama
+  (`min(at) − pos + 1`, `max(at) − pos + 3`) setara dengan rumus baru
+  `k·(i_min − 1) + 1` dan `k·i_max` untuk k = 3. Uji lama `test-align.R`
+  lulus, dan M30 mati. Hanya pesan galat `rcli_error_short_series` yang
+  menjadi umum.
+- R8 tertutup. Laporan uji tanpa peringatan.
+- R9 tertutup. Baris dipecah.
+- R10 tertutup. `period_position()` (1 sampai k) dipakai untuk acuan
+  semesteran/tahunan dengan `method = "linear"`; nilai di luar rentang →
+  `rcli_error_argument` yang menyebut nama dan k; `?cli_align` diperbarui.
+  M28 mati. Batas atas rentang belum diuji (R16).
+- R11 tertutup. Toleransi 1e-8.
+- R12 tertutup. `?cli_candidates` membedakan kolom `meta$frequency` dari
+  argumen `frequency`.
+- R13 tertutup. Uji jendela tanggal pada kedua tepi (175/190 dan 360/370
+  hari) dan di luarnya; M15 mati.
+- R14 tertutup. Vignette membatasi "kept exactly" pada Denton–Cholette dan
+  Chow–Lin, dan menyebut catatan kartu skor. Versi menjadi 0.3.0
+  (a95fda9) atas keputusan pemelihara, dengan alasan di NEWS.
+- Catatan di luar cakupan (benih/sumber langkah 1) tertutup. `rv$loaded`
+  disimpan saat `run1` dan dipakai `current_state()`; uji "the script uses
+  the data as loaded in step 1"; M29 mati.
+
+### Temuan baru
+- [ ] [R15][nit] tests/testthat/test-app-frequency.R ("R1") — Mutan M20
+  bertahan. M20 mengembalikan jalan balik lama: nama yang tidak ada di
+  tampilan terakhir maupun di `rv$meta_known` mewarisi isian posisi yang
+  sama. Uji R1 tidak memeriksa baris kandidat baru (`reference`). Perilaku
+  saat ini benar (baris itu mendapat bawaan; diperiksa di Chrome). Saran:
+  di uji R1, isi `typ_1`/`frq_1` untuk lead_6 lalu ganti acuan ke lead_6
+  atau lead_3, dan periksa bahwa baris `reference` tidak mendapat stock atau
+  weekly.
+- [ ] [R16][nit] tests/testthat/test-frequency.R ("R4: Chow-Lin …",
+  "R4/R10") — Tiga mutan bertahan; perilaku saat ini benar:
+  - M5: uji Chow–Lin memakai acuan tahunan yang mulai di periode 1, jadi
+    tidak membedakan k dari 3. Saran: acuan semesteran
+    `start = c(y, 2)` dengan indikator bulanan, lalu periksa `start(x)` =
+    `c(y, 7)` dan kendala.
+  - M2b: posisi bawaan stok di `period_position()` (dipakai `cli_align()`
+    untuk acuan rendah dan kandidat triwulanan) tidak diuji lewat
+    `cli_align()`. Saran: acuan tahunan stok dengan `method = "linear"`
+    tanpa `position`, lalu periksa nilai Desember.
+  - M27: hanya `position = 1` (sah) dan 13 (tidak sah dalam kedua kasus)
+    yang diuji. Saran: `position = c(gdp = 12)` untuk acuan tahunan harus
+    diterima.
+- [ ] [R17][nit] harness/STATE.md:45 — Baris kosong sebelum log 07:40
+  memutus tabel "Log putaran" (sama dengan R14 di review 0.2.1). Saran:
+  hapus baris kosong itu.
+
+### Ringkasan putaran 2
+R1–R14 tertutup. Ketiga major terbukti diperbaiki: R1 di testServer dan
+Chrome, R2 untuk lima kombinasi frekuensi, R3 dengan reproduksi putaran 1.
+R4 tertutup kecuali satu mutan, yang diturunkan menjadi nit. 7 dari 8
+mutan yang bertahan di putaran 1 kini mati (M1, M2, M3, M14, M15, M17,
+M18); M5 masih bertahan. Masalah benih/sumber di luar cakupan juga
+diperbaiki. Ada tiga nit baru (R15–R17); tidak ada blocker, major, atau
+minor yang terbuka.
+
 ## Putusan
 Putaran 1 — Inti numerik FR-007 benar dan sesuai F-04 baris demi baris.
 Hasilnya diverifikasi independen terhadap `tempdisagg`, terhadap solusi
@@ -310,6 +479,16 @@ Ada tiga major:
   sesudah komposit manual sebelumnya.
 
 Ada empat minor (R4 celah uji inti FR-007, R5–R7) dan tujuh nit. R1–R3 dan
-R4 sebaiknya ditutup sebelum rilis 0.2.2.
+R4 sebaiknya ditutup sebelum rilis 0.2.2. Putusan putaran 1:
+CHANGES-REQUESTED.
 
-Putusan: CHANGES-REQUESTED
+Putaran 2 — R1–R14 tertutup dan terverifikasi (R4 dengan sisa nit R16).
+Versi kini 0.3.0. Hanya nit R15–R17 yang terbuka. Jalankan ulang G6 agar
+gate report membaca putusan ini.
+
+Putusan: APPROVE
+
+## Tindak lanjut A5 sesudah putaran 2
+- [x] R15 (nit): uji R1 kini juga memeriksa bahwa kandidat yang baru muncul (`reference`) mendapat isian bawaan (tipe kosong, rasional contoh `early_stage`).
+- [x] R16 (nit): uji "R16" untuk Chow–Lin dengan acuan semesteran yang mulai di semester kedua (k = 6), posisi stok bawaan lewat `cli_align()`, dan `position = 12` untuk acuan tahunan.
+- [x] R17 (nit): baris kosong di tabel log STATE.md dihapus.
