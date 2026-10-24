@@ -1,4 +1,4 @@
-# FR-007 AC-7 (rcli 0.2.2): the source frequency of each candidate in step 2.
+# FR-007 AC-7 (rcli 0.3.0): the source frequency of each candidate in step 2.
 
 test_that("step 2 records the source frequency of each candidate", {
   skip_if_not_installed("shiny")

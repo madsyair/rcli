@@ -21,7 +21,7 @@ Log (2026-10-23, `devtools::test(filter = "ragged-edge|end-extension")`): 9 gala
 ### Bukti merah 0.2.1 (G4)
 Bukti merah: sebelum implementasi FR-004 (2026-10-23), `devtools::test(filter = "hp-solver")` gagal: AC-6 `Error: cannot allocate vector of size 74.5 Gb` (solve() padat untuk n = 10⁵) dan AC-3 dengan batas semula (galat sisa relatif 2e-10 > 1e-10, juga untuk solve() padat; batas direvisi ke galat mundur ternorma ≤ 10u sesuai teori, lihat 01 dan F-03).
 
-### Bukti merah 0.2.2 (G4)
+### Bukti merah 0.3.0 (G4)
 Bukti merah: sebelum implementasi FR-006 (2026-10-24), `devtools::test(filter = "app-reference")` gagal: judul tanpa versi (2 kegagalan), kunci teks `cci_ref` belum ada (galat), dan tombol `cci_ref` tidak berbuat apa-apa (6 kegagalan pada `rv$cand@reference`, `rv$done`, `rv$data`).
 
 Bukti merah FR-007 (2026-10-24): `devtools::test(filter = "frequency")` gagal 10 kali sebelum implementasi (`series_frequencies` tidak ada, `cli_align()` menolak `ts` tahunan, `denton_cholette()` tanpa argumen `to`, metadata tanpa kolom `frequency`); `test-app-frequency.R` gagal 3 kali (kunci teks `var_freq` dan isian `frq_i` belum ada).

@@ -1,9 +1,12 @@
-# rcli 0.2.2
+# rcli 0.3.0
+
+New exported functions and arguments (the source frequency of every series)
+and interface features, so the minor version changes; no default changes.
 
 ## Graphical interface
 
 * The title shows the package version and names both indices ("rcli
-  0.2.2: Composite Leading and Coincident Indicators"; in Indonesian
+  0.3.0: Composite Leading and Coincident Indicators"; in Indonesian
   "Indikator Komposit Pendahulu dan Sejalan").
 * Step 9 gains a button that makes the coincident index the reference
   series of a new analysis (`cci_as_reference()`): steps 1 and 2 are filled

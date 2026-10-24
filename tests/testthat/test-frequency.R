@@ -1,4 +1,4 @@
-# FR-007, F-04 (rcli 0.2.2): the source frequency of every series, annual
+# FR-007, F-04 (rcli 0.3.0): the source frequency of every series, annual
 # and semiannual reference series, and the Denton-Cholette disaggregation
 # with a general aggregation ratio. Reference: harness/02-math/F-04.md.
 
@@ -193,7 +193,7 @@ test_that("FR-007: the printed candidate set shows given source frequencies", {
   expect_true(any(grepl("lead_6.*weekly", out)))
 })
 
-# Review of 0.2.2 (harness/06-review.md, round 1)
+# Review of 0.3.0 (harness/06-review.md, round 1)
 
 test_that("R2: an annual or semiannual reference is flagged on the scorecard", {
   sim <- simulate_cycles(seed = 2026)

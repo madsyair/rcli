@@ -1,4 +1,4 @@
-# FR-006 (rcli 0.2.2): the title shows the version, and step 9 can make the
+# FR-006 (rcli 0.3.0): the title shows the version, and step 9 can make the
 # coincident index the reference series of a new analysis
 # (cci_as_reference()); the exported script reproduces the whole chain.
 
