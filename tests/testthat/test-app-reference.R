@@ -69,7 +69,8 @@ test_that("the coincident index becomes the reference of a new analysis", {
     session$setInputs(run2 = 2, run3 = 3, run4 = 3, run5 = 3, run6 = 3,
                       run7 = 3)
     script <- script()
-    expect_match(script, "cand <- cli_candidates(cand@data, reference = \"cci\"",
+    expect_match(script,
+                 "cand <- cli_candidates(cand@data, reference = \"cci\"",
                  fixed = TRUE)
     env <- new.env()
     utils::capture.output(eval(parse(text = script), envir = env))
@@ -80,5 +81,37 @@ test_that("the coincident index becomes the reference of a new analysis", {
     session$setInputs(run1 = 5)
     expect_null(rv$prelude)
     expect_equal(rv$done, 1L)
+  })
+})
+
+test_that("R3: a manual composite from before a reset does not leak", {
+  skip_if_not_installed("shiny")
+  shiny::testServer(rcli:::app_server("en"), {
+    session$userData$data <- function() rv$data
+    run_all_steps(session, mode = "manual")
+    expect_equal(rv$mode, "manual")
+    # step 3 again: steps 4 to 9 are redone, step 7 is skipped
+    session$setInputs(run3 = 2, run4 = 2, run5 = 2, run6 = 2)
+    expect_null(rv$mode)
+    expect_null(rv$components)
+    session$setInputs(cci_mode = "auto", run9 = 1, cci_ref = 1)
+    session$setInputs(reference = "cci")
+    session$setInputs(run3 = 3, run4 = 3, run5 = 3, run6 = 3,
+                      comp_mode = "auto", run7 = 3)
+    env <- new.env()
+    utils::capture.output(eval(parse(text = script()), envir = env))
+    expect_equal(as.numeric(composite(env$res)@index),
+                 as.numeric(rv$composite@index))
+  })
+})
+
+test_that("the script uses the data as loaded in step 1", {
+  skip_if_not_installed("shiny")
+  shiny::testServer(rcli:::app_server("en"), {
+    session$userData$data <- function() rv$data
+    run_all_steps(session)
+    session$setInputs(seed = 99)
+    expect_match(script(), "simulate_cycles(freq = 12, seed = 1)",
+                 fixed = TRUE)
   })
 })

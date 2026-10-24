@@ -42,6 +42,9 @@
 | 2026-10-23 23:00 | INC-04/05 | A0 | G1–G8 | LOLOS semua (cakupan 96,6%); CI PR #1 hijau | 2/3 | A6 putaran 2 |
 | 2026-10-24 05:50 | INC-04/05 | A6 | G6 | APPROVE putaran 2 (R1–R14 tertutup; nit R15–R17) | 2/3 | R16–R17 diperbaiki, merge PR #1 |
 
+| 2026-10-24 07:40 | INC-06/07 | A6 | G6 | CHANGES-REQUESTED (R1–R3 major, R4–R7 minor, R8–R14 nit) | 1/3 | A5 perbaiki |
+| 2026-10-24 08:20 | INC-06/07 | A5 | G4–G5 | R1–R14 ditindaklanjuti; uji merah dibuktikan pada kode 31c2d41 | 2/3 | A6 putaran 2 |
+
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
 - Di luar increment 0.2.1 (temuan A6): dengan `lag_shift = TRUE` (bawaan `oecd_spec()`), uji bias seleksi membandingkan komposit tergeser di dalam sampel dengan komposit tanpa geser sesudah titik potong, sehingga `lead_gap` (R/selection-bias.R) bias. Ada sejak 0.1.3; diusulkan sebagai isu terpisah.

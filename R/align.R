@@ -101,8 +101,10 @@ series_frequencies <- c(
 #'   reference series.
 #' @param indicator `ts` at the target frequency used by
 #'   `method = "chow-lin"`.
-#' @param position Named integers (1 to 3): month of the quarter at which a
-#'   quarterly candidate is placed before interpolation.
+#' @param position Named integers: subperiod at which a value is placed
+#'   before linear interpolation, 1 to 3 (month of the quarter) for a
+#'   quarterly candidate, 1 to k for a semiannual or annual reference with
+#'   `method = "linear"` (k = 6 or 12 months, 2 or 4 quarters).
 #' @param week_date Whether the dates of weekly data mark the first
 #'   (`"start"`) or the last (`"end"`) day of each week.
 #' @param min_coverage Smallest share of an edge period that daily or weekly
@@ -169,6 +171,9 @@ cli_align <- function(series, freq = 12, type = NULL, reference = NULL,
       rcli_abort(sprintf("Series '%s' is declared %s, but its data are %s.",
                          nm, declared[[nm]], s$from),
                  "rcli_error_frequency")
+    }
+    if (s$from %in% c("semiannual", "annual") && !identical(nm, reference)) {
+      abort_low_frequency(nm, s$from)
     }
     tp <- if (nm %in% names(type)) type[[nm]] else NA_character_
     if (s$from != freq_name(freq) && is.na(tp)) {
@@ -407,7 +412,9 @@ convert_one <- function(s, nm, tp, freq, is_ref, method, indicator,
       "denton-cholette" = denton_cholette(s$x, tp, freq),
       "chow-lin" = chow_lin(s$x, tp, indicator, freq),
       "linear" = if (low) {
-        interpolate_reference(s$x, tp, freq)
+        k <- as.integer(round(freq / stats::frequency(s$x)))
+        interpolate_reference(s$x, tp, freq,
+                              period_position(nm, tp, position, k))
       } else {
         interpolate_quarterly(s$x, tp, quarter_position(nm, tp, position))
       }
@@ -476,15 +483,22 @@ monthly_to_quarterly <- function(x, tp) {
 }
 
 quarter_position <- function(nm, tp, position) {
+  period_position(nm, tp, position, 3L)
+}
+
+# Subperiod (1 to k) at which a value of a lower-frequency series is placed
+# before linear interpolation: `position` when given, otherwise the middle
+# of the period (flows, averages) or its end (stocks).
+period_position <- function(nm, tp, position, k) {
   if (!is.null(position) && nm %in% names(position)) {
     p <- as.integer(position[[nm]])
-    if (!p %in% 1:3) {
-      rcli_abort("`position` values must be 1, 2 or 3.",
-                 "rcli_error_argument")
+    if (!p %in% seq_len(k)) {
+      rcli_abort(sprintf("`position` of '%s' must be between 1 and %d.",
+                         nm, k), "rcli_error_argument")
     }
     return(p)
   }
-  if (tp == "stock") 3L else 2L
+  if (tp == "stock") k else (k + 1) / 2
 }
 
 # Empty ts at frequency `to` covering whole periods of the lower-frequency
@@ -499,19 +513,20 @@ target_frame <- function(q, to) {
 # Monthly ts covering whole quarters of a quarterly ts `q`.
 monthly_frame <- function(q) target_frame(q, 12)
 
-# Linear interpolation of a semiannual or annual reference series: the
-# value per subperiod (a flow divided by k) sits in the middle of its period
-# (flows, averages) or at its end (stocks); harness/02-math/F-04.md.
-interpolate_reference <- function(q, tp, to) {
+# Linear interpolation of a lower-frequency series to frequency `to`: the
+# value per subperiod (a flow divided by k) sits at subperiod `pos` of its
+# period, by default the middle (flows, averages) or the end (stocks);
+# harness/02-math/F-04.md.
+interpolate_reference <- function(q, tp, to, pos = NULL) {
   frame <- target_frame(q, to)
   k <- as.integer(round(to / stats::frequency(q)))
   v <- as.numeric(q)
   if (tp == "flow") v <- v / k
-  pos <- if (tp == "stock") k else (k + 1) / 2
+  if (is.null(pos)) pos <- if (tp == "stock") k else (k + 1) / 2
   at <- k * (seq_along(v) - 1L) + pos
   ok <- !is.na(v)
   if (sum(ok) < 2L) {
-    rcli_abort("A reference series needs at least two observations.",
+    rcli_abort("A series to interpolate needs at least two observations.",
                "rcli_error_short_series")
   }
   y <- stats::approx(at[ok], v[ok], xout = seq_along(frame), rule = 2)$y
@@ -524,20 +539,7 @@ interpolate_reference <- function(q, tp, to) {
 # OECD: linear interpolation with the quarterly value placed at month `pos`
 # of its quarter (a flow is expressed per month first).
 interpolate_quarterly <- function(q, tp, pos) {
-  frame <- monthly_frame(q)
-  v <- as.numeric(q)
-  if (tp == "flow") v <- v / 3
-  at <- 3L * (seq_along(v) - 1L) + pos
-  ok <- !is.na(v)
-  if (sum(ok) < 2L) {
-    rcli_abort("A quarterly series needs at least two observations.",
-               "rcli_error_short_series")
-  }
-  y <- stats::approx(at[ok], v[ok], xout = seq_along(frame), rule = 2)$y
-  first <- min(at[ok]) - pos + 1L
-  last <- max(at[ok]) - pos + 3L
-  y[seq_along(y) < first | seq_along(y) > last] <- NA_real_
-  as_ts_like(y, frame)
+  interpolate_reference(q, tp, 12, pos)
 }
 
 # Aggregation matrix of the constraint: k subperiods per period

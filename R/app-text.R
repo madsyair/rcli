@@ -363,6 +363,12 @@ app_phrases_id <- c(
   "reference disaggregated from quarterly data" =
     "seri acuan hasil disagregasi data triwulanan",
   "turning points +/- 1 month" = "titik balik \u00b11 bulan",
+  "reference disaggregated from semiannual data" =
+    "seri acuan hasil disagregasi data semesteran",
+  "reference disaggregated from annual data" =
+    "seri acuan hasil disagregasi data tahunan",
+  "turning points +/- 3 months" = "titik balik \u00b13 bulan",
+  "turning points +/- 6 months" = "titik balik \u00b16 bulan",
   score = "skor", cutoff = "titik potong", median_lead_in = "lead dalam sampel",
   median_lead_out = "lead sesudahnya", pct_led_out = "didahului sesudahnya",
   n_tp_out = "titik balik sesudahnya", lead_gap = "selisih lead",

@@ -50,10 +50,11 @@ up to 3.5 months at individual cut-offs.
 
 The lead of the cross-correlation peak is also compared with the lead the
 OECD aims at (`target_lead`, 6 to 9 months); this row is information only.
-When the reference series of a [CliResult-class] was disaggregated from
-quarterly data by [cli_align()], a second information row and the note
-say that its turning-point dates, and so the lead, are uncertain by about
-one month.
+When the reference series of a [CliResult-class] was disaggregated by
+[cli_align()], a second information row and the note say that its
+turning-point dates, and so the lead, are uncertain by about half a source
+period: one month for quarterly data, 3 months for semiannual and 6 months
+for annual data.
 
 **Verdict**: `"good"` when all three groups pass; `"acceptable"` when the
 turning-point and prediction groups pass but no out-of-sample check was

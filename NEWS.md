@@ -13,8 +13,12 @@
   the first analysis, `cand <- cci_as_reference(cci)`, and the analysis
   against the index (with `cli_candidates(cand@data, ...)` when the
   metadata is edited again). Loading data in step 1 starts from scratch.
-* The candidate metadata of step 2 is kept by candidate name when the
-  list of candidates changes, instead of by position.
+* The entries of step 2 follow the candidate names when the list of
+  candidates changes (another reference series, or the coincident index
+  as reference), instead of their position.
+* The exported script uses the data source and seed as they were when
+  step 1 ran, and a manual composite from before a reset of the later
+  steps no longer leaks into it.
 * Step 2 gains a *Source frequency* column (daily to annual); the values
   enter the metadata and the exported script. A semiannual or annual
   candidate is refused with a message, and a refused step 2 clears its
@@ -40,6 +44,15 @@
   dates show another frequency is an error naming both.
 * The printed candidate set shows the source frequencies when any is
   known, as it does for the types.
+* A source frequency given in `meta` must agree with the one `cli_align()`
+  found; a semiannual or annual candidate is refused before its type is
+  asked for.
+* `position` also places the values of a semiannual or annual reference
+  for `method = "linear"` (1 to k subperiods).
+* `cli_quality()` notes a disaggregated reference of any source frequency:
+  its turning-point dates are uncertain by about one month (quarterly),
+  3 months (semiannual) or 6 months (annual). It used to note only the
+  quarterly case.
 
 # rcli 0.2.1
 

@@ -39,8 +39,10 @@ reference series.}
 \item{indicator}{`ts` at the target frequency used by
 `method = "chow-lin"`.}
 
-\item{position}{Named integers (1 to 3): month of the quarter at which a
-quarterly candidate is placed before interpolation.}
+\item{position}{Named integers: subperiod at which a value is placed
+before linear interpolation, 1 to 3 (month of the quarter) for a
+quarterly candidate, 1 to k for a semiannual or annual reference with
+`method = "linear"` (k = 6 or 12 months, 2 or 4 quarters).}
 
 \item{week_date}{Whether the dates of weekly data mark the first
 (`"start"`) or the last (`"end"`) day of each week.}

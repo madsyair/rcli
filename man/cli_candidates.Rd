@@ -28,7 +28,10 @@ together with `start` and `frequency`.}
 `names(series_types)`) and `frequency`, the source frequency (one of
 `names(series_frequencies)`; a candidate cannot be semiannual or
 annual). When `data` comes from [cli_align()], the types, source
-frequencies and conversion steps recorded there are kept as well.}
+frequencies and conversion steps recorded there are kept as well, and a
+source frequency in `meta` must agree with the recorded one. (The
+`frequency` column of `meta` is the source frequency of a candidate; the
+argument `frequency` below is the number of periods a year of `data`.)}
 
 \item{vintages}{Optional named list of earlier releases, each shaped like
 `data`, for real-time evaluation.}

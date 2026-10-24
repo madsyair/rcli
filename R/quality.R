@@ -33,10 +33,11 @@
 #'
 #' The lead of the cross-correlation peak is also compared with the lead the
 #' OECD aims at (`target_lead`, 6 to 9 months); this row is information only.
-#' When the reference series of a [CliResult-class] was disaggregated from
-#' quarterly data by [cli_align()], a second information row and the note
-#' say that its turning-point dates, and so the lead, are uncertain by about
-#' one month.
+#' When the reference series of a [CliResult-class] was disaggregated by
+#' [cli_align()], a second information row and the note say that its
+#' turning-point dates, and so the lead, are uncertain by about half a source
+#' period: one month for quarterly data, 3 months for semiannual and 6 months
+#' for annual data.
 #'
 #' **Verdict**: `"good"` when all three groups pass; `"acceptable"` when the
 #' turning-point and prediction groups pass but no out-of-sample check was
@@ -108,10 +109,12 @@ cli_quality <- function(x, spec = NULL) {
     failed <- unique(tab$group[tab$passed %in% FALSE])
     note <- sprintf("Criteria not met in: %s.", paste(failed, collapse = ", "))
   }
-  if (!is.null(ref_conv) && grepl("^quarterly to monthly", ref_conv$method)) {
-    note <- paste(note, "The reference was disaggregated from quarterly",
-                  "data: its turning-point dates and the lead are uncertain",
-                  "by about one month.")
+  dis <- disaggregation(ref_conv)
+  if (!is.null(dis)) {
+    note <- paste(note, sprintf(paste("The reference was disaggregated from",
+                                      "%s data: its turning-point dates and",
+                                      "the lead are uncertain by about %s."),
+                                dis$from, dis$about))
   }
   new("CliQuality", table = tab, verdict = verdict, note = note)
 }
@@ -224,13 +227,25 @@ quality_out_of_sample <- function(oos, spec, role = "leading") {
   )
 }
 
-# Information row when the reference was disaggregated to monthly.
+# Source frequency of a disaggregated reference series and the uncertainty
+# of its turning-point dates (about half a source period), or NULL.
+disaggregation <- function(conv) {
+  pattern <- "^(quarterly|semiannual|annual) to (monthly|quarterly)"
+  if (is.null(conv) || !grepl(pattern, conv$method)) return(NULL)
+  from <- sub(paste0(pattern, ".*"), "\\1", conv$method)
+  months <- c(quarterly = 1, semiannual = 3, annual = 6)[[from]]
+  list(from = from, months = months,
+       about = if (months == 1) "one month" else sprintf("%d months", months))
+}
+
+# Information row when the reference was disaggregated.
 quality_reference <- function(conv) {
-  if (is.null(conv) || !grepl("^quarterly to monthly", conv$method)) {
-    return(NULL)
-  }
-  q_row("information", "reference disaggregated from quarterly data",
-        1, "turning points +/- 1 month", NA)
+  dis <- disaggregation(conv)
+  if (is.null(dis)) return(NULL)
+  q_row("information",
+        sprintf("reference disaggregated from %s data", dis$from), 1,
+        sprintf("turning points +/- %d month%s", dis$months,
+                if (dis$months == 1) "" else "s"), NA)
 }
 
 quality_information <- function(row, spec, role = "leading") {

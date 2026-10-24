@@ -33,3 +33,22 @@ test_that("step 2 records the source frequency of each candidate", {
     expect_match(row, 'value="quarterly" selected', fixed = TRUE)
   })
 })
+
+test_that("R1: step-2 entries follow the candidate names, not positions", {
+  skip_if_not_installed("shiny")
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(source = "example_m", seed = 1, freq = "auto",
+                      start = "", run1 = 1)
+    session$setInputs(reference = "reference")
+    invisible(output$meta_ui)
+    # lead_6 is first and lead_3 second; with lead_3 as reference, lead_6
+    # becomes second, where lead_3's entries were
+    session$setInputs(typ_1 = "stock", typ_2 = "flow", frq_1 = "weekly")
+    session$setInputs(reference = "lead_3")
+    html <- as.character(output$meta_ui$html)
+    row <- regmatches(html, regexpr("lead_6.*?typ_[0-9]+.*?</select>", html))
+    expect_match(row, 'value="stock" selected', fixed = TRUE)
+    row <- regmatches(html, regexpr("lead_6.*?frq_[0-9]+.*?</select>", html))
+    expect_match(row, 'value="weekly" selected', fixed = TRUE)
+  })
+})

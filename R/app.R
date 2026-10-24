@@ -545,13 +545,14 @@ app_server <- function(language = "id") {
       assessment = NULL, cycles_used = NULL, composite = NULL,
       validation = NULL, audit = NULL, done = integer(0), meta = NULL,
       spec_call = NULL, mode = "auto", components = character(0),
-      cci = NULL, cci_mode = NULL, prelude = NULL, cand_rebuilt = FALSE
+      cci = NULL, cci_mode = NULL, prelude = NULL, cand_rebuilt = FALSE,
+      loaded = NULL, meta_known = NULL
     )
     fields <- list(`1` = "data", `2` = c("cand", "meta"),
                    `3` = c("spec", "spec_call"), `4` = "cycles", `5` = "tps",
                    `6` = c("assessment", "cycles_used"),
                    `7` = c("composite", "validation", "audit", "cci",
-                           "cci_mode"))
+                           "cci_mode", "mode", "components"))
     reset_from <- function(k) {
       for (s in names(fields)) {
         if (as.integer(s) >= k) for (f in fields[[s]]) rv[[f]] <- NULL
@@ -626,6 +627,15 @@ app_server <- function(language = "id") {
       })
       if (is.null(data)) return()
       rv$data <- data
+      # the script reproduces the data as loaded, not later edits of step 1
+      rv$loaded <- list(
+        source = input$source,
+        file_name = if (is.null(input$file)) "data.csv" else input$file$name,
+        start = if (input$source == "upload") parse_start(input$start) else
+          NULL,
+        seed = input$seed
+      )
+      rv$meta_known <- NULL
       rv$prelude <- NULL
       rv$cand_rebuilt <- FALSE
       finish(1L)
@@ -660,6 +670,7 @@ app_server <- function(language = "id") {
       need(1L)
       setdiff(colnames(rv$data), input$reference)
     })
+    shown_cands <- character(0)
     output$meta_ui <- shiny::renderUI({
       # depends only on the data and the reference, so that the choices the
       # user made are not reset when later steps run
@@ -673,26 +684,32 @@ app_server <- function(language = "id") {
                         stats::setNames(names(series_types),
                                         c(t("type_flow"), t("type_stock"),
                                           t("type_average"))))
-      # metadata already given is kept by candidate name (the order of the
-      # candidates changes with the reference); otherwise by position
-      known <- shiny::isolate(rv$meta)
+      # entries follow the candidate names, since the order of the
+      # candidates changes with the reference: first the entry shown for the
+      # same candidate in the last rendering, then the metadata of the last
+      # candidate set, then the default
+      known <- shiny::isolate(rv$meta_known)
+      shown <- shown_cands
       freq_keys <- names(series_frequencies)
       freq_choices <- c(stats::setNames("", t("none")),
                         stats::setNames(freq_keys,
                                         vapply(paste0("freq_", freq_keys), t,
                                                character(1))))
       keep <- function(id, default) {
-        i <- as.integer(sub("^[a-z]+_", "", id))
+        prefix <- sub("_[0-9]+$", "", id)
+        nm <- cands[as.integer(sub("^[a-z]+_", "", id))]
+        j <- match(nm, shown)
+        if (!is.na(j)) {
+          v <- shiny::isolate(input[[paste0(prefix, "_", j)]])
+          if (!is.null(v)) return(v)
+        }
         col <- c(rat = "rationale", typ = "type", src = "source",
-                 frq = "frequency")[[
-          sub("_[0-9]+$", "", id)]]
-        if (!is.null(known) && col %in% names(known) &&
-            cands[i] %in% known$name) {
-          v <- known[[col]][match(cands[i], known$name)]
+                 frq = "frequency")[[prefix]]
+        if (!is.null(known) && col %in% names(known) && nm %in% known$name) {
+          v <- known[[col]][match(nm, known$name)]
           return(if (is.na(v)) "" else v)
         }
-        v <- shiny::isolate(input[[id]])
-        if (is.null(v)) default else v
+        default
       }
       rows <- lapply(seq_along(cands), function(i) {
         shiny::fluidRow(
@@ -713,6 +730,7 @@ app_server <- function(language = "id") {
             placeholder = t("data_source")))
         )
       })
+      shown_cands <<- cands
       shiny::tagList(
         shiny::fluidRow(shiny::column(2, shiny::strong("")),
                         shiny::column(3, shiny::strong(t("rationale"))),
@@ -752,6 +770,7 @@ app_server <- function(language = "id") {
       }
       rv$cand <- cand
       rv$meta <- meta
+      rv$meta_known <- meta
       rv$cand_rebuilt <- !is.null(rv$prelude)
       finish(2L)
     })
@@ -1097,6 +1116,7 @@ app_server <- function(language = "id") {
       rv$data <- cand@data
       rv$cand <- cand
       rv$meta <- cand@meta
+      rv$meta_known <- cand@meta
       rv$prelude <- prelude
       rv$cand_rebuilt <- FALSE
       rv$done <- 1:2
@@ -1162,12 +1182,11 @@ app_server <- function(language = "id") {
     })
     current_state <- function() {
       list(
-        source = input$source,
-        file_name = if (is.null(input$file)) "data.csv" else input$file$name,
+        source = rv$loaded$source,
+        file_name = rv$loaded$file_name,
         frequency = stats::frequency(rv$data),
-        start = if (input$source == "upload") parse_start(input$start) else
-          NULL,
-        seed = input$seed, meta = rv$meta, reference = reference(),
+        start = rv$loaded$start,
+        seed = rv$loaded$seed, meta = rv$meta, reference = reference(),
         spec_call = rv$spec_call, mode = rv$mode,
         components = rv$components, lag_shift = isTRUE(rv$spec@lag_shift),
         cci_mode = rv$cci_mode,
