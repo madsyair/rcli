@@ -44,7 +44,8 @@ read_cli_data <- function(file, frequency = NULL, start = NULL, ...) {
   df <- df[!blank]
   num <- vapply(df, is.numeric, logical(1))
   if (!any(num)) {
-    rcli_abort("No numeric column found.", "rcli_error_argument")
+    rcli_abort(paste("No numeric column found; check the column separator",
+                     "and the decimal mark."), "rcli_error_argument")
   }
   if (!all(num)) {
     rcli_warn(sprintf(paste("Columns without numbers were dropped: %s.",
@@ -147,8 +148,9 @@ detect_decimal <- function(path, sep) {
   ), use.names = FALSE), error = function(e) character(0))
   cells <- gsub("^\\s+|\\s+$", "", cells, useBytes = TRUE)
   has <- function(pattern) grepl(pattern, cells, useBytes = TRUE)
-  # one mark and one group of three digits: thousands or decimals
-  either <- has("^-?[0-9]{1,3}[.,][0-9]{3}$")
+  # one mark and one group of three digits: thousands or decimals (a
+  # thousands group never follows a leading zero, so 0,125 is a decimal)
+  either <- has("^-?[1-9][0-9]{0,2}[.,][0-9]{3}$")
   comma <- (has("^-?([0-9]{1,3}(\\.[0-9]{3})+|[0-9]+),[0-9]+$") & !either) |
     has("^-?[0-9]{1,3}(\\.[0-9]{3}){2,}$")
   point <- (has("^-?([0-9]{1,3}(,[0-9]{3})+|[0-9]+)\\.[0-9]+$") & !either) |

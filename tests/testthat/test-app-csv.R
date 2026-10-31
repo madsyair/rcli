@@ -237,7 +237,8 @@ test_that("R1: without a date column decimal commas do not win the split", {
                      dec = ",", check.names = FALSE)
   expect_equal(as.numeric(x[, 1]), c(100.5, 101.2, 102.0))
   # N2: an irregular split is no candidate, however wide its header
-  g <- write_csv_lines(c("tanggal;PDB (ADHK, riil, miliar);kredit (Rp, triliun)",
+  g <- write_csv_lines(c(paste0("tanggal;PDB (ADHK, riil, miliar);",
+                                "kredit (Rp, triliun)"),
                          "2001Q1;100,5;20", "2001Q2;101;21"))
   expect_equal(rcli:::csv_format(g)$sep, ";")
   # N12: with no regular split the widest header wins
@@ -302,4 +303,34 @@ test_that("R13: the remaining mutants", {
            g)
   expect_equal(colnames(read_cli_data(g, fileEncoding = "UTF-8-BOM")),
                c("pdb", "kredit"))
+})
+
+# Review of 0.3.1, round 3 (harness/06-review.md)
+
+test_that("R14: three decimals with a leading zero are a decimal mark", {
+  f <- write_csv_lines(c("tanggal;suku_bunga;kurs", "2001Q1;0,125;0,950",
+                         "2001Q2;0,130;0,975", "2001Q3;0,128;0,990"))
+  expect_equal(rcli:::csv_format(f), list(sep = ";", dec = ","))
+  g <- write_csv_lines(c("tanggal\tsuku_bunga", "2001Q1\t0.125",
+                         "2001Q2\t0.130"))
+  expect_equal(rcli:::csv_format(g), list(sep = "\t", dec = "."))
+  # with no number left, the error points at the format
+  h <- write_csv_lines(c("tanggal;a", "2001Q1;x", "2001Q2;y"))
+  expect_error(read_cli_data(h, sep = ";"), class = "rcli_error_argument",
+               regexp = "decimal mark")
+})
+
+test_that("R15: the single decimal patterns and kept unnamed columns", {
+  # N5: thousands point with decimal comma, as the only evidence
+  f <- write_csv_lines(c("tanggal;pdb;kredit", "2001Q1;1.234,5;20",
+                         "2001Q2;1.240,2;21"))
+  expect_equal(rcli:::csv_format(f)$dec, ",")
+  # P2: thousands comma with decimal point, as the only evidence
+  g <- write_csv_lines(c("tanggal\tpdb\tkredit", "2001Q1\t1,234.5\t20",
+                         "2001Q2\t1,240.2\t21"))
+  expect_equal(rcli:::csv_format(g)$dec, ".")
+  # P7: an unnamed column with numbers is kept, not dropped
+  h <- write_csv_lines(c("tanggal,pdb,", "2001Q1,100,7", "2001Q2,101,8"))
+  x <- read_cli_data(h)
+  expect_equal(ncol(x), 2L)
 })

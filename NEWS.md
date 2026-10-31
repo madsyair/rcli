@@ -10,10 +10,12 @@
   commas inside column names do not mislead it), preferring tab, then
   semicolon, then comma, and the decimal mark that most unambiguous cells
   use. Whole numbers with a thousands separator (`1.012`, `12,345`) are no
-  evidence; when nothing else decides, such a column is dropped with a
-  warning instead of being read as 1.012. Files in Windows-1252 encoding
-  are read in UTF-8 sessions as well. A separator equal to the decimal mark is an
-  error. The upload also accepts `.txt` and `.tsv` files.
+  evidence (`0,125` is, since thousands never follow a leading zero); when
+  nothing else decides, such a column is dropped with a warning instead
+  of being read as 1.012. Files in Windows-1252 encoding are read in UTF-8
+  sessions as well. A separator equal to the decimal mark is an error, and
+  "No numeric column found" now points at the separator and decimal mark.
+  The upload also accepts `.txt` and `.tsv` files.
 * The exported script passes the format actually used to
   `read_cli_data()` (`sep`, `dec`) when it differs from the `read.csv()`
   defaults, and `check.names = FALSE` as the interface does, so column

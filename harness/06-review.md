@@ -2,14 +2,16 @@
 
 - Increment: rcli 0.3.1 (FR-008)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 2 (putaran 1 terhadap 4152863; putaran 2 terhadap 567153e)
+- Putaran: 3 (putaran 1 terhadap 4152863; putaran 2 terhadap 567153e;
+  putaran 3 terhadap f05097c)
 - Keadaan yang direview: putaran 1 pada cabang `rcli-0.3.1`, HEAD 4152863,
   terhadap basis 595dba8 (0.3.0 di main). Komit yang dibaca:
   - 4152863: pemisah kolom dan tanda desimal berkas CSV unggahan di GUI
     (FR-008), versi 0.3.1.
 
   Putaran 2 pada cabang yang sama, HEAD 567153e; lihat bagian "Review
-  putaran 2".
+  putaran 2". Putaran 3 pada HEAD f05097c; lihat bagian "Review
+  putaran 3" di akhir berkas.
 
   Semua uji, mutasi, dan `R CMD check` dijalankan pada salinan
   `git archive` di direktori sementara. Uji peramban memakai pustaka
@@ -123,7 +125,7 @@
   | M15 | baris kosong tidak dibuang | bertahan (R7) |
 
 ## Temuan
-- [ ] [R1][major] R/app.R:84-91 (`csv_format()`, pengenalan pemisah) dan
+- [x] [R1][major] R/app.R:84-91 (`csv_format()`, pengenalan pemisah) dan
   AC-FR-008.2 — Pemisah dipilih dari jumlah karakter di baris judul saja,
   tanpa memperhatikan kutip dan tanpa memeriksa baris data; bila seri,
   koma menang karena urutan `seps`. Judul berbahasa Indonesia dengan
@@ -409,7 +411,7 @@ Tindak lanjut A5 untuk catatan di luar increment: `Roxygen: list(markdown = TRUE
   (diperiksa di atas) dan nama berkas lewat `deparse_value()`.
 
 ### Temuan baru
-- [ ] [R11][major] R/app.R:134-146 (`detect_decimal()`) dan AC-FR-008.2 —
+- [x] [R11][major] R/app.R:134-146 (`detect_decimal()`) dan AC-FR-008.2 —
   Sel bilangan bulat berformat ribuan dihitung sebagai bukti tanda
   desimal. `1.012` cocok dengan pola titik dan `12,345` cocok dengan pola
   koma, padahal di berkas Excel keduanya biasanya angka ribuan (format
@@ -426,12 +428,12 @@ Tindak lanjut A5 untuk catatan di luar increment: `Roxygen: list(markdown = TRUE
   dua belas; pilih tanda desimal"), atau untuk titik koma pakai koma
   sehingga kolom itu dibuang dengan `rcli_warning_dropped`, bukan dibaca
   salah. Uji: kedua contoh di atas.
-- [ ] [R12][nit] R/app.R:43-50 (`rcli_warning_dropped`) — Excel kadang
+- [x] [R12][nit] R/app.R:43-50 (`rcli_warning_dropped`) — Excel kadang
   menulis `;` di akhir setiap baris. Kolom kosong tanpa nama itu memicu
   "Columns without numbers were dropped: ." yang membingungkan. Saran:
   buang kolom yang seluruhnya `NA` tanpa peringatan, atau tulis
   `(tanpa nama)`.
-- [ ] [R13][nit] tests/testthat/test-app-csv.R — Mutan yang bertahan:
+- [x] [R13][nit] tests/testthat/test-app-csv.R — Mutan yang bertahan:
   M7 (`csv_choice("point", "sep")` diterima), N2 (syarat teratur
   diabaikan), N3 (seri desimal), N4 (`useBytes`; berkas Windows-1252 dengan
   byte di kolom teks atau sel data), N5 (`1.234,5` sebagai bukti koma),
@@ -482,11 +484,136 @@ Putaran 2 — R2–R10 tertutup dan terverifikasi. Ada dua major terbuka:
 
 Keduanya menghasilkan data salah dari berkas Excel berbahasa Indonesia,
 sasaran FR-008, dan keduanya perlu uji. R12 dan R13 adalah nit.
-
-Putusan: CHANGES-REQUESTED
+Putusan putaran 2: CHANGES-REQUESTED.
 
 ## Tindak lanjut A5 sesudah putaran 2
 - [x] R1: di antara pemisah yang teratur, urutan pilihan tab, titik koma, lalu koma, tanpa melihat lebar; tanpa pemisah teratur, baris judul terlebar. Uji "R1: without a date column decimal commas do not win the split" (contoh putaran 2) beserta N2 dan N12; merah sebelum perbaikan.
 - [x] R11: sel `1.012`/`12,345` (satu tanda, satu kelompok tiga digit) tidak dihitung sebagai bukti; `1.234.567`/`1,234,567` dihitung sebagai pemisah ribuan; tanpa bukti lain, tanda di sel bergolongan dianggap pemisah ribuan sehingga kolom dibuang dengan peringatan. Uji "R11" (titik koma, tab, kelompok ganda, N5); merah sebelum perbaikan.
 - [x] R12: `read_cli_data()` membuang diam-diam kolom tanpa nama yang seluruhnya kosong. Uji "R12"; merah sebelum perbaikan.
 - [x] R13: uji "R13" untuk M7 (`csv_choice("point", "sep")` dan sebaliknya), N4 (bita Windows-1252 di sel data di bawah C.UTF-8), N11 (`fileEncoding` dari pengguna pada berkas ber-BOM); N2, N3, N5, N12 di uji R1 dan R11.
+
+## Review putaran 3
+- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang `rcli-0.3.1`, HEAD
+  f05097c. Komit yang dibaca sejak 567153e:
+  - d334514: laporan gerbang (tanpa perubahan kode);
+  - f05097c: perbaikan R1 (sisa) dan R11–R13, revisi AC-FR-008.2, NEWS.
+
+  Semua pemeriksaan dijalankan pada salinan `git archive` f05097c dengan
+  pustaka sementara. Kotak R1, R11, R12, dan R13 di atas saya centang
+  sesudah verifikasi di bawah.
+- Gerbang yang saya jalankan sendiri:
+  - `devtools::test()` lengkap dengan `NOT_CRAN=true`:
+    `[ FAIL 0 | WARN 0 | SKIP 1 | PASS 1719 ]` (yang dilewati hanya
+    `seasonal`; uji peramban ikut berjalan);
+  - `lintr::lint_package()`: 0 temuan; `roxygenise()`: `man/` dan
+    `NAMESPACE` sinkron;
+  - `R CMD build` + `R CMD check --as-cran --no-manual`: 0 galat,
+    0 peringatan, 3 NOTE dari lingkungan (sama dengan putaran 1 dan 2);
+    Rd cross-references OK;
+  - baris > 80 karakter: tests/testthat/test-app-csv.R:240 dan
+    NEWS.md:15 (81 karakter; R16).
+- Contoh gagal putaran 2 diulang (jalur GUI persis, lokal `C` dan
+  `LANG=C.UTF-8`):
+
+  | Kasus | Putaran 2 | Putaran 3 |
+  |---|---|---|
+  | Titik koma tanpa kolom tanggal, nama berkoma (`PDB (ADHK, miliar);Kredit (Rp, triliun)`) | `,` → 100, 101, 102 / 1, 9, 5 | `;`/`,`, 100,5 dan 20,1 benar |
+  | Titik koma, `987`, `1.012`, `1.045`, `998` saja | `.` → 1,012 tanpa pesan | `,` → kolom `wisman` dibuang dengan `rcli_warning_dropped` |
+  | Sama, ditambah kolom indeks `101,3` | — | `;`/`,`; `wisman` dibuang dengan peringatan, `ihk` benar |
+  | Tab, `12,345` saja | `,` → 12,345 tanpa pesan | `.` → kolom dibuang |
+  | Titik koma, `1.234.567` | — | `,`; kolom dibuang dengan peringatan (pemisah ribuan tidak dibaca `read.csv()`) |
+  | Titik koma, `;` di akhir setiap baris | peringatan "dropped: ." | kolom kosong dibuang diam-diam |
+  | Windows-1252 di judul dan di kolom teks, `LANG=C.UTF-8` | benar | benar (pemeriksaan kolom kosong tidak memecahkan R3) |
+  | Semua kasus putaran 1 dan 2 lainnya (nama berkoma/berkutip, baris pertama kosong/`NA`/basis 100, ribuan `1,100.5` dan `2.345,5`, BOM, CRLF/CR, satu baris, hanya judul, tanpa tanggal) | benar | sama |
+
+- Kasus baru:
+
+  | Kasus | Hasil | Akibat |
+  |---|---|---|
+  | Titik koma, tiga desimal tetap gaya Excel ID (`0,125`; `101,325`) | `;`/`.` | galat "No numeric column found" (R14) |
+  | Tab, tiga desimal tetap (`0.125`; `101.325`) | `"\t"`/`,` | galat yang sama (R14) |
+
+  Di putaran 2 kedua berkas ini terbaca benar. Hasilnya tidak salah diam,
+  dan pilihan eksplisit membacanya benar.
+- Reproduksi skrip ekspor (testServer langkah 1–7, `eval()` skrip):
+  delapan kasus putaran 2 (titik koma otomatis/eksplisit, tab berdesimal
+  koma/titik, koma, BOM, `PDB riil` pada titik koma dan koma): nama, data,
+  dan indeks skrip = GUI.
+- Mutasi (filter `app-csv`, baseline 72 lulus):
+
+  | Mutan | Uraian | Status |
+  |---|---|---|
+  | M7 | peta `csv_choice()` tanpa `kind` | **mati** (2) |
+  | N2 | syarat "jumlah kolom sama" diabaikan | **mati** (3) |
+  | N3 | seri desimal → koma | **mati** (1) |
+  | N4 | `trimws()`/`grepl()` tanpa `useBytes` | **mati** (1 galat) |
+  | N11 | pengaman `fileEncoding` dihapus | **mati** (1 galat) |
+  | P1 | sel `1.012`/`12,345` dihitung lagi sebagai bukti | mati (1) |
+  | P3 | tanpa aturan cadangan "tanda di sel bergolongan = ribuan" | mati (1) |
+  | P4 | kembali ke pembagian teratur terlebar | mati (2) |
+  | P5 | kolom kosong tanpa nama tidak dibuang | mati (1) |
+  | P6 | nama `X`/`X.1` tidak dikenali | mati (1) |
+  | P8 | sel ambigu tidak dikenali sama sekali | mati (2) |
+  | N5 | pola koma tanpa `1.234,5` | bertahan (R15) |
+  | P2 | `1.234.567` tidak dihitung sebagai bukti koma | bertahan (R15) |
+  | P7 | syarat "seluruhnya NA" dihapus dari pembuangan kolom | bertahan (R15) |
+  | N12 | cadangan `";"` bila semua pembagian satu kolom | bertahan; praktis setara (berkas satu kolom gagal dengan galat yang sama) |
+
+### Status temuan putaran 2
+- R1 tertutup. Di antara pembagian teratur dipilih tab, titik koma, lalu
+  koma tanpa melihat lebar; contoh tanpa kolom tanggal kini benar, dan
+  uji "R1: without a date column …" memuatnya. P4 dan N2 mati.
+- R11 tertutup. Sel dengan satu tanda dan satu kelompok tiga digit tidak
+  lagi menjadi bukti; tanpa bukti lain, tanda di sel itu dianggap pemisah
+  ribuan. Kedua contoh putaran 2 kini berakhir dengan kolom yang dibuang
+  disertai peringatan, bukan angka salah. P1, P3, dan P8 mati. Efek
+  sampingnya dicatat di R14.
+- R12 tertutup. Kolom tanpa nama (atau `X`, `X.1`) yang seluruhnya `NA`
+  dibuang tanpa peringatan; P5 dan P6 mati.
+- R13 tertutup. M7, N2, N3, N4, dan N11 kini mati. Sisa N5, P2, dan P7
+  dicatat di R15.
+
+### Temuan baru
+- [ ] [R14][minor] R/app.R:142-165 (`detect_decimal()`, aturan cadangan)
+  — Data dengan tiga angka desimal tetap dan bagian bulat ≤ 3 digit
+  (`0,125`, `101,325`; format Excel `0,000`) hanya berisi sel "ambigu".
+  Aturan cadangan lalu memperlakukan tanda itu sebagai pemisah ribuan, dan
+  semua kolom dibuang: "No numeric column found". Di putaran 2 berkas ini
+  terbaca benar, jadi ini regresi kecil dari perbaikan R11. Data tidak
+  terbaca salah, dan pilihan eksplisit membacanya benar. Namun pesan galat
+  tidak menyebut tanda desimal, karena `rcli_abort()` terjadi sebelum
+  peringatan kolom dibuang. Saran: (a) sel dengan bagian bulat `0` atau
+  `-0` (`0,125`, `0.125`) tidak mungkin ribuan, jadi hitung sebagai bukti
+  tegas; (b) tambahkan petunjuk "check the decimal mark" pada galat "No
+  numeric column found" bila ada kolom yang dibuang; (c) uji kedua berkas
+  di atas.
+- [ ] [R15][nit] tests/testthat/test-app-csv.R — Mutan N5 (`1.234,5`
+  sebagai bukti koma), P2 (`1.234.567` sebagai bukti koma), dan P7
+  (pembuangan kolom bernama `X` yang berisi data) bertahan. Saran: satu
+  harapan untuk masing-masing, mis. berkas titik koma yang hanya punya
+  `1.234,5` dan `12` sebagai bukti, dan `read_cli_data()` dengan kolom `X`
+  berisi angka yang harus tetap ada.
+- [ ] [R16][nit] tests/testthat/test-app-csv.R:240 dan NEWS.md:15 — 81
+  karakter; CLAUDE.md meminta ≤ 80 (lintr tidak menandai literal string,
+  dan NEWS tidak di-lint). Saran: pecah baris.
+
+### Ringkasan putaran 3
+Semua temuan blocker dan major sudah tertutup dan terverifikasi: R1–R4
+dan R11 dengan contoh asli, di lokal `C` dan UTF-8. R5–R10 dan R12–R13
+juga tertutup. Uji lengkap, lint, roxygen, dan check bersih, dan skrip
+ekspor mereproduksi GUI di delapan kasus. Tersisa satu minor (R14,
+regresi kecil yang terlihat, dengan jalan keluar lewat pilihan eksplisit)
+dan dua nit (R15, R16). R14 sebaiknya diperbaiki bila masih ada waktu
+sebelum rilis, tetapi tidak menghalangi.
+
+## Putusan putaran 3
+R1 dan R11, dua major yang terbuka sesudah putaran 2, tertutup. Tidak ada
+blocker atau major yang terbuka. Sisa temuan adalah R14 (minor), R15, dan
+R16 (nit). Jalankan ulang G6 agar gate report membaca putusan ini.
+
+Putusan: APPROVE
+
+## Tindak lanjut A5 sesudah putaran 3
+- [x] R14 (minor): sel dengan nol di depan (`0,125`, `0.125`) kini bukti tanda desimal yang tegas, karena kelompok ribuan tidak pernah didahului nol; galat "No numeric column found" menyebut pemisah kolom dan tanda desimal. Uji "R14"; merah sebelum perbaikan.
+- [x] R15 (nit): uji "R15" untuk N5 (`1.234,5` sebagai satu-satunya bukti), P2 (`1,234.5`), dan P7 (kolom tanpa nama berisi angka tetap dipakai).
+- [x] R16 (nit): kedua baris dipecah; tidak ada baris lebih dari 80 karakter.

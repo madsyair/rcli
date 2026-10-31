@@ -25,7 +25,7 @@
 | INC-05 | Indeks koinsiden (PR #1) ke 0.2.1 | FR-005 | — | selesai |
 | INC-06 | GUI: judul berversi, indeks sejalan sebagai acuan (0.3.0) | FR-006 | — | selesai (G1–G8) |
 | INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
-| INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | G4–G5 lolos |
+| INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | selesai (G1–G8) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -53,6 +53,8 @@
 | 2026-10-31 17:40 | INC-08 | A5 | G4–G8 | R1–R10 ditindaklanjuti; gerbang perintah lolos (cakupan 96,9%) | 2/3 | A6 putaran 2 |
 | 2026-10-31 18:10 | INC-08 | A6 | G6 | CHANGES-REQUESTED (R1 sebagian, R11 major, R12–R13 nit) | 2/3 | A5 perbaiki |
 | 2026-10-31 18:30 | INC-08 | A5 | G4–G5 | R1, R11–R13 ditindaklanjuti | 3/3 | A6 putaran 3 (anggaran terakhir) |
+| 2026-10-31 19:00 | INC-08 | A6 | G6 | APPROVE putaran 3 (R1, R11–R13 tertutup; R14 minor, R15–R16 nit) | 3/3 | A5 R14–R16, PR |
+| 2026-10-31 19:20 | INC-08 | A5 | G4–G5 | R14–R16 ditindaklanjuti | 3/3 | gerbang penuh, PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
