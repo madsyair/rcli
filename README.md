@@ -47,7 +47,8 @@ composite. The vignette explains, with simulations, where and why the
 defaults differ.
 
 Series of mixed frequencies (daily, weekly, monthly, quarterly) and types
-(flow, stock, average) are brought to one frequency with `cli_align()`, and
+(flow, stock, average), read from one file per indicator with
+`read_cli_series()`, are brought to one frequency with `cli_align()`, and
 moving holidays such as Idulfitri are removed during seasonal adjustment with
 `holiday_effect()`.
 
