@@ -41,3 +41,15 @@ Keputusan FR-007: frekuensi semesteran dan tahunan hanya untuk seri acuan (keput
 | FR-008 | Isian GUI `csv_sep`, `csv_dec`; fungsi internal `csv_format(path, sep, dec)` (pengenalan otomatis) dan `csv_choice()`; `data_lines()` (langkah 1 skrip ekspor, dengan `sep` dan `dec` bila bukan bawaan); `rv$loaded$sep`, `rv$loaded$dec` | `R/app.R`, `R/app-text.R` |
 
 Keputusan: `read_cli_data()` tidak diubah (argumen `...` sudah diteruskan ke `read.csv()`); pengenalan otomatis hanya di GUI agar perilaku fungsi untuk pengguna R tetap eksplisit.
+
+## Increment 0.4.0
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-009 | Fungsi ekspor `read_cli_series(files, sep, dec)`; internal `read_series_file()`, `series_dates()`; GUI sumber `upload_multi` dengan isian `files` (banyak) dan `target_freq`, `rv$series`, `rv$align`, `series_summary()`, `date_label()`, `plot_series_dated()`, `index_first()`; langkah 2 isian `ref_type`, frekuensi asal terisi dari deteksi, `run2` memanggil `cli_align()` lalu `cli_candidates()`; `multi_lines()` di skrip ekspor | `R/read-series.R`, `R/app.R`, `R/app-plots.R`, `R/app-text.R` |
+
+Keputusan FR-009:
+- Fungsi baca terpisah dari `read_cli_data()` karena keluarannya berbeda (daftar seri bertanggal, bukan `ts` lebar) dan langsung menjadi masukan `cli_align()`; tidak ada Imports baru.
+- Tanggal setiap berkas harus satu bentuk; bentuk dikenali dari nilai pertama, dan nilai pertama yang menyimpang disebut dalam pesan galat.
+- Sel kosong hanya membuang observasi seri itu, sehingga satu berkas boleh memuat seri dengan rentang berbeda.
+- Penyelarasan frekuensi dilakukan di langkah 2, bukan langkah 1, karena tipe variabel (aliran, stok, rata-rata) baru diisi di langkah 2. Langkah 1 menyimpan seri apa adanya (`rv$series`), `rv$data` kosong.
+- Perbaikan inti yang ikut: `complete_meta()` tidak lagi menimpa tipe dan frekuensi dari `cli_align()` dengan nilai kosong di `meta`.

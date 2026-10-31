@@ -130,5 +130,6 @@ Sax, C. and Steiner, P. (2013). Temporal disaggregation of time series.
 \emph{The R Journal}, 5(2), 80--87.
 }
 \seealso{
-\link{series_types}, \code{\link[=cli_candidates]{cli_candidates()}}
+\link{series_types}, \code{\link[=cli_candidates]{cli_candidates()}}, \code{\link[=read_cli_series]{read_cli_series()}} to read
+one file per indicator.
 }

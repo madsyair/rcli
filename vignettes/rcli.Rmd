@@ -198,6 +198,11 @@ When the reference series was disaggregated, the quality scorecard adds a
 line saying that its turning-point dates, and so the lead, are uncertain by
 about one month: the monthly path inside each quarter is an estimate.
 
+Data published as one file per indicator, at different frequencies, are
+read with `read_cli_series()`: each file has a date column (`2001-01-15`,
+`15/01/2001`, `2001-01`, `2001Q1`, `2001S1` or `2001`) and one or more value
+columns, and the result goes straight into `cli_align()`.
+
 The source frequency of every series (`series_frequencies`) is detected
 from its dates and recorded with the candidates (`cand_mf@meta$frequency`);
 `cli_align(frequency = )` checks a declared frequency against the data. A

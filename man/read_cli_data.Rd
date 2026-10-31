@@ -32,3 +32,7 @@ df <- data.frame(date = c("2001Q1", "2001Q2", "2001Q3"),
                  gdp = c(100, 101, 103), sales = c(50, 52, 51))
 read_cli_data(df)
 }
+\seealso{
+\code{\link[=read_cli_series]{read_cli_series()}} for one file per indicator, at different
+frequencies.
+}

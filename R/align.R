@@ -132,7 +132,8 @@ series_frequencies <- c(
 #'
 #' Sax, C. and Steiner, P. (2013). Temporal disaggregation of time series.
 #' *The R Journal*, 5(2), 80--87.
-#' @seealso [series_types], [cli_candidates()]
+#' @seealso [series_types], [cli_candidates()], [read_cli_series()] to read
+#'   one file per indicator.
 #' @examples
 #' sim <- simulate_cycles(seed = 1, n_years = 20)
 #' gdp_q <- aggregate(sim[, "reference"], nfrequency = 4, FUN = sum)
