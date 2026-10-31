@@ -1,4 +1,4 @@
-# Gate report — 2026-10-31T16:57:57
+# Gate report — 2026-10-31T17:46:12
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -7,9 +7,9 @@
 | G3 Desain | LOLOS | 0 |
 | G4 Uji-dulu | LOLOS | 0 |
 | G5 Build & uji | LOLOS | 0 |
-| G6 Review | GAGAL | 1 |
+| G6 Review | LOLOS | 0 |
 | G7 Dokumentasi | LOLOS | 0 |
-| G8 Rilis | GAGAL | 1 |
+| G8 Rilis | LOLOS | 0 |
 
 ## G1 Kebutuhan
 - [x] Ada kebutuhan FR/NFR — 11 ID
@@ -44,18 +44,18 @@
 - [x] Bukti merah tercatat — sebelum implementasi (2026-10-23): `devtools::test(filter = "ragged-edge|end-ext
 
 ## G5 Build & uji
-- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1701 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44707 -Dhttp.nonProxyHosts=localhost|127.
+- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1725 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44707 -Dhttp.nonProxyHosts=localhost|127.
 - [x] lint — exit 0: 
-- [x] coverage — exit 0: coverage 96.93928
+- [x] coverage — exit 0: coverage 96.97266
 
 ## G6 Review
 - [x] Tidak ada temuan blocker/major terbuka
-- [ ] Putusan APPROVE — CHANGES-REQUESTED
+- [x] Putusan APPROVE — APPROVE
 
 ## G7 Dokumentasi
 - [x] document — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli
 - [x] examples — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli | ℹ Loading rcli | ℹ Loading rcli
 
 ## G8 Rilis
-- [ ] Gerbang G1–G7 lolos — gagal: G6
+- [x] Gerbang G1–G7 lolos
 - [x] check-as-cran — exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli
