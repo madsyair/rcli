@@ -26,6 +26,7 @@
 | INC-06 | GUI: judul berversi, indeks sejalan sebagai acuan (0.3.0) | FR-006 | — | selesai (G1–G8) |
 | INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
 | INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | selesai (G1–G8) |
+| INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | berjalan |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -55,6 +56,9 @@
 | 2026-10-31 18:30 | INC-08 | A5 | G4–G5 | R1, R11–R13 ditindaklanjuti | 3/3 | A6 putaran 3 (anggaran terakhir) |
 | 2026-10-31 19:00 | INC-08 | A6 | G6 | APPROVE putaran 3 (R1, R11–R13 tertutup; R14 minor, R15–R16 nit) | 3/3 | A5 R14–R16, PR |
 | 2026-10-31 19:20 | INC-08 | A5 | G4–G5 | R14–R16 ditindaklanjuti | 3/3 | gerbang penuh, PR |
+| 2026-11-01 05:40 | INC-09 | A1, A4, A5 | G1, G4, G5 | merah 6 kegagalan → hijau; uji peramban tiga berkas | 1/3 | A6 |
+| 2026-11-01 06:30 | INC-09 | A6 | G6 | CHANGES-REQUESTED (R1 major, R2–R6 dan R10 minor, R7–R9 nit) | 1/3 | A5 perbaiki |
+| 2026-11-01 07:00 | INC-09 | A5 | G4–G5 | R1–R10 ditindaklanjuti; merah 9 kegagalan pada 0fd867f | 2/3 | A6 putaran 2 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

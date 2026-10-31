@@ -892,6 +892,19 @@ app_server <- function(language = "id") {
                                 value = if (monthly) 1 else 0.5)
       shiny::showNotification(t("loaded"), type = "message")
     })
+    # a new analysis frequency for files already read clears step 2 onwards
+    shiny::observeEvent(input$target_freq, {
+      f <- as.numeric(input$target_freq)
+      if (!multi() || identical(f, rv$loaded$frequency)) return()
+      loaded <- rv$loaded
+      loaded$frequency <- f
+      rv$loaded <- loaded
+      reset_from(2L)
+      shiny::updateNumericInput(session, "min_lead",
+                                value = if (f == 12) 3 else 1)
+      shiny::updateNumericInput(session, "min_median_lead",
+                                value = if (f == 12) 1 else 0.5)
+    }, ignoreInit = TRUE)
     shiny::observeEvent(input$reference, {
       if (!is.null(rv$cand) && !identical(input$reference, reference())) {
         reset_from(2L)
@@ -919,6 +932,7 @@ app_server <- function(language = "id") {
       setdiff(series_names(), input$reference)
     })
     shown_cands <- character(0)
+    ref_type_for <- NULL
     output$meta_ui <- shiny::renderUI({
       # depends only on the data and the reference, so that the choices the
       # user made are not reset when later steps run
@@ -960,10 +974,17 @@ app_server <- function(language = "id") {
         }
         default
       }
-      # the frequency of a series read from a file is the detected one
-      frq_selected <- function(i) {
-        if (multi()) return(attr(rv$series[[cands[i]]], "frequency"))
-        keep(paste0("frq_", i), "")
+      # the frequency of a series read from a file is the detected one, so
+      # it is shown, not chosen
+      frq_cell <- function(i) {
+        if (multi()) {
+          from <- attr(rv$series[[cands[i]]], "frequency")
+          return(shiny::tags$p(t(paste0("freq_", from)),
+                               id = paste0("frq_text_", i),
+                               style = "margin-top: 8px;"))
+        }
+        shiny::selectInput(paste0("frq_", i), NULL, freq_choices,
+                           selected = keep(paste0("frq_", i), ""))
       }
       rows <- lapply(seq_along(cands), function(i) {
         shiny::fluidRow(
@@ -976,9 +997,7 @@ app_server <- function(language = "id") {
           shiny::column(2, shiny::selectInput(
             paste0("typ_", i), NULL, type_choices,
             selected = keep(paste0("typ_", i), ""))),
-          shiny::column(2, shiny::selectInput(
-            paste0("frq_", i), NULL, freq_choices,
-            selected = frq_selected(i))),
+          shiny::column(2, frq_cell(i)),
           shiny::column(3, shiny::textInput(
             paste0("src_", i), NULL, keep(paste0("src_", i), ""),
             placeholder = t("data_source")))
@@ -986,7 +1005,11 @@ app_server <- function(language = "id") {
       })
       shown_cands <<- cands
       ref_row <- if (multi() && input$reference %in% names(rv$series)) {
-        old <- shiny::isolate(input$ref_type)
+        # the type belongs to one reference series
+        old <- if (identical(ref_type_for, input$reference)) {
+          shiny::isolate(input$ref_type)
+        }
+        ref_type_for <<- input$reference
         from <- attr(rv$series[[input$reference]], "frequency")
         shiny::fluidRow(shiny::column(6, shiny::selectInput(
           "ref_type",
@@ -1022,6 +1045,7 @@ app_server <- function(language = "id") {
           if (is.null(v) || !nzchar(v)) NA_character_ else v
         }, character(1)),
         frequency = vapply(seq_along(cands), function(i) {
+          if (multi()) return(attr(rv$series[[cands[i]]], "frequency"))
           v <- input[[paste0("frq_", i)]]
           if (is.null(v) || !nzchar(v)) NA_character_ else v
         }, character(1)),

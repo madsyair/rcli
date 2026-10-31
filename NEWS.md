@@ -11,7 +11,11 @@
   per file, as in the interface since 0.3.1. Each series is a data frame
   with `date` and `value`, carries its recognised source frequency, and
   goes straight into `cli_align()`. A date that does not fit is reported
-  with its file name and value (`rcli_error_dates`).
+  with its file name and value (`rcli_error_dates`); two series with the
+  same name, a value column without a name and a series with fewer than
+  two observations are refused, naming the file. Cells such as `-`, `..`
+  or `#N/A` (argument `na`) count as missing values, and Excel date-times
+  at midnight are read as dates.
 * `cli_candidates()`: an empty `type` or `frequency` in `meta` no longer
   overwrites what `cli_align()` recorded for that candidate.
 
@@ -23,10 +27,13 @@
   The summary lists each series with its file, source frequency, start,
   end and number of observations; the overview plot puts all series on one
   time axis. Inputs that do not apply to the chosen source are hidden.
-* Step 2 then asks for the variable type of the reference series as well,
-  fills in the source frequencies that were recognised, and aligns all
+* Step 2 then asks for the variable type of the reference series as well
+  (cleared when another reference is chosen), shows the source frequencies
+  that were recognised, and aligns all
   series with `cli_align()` before building the candidate set. A series
   that must be converted but has no type stops step 2 with a message.
+  Changing the analysis frequency after the files were read clears step 2
+  and the later steps.
 * The exported script reads the files with `read_cli_series()` and aligns
   them with the same `cli_align()` call, so it reproduces the analysis,
   also when the coincident index later becomes the reference.

@@ -25,9 +25,10 @@ test_that("AC-FR-009.5/6/7: several files run through the ten steps", {
     # step 2: the reference type and the detected frequencies
     html <- as.character(output$meta_ui$html)
     expect_match(html, "ref_type", fixed = TRUE)
-    row <- regmatches(html, regexpr("counter.*?frq_[0-9]+.*?</select>",
-                                    html))
-    expect_match(row, 'value="quarterly" selected', fixed = TRUE)
+    # R5: the detected frequency is shown, not chosen
+    row <- regmatches(html, regexpr("counter.*?frq_text_[0-9]+[^<]*<", html))
+    expect_match(row, ">Quarterly<", fixed = TRUE)
+    expect_false(grepl('id="frq_1"', html, fixed = TRUE))
     session$setInputs(rat_1 = "early_stage", rat_2 = "early_stage",
                       rat_3 = "rapid_response", rat_4 = "rapid_response",
                       rat_5 = "expectations")
@@ -114,6 +115,32 @@ test_that("AC-FR-009.5: quarterly analysis and bad files", {
     expect_equal(rv$cand@meta$frequency[1], "monthly")
     script <- rcli:::app_script(current_state())
     expect_match(script, "cli_align(series, freq = 4", fixed = TRUE)
+    # R10: the quarterly script reproduces the candidate set
+    session$setInputs(method = "rcli", filter = "hp_double",
+                      aggregator = "equal", extend = TRUE,
+                      transform = "auto", seasonal = FALSE, outlier = 5,
+                      min_lead = 1, min_median_lead = 0.5,
+                      min_consistency = 0.5, max_missed = 0.4,
+                      max_extra = 0.4, alpha = 0.05, min_auc = 0.7,
+                      min_components = 2, max_iter = 10, oos_cutoffs = "",
+                      run3 = 1, run4 = 1)
+    session$setInputs(tp_series = "pdb", as_series = "lead_6", run5 = 1)
+    session$setInputs(run6 = 1)
+    session$setInputs(comp_mode = "auto", run7 = 1)
+    old <- setwd(dirname(files$datapath[1]))
+    on.exit(setwd(old), add = TRUE)
+    env <- new.env()
+    utils::capture.output(eval(parse(text = script()), envir = env))
+    expect_equal(env$cand@data, rv$cand@data)
+    expect_equal(as.numeric(composite(env$res)@index),
+                 as.numeric(rv$composite@index))
+    setwd(old)
+    # R4: another analysis frequency clears step 2 and later steps
+    session$setInputs(target_freq = "12")
+    expect_equal(rv$done, 1L)
+    expect_equal(rv$loaded$frequency, 12)
+    session$setInputs(ref_type = "average", typ_5 = "flow", run2 = 2)
+    expect_equal(stats::frequency(rv$cand@data), 12)
     # a file with bad dates changes nothing
     bad <- tempfile(fileext = ".csv")
     writeLines(c("date,value", "kemarin,1", "hari ini,2"), bad)
@@ -123,5 +150,36 @@ test_that("AC-FR-009.5: quarterly analysis and bad files", {
     expect_equal(rv$done, 1:2)
     expect_named(rv$series, c("pdb", "lead_6", "lead_3", "coincident",
                               "lag_3", "counter"))
+  })
+})
+
+test_that("R3/R10: the reference type and the file format in the script", {
+  skip_if_not_installed("shiny")
+  files <- multi_files()
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(source = "upload_multi", csv_sep = "auto",
+                      csv_dec = "auto", target_freq = "12", files = files,
+                      run1 = 1)
+    session$setInputs(reference = "pdb")
+    html <- as.character(output$meta_ui$html)
+    session$setInputs(ref_type = "average")
+    session$setInputs(reference = "lead_6")
+    session$setInputs(reference = "counter")
+    # the type chosen for pdb is not offered for counter
+    html <- as.character(output$meta_ui$html)
+    sel <- regmatches(html, regexpr('id="ref_type".*?</select>', html))
+    expect_match(sel, 'value="" selected', fixed = TRUE)
+    expect_match(html, "counter (Quarterly)", fixed = TRUE)
+    # explicit separator and decimal mark reach the script
+    session$setInputs(csv_sep = "semicolon", csv_dec = "comma",
+                      files = files[2, ], run1 = 2)
+    lines <- rcli:::data_lines(current_state())
+    expect_match(lines[2], paste0('read_cli_series("indikator.csv", ',
+                                  'sep = ";", dec = ",")'), fixed = TRUE)
+    old <- setwd(dirname(files$datapath[1]))
+    on.exit(setwd(old), add = TRUE)
+    env <- new.env()
+    eval(parse(text = lines[1:2]), envir = env)
+    expect_equal(env$series, rv$series)
   })
 })

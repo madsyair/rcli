@@ -166,3 +166,52 @@ test_that("AC-FR-009.6: an empty metadata entry keeps the alignment record", {
   expect_equal(cand@meta$type, c("flow", NA))
   expect_equal(cand@meta$frequency, c("monthly", "monthly"))
 })
+
+test_that("R1/R2: names within one file", {
+  f <- write_lines_as(c("date,value,gdp_sa", "2001Q1,1,10", "2001Q2,2,20"),
+                      "gdp_sa.csv")
+  err <- expect_error(read_cli_series(f), class = "rcli_error_argument")
+  expect_match(conditionMessage(err), "gdp_sa", fixed = TRUE)
+  f <- write_lines_as(c("date,a,a", "2001Q1,1,10", "2001Q2,2,20"), "dup.csv")
+  expect_error(read_cli_series(f), class = "rcli_error_argument")
+  f <- write_lines_as(c("date,a,", "2001Q1,1,10", "2001Q2,2,20"), "kosong.csv")
+  err <- expect_error(read_cli_series(f), class = "rcli_error_argument")
+  expect_match(conditionMessage(err), "kosong.csv", fixed = TRUE)
+  # an empty column left by a trailing separator is still ignored
+  f <- write_lines_as(c("date,a,", "2001Q1,1,", "2001Q2,2,"), "akhir.csv")
+  expect_named(read_cli_series(f), "a")
+})
+
+test_that("R6-R9: missing marks, order, short series and date forms", {
+  f <- write_lines_as(c("date,a,b", "2001Q1,-,1", "2001Q2,2,..",
+                        "2001Q3,3,#N/A", "2001Q4,4,4", "2002Q1,5,5"),
+                      "tanda.csv")
+  out <- read_cli_series(f)
+  expect_equal(out$a$value, 2:5)
+  expect_equal(out$b$value, c(1, 4, 5))
+  # a file written newest first is sorted
+  f <- write_lines_as(c("date,value", "2001-03,3", "2001-02,2", "2001-01,1"),
+                      "terbalik.csv")
+  s <- read_cli_series(f)[[1]]
+  expect_equal(s$value, 1:3)
+  expect_false(is.unsorted(s$date))
+  # one observation, or no dates at all, names the file
+  f <- write_lines_as(c("date,value", "2001Q1,1"), "satu.csv")
+  err <- expect_error(read_cli_series(f), class = "rcli_error_argument")
+  expect_match(conditionMessage(err), "satu.csv", fixed = TRUE)
+  f <- write_lines_as(c("date,value", ",1", ",2"), "tanpa.csv")
+  err <- expect_error(read_cli_series(f), class = "rcli_error_dates")
+  expect_match(conditionMessage(err), "tanpa.csv", fixed = TRUE)
+  # Excel date-times at midnight, and the documented separators
+  for (d in list(c("2001-01-15 00:00:00", "2001-01-22 00:00:00"),
+                 c("2001/01/15", "2001/01/22"),
+                 c("15-01-2001", "22-01-2001"),
+                 c("15.01.2001", "22.01.2001"))) {
+    f <- write_lines_as(c("date;value", paste0(d, ";", 1:2)), "waktu.csv")
+    expect_equal(read_cli_series(f)[[1]]$date,
+                 as.Date(c("2001-01-15", "2001-01-22")), info = d[1])
+  }
+  f <- write_lines_as(c("date,value", "2001-01-15 08:30,1",
+                        "2001-01-16 08:30,2"), "jam.csv")
+  expect_error(read_cli_series(f), class = "rcli_error_dates")
+})

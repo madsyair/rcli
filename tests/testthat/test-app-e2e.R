@@ -245,8 +245,8 @@ test_that("several files at different frequencies run in the browser", {
   expect_plot(app, "overview")
   shot(app, "upload-multi-step1")
   go_to(app, 2L)
-  expect_equal(app$get_value(input = "frq_5"), "quarterly")
-  expect_equal(app$get_value(input = "frq_1"), "monthly")
+  expect_match(app$get_html("#frq_text_5"), "Triwulanan")
+  expect_match(app$get_html("#frq_text_1"), "Bulanan")
   inputs <- stats::setNames(as.list(rep("early_stage", 5)),
                             paste0("rat_", 1:5))
   do.call(app$set_inputs, c(inputs, wait_ = FALSE))

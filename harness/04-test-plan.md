@@ -34,3 +34,4 @@ Bukti merah: sebelum implementasi FR-008 (2026-10-31), `devtools::test(filter = 
 
 ### Bukti merah 0.4.0 (G4)
 Bukti merah: sebelum implementasi FR-009 (2026-11-01), `test-read-series.R` gagal 4 kali (`read_cli_series()` belum ada) dan `test-app-multi.R` gagal 2 kali (kunci teks `src_upload_multi` dan isian `files` belum ada; langkah 2 tidak selesai). Uji "metadata kosong tidak menimpa penyelarasan" ditambahkan sesudah uji GUI menemukan cacat itu di `complete_meta()`; uji itu gagal pada kode 0.3.1.
+Bukti merah sesudah review putaran 1 (R1–R10): uji baru gagal 9 kali pada kode 0fd867f dan lolos sesudah perbaikan.

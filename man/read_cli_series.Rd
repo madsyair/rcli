@@ -4,7 +4,12 @@
 \alias{read_cli_series}
 \title{Read indicators from several CSV files, one or more per file}
 \usage{
-read_cli_series(files, sep = "auto", dec = "auto")
+read_cli_series(
+  files,
+  sep = "auto",
+  dec = "auto",
+  na = c("NA", "-", "..", "...", "#N/A")
+)
 }
 \arguments{
 \item{files}{Paths of the CSV files. Names, if given, replace the file
@@ -14,11 +19,17 @@ names of uploaded files).}
 \item{sep}{Column separator: \code{"auto"}, \code{","}, \code{";"} or \code{"\\t"}.}
 
 \item{dec}{Decimal mark: \code{"auto"}, \code{"."} or \code{","}.}
+
+\item{na}{Cell contents read as missing values. The defaults include the
+marks often used in published tables (\code{-}, \code{..}, \code{...}, \verb{#N/A}).}
 }
 \value{
 A named list of data frames with columns \code{date} (\code{Date}) and
 \code{value}, ready for \code{\link[=cli_align]{cli_align()}}. Each carries the attributes
-\code{frequency} (the recognised source frequency) and \code{file}.
+\code{frequency} (the recognised source frequency) and \code{file}. Errors have
+the classes \code{rcli_error_argument} (missing file, no value column, a
+series name twice, a value column without a name, too few
+observations) and \code{rcli_error_dates} (a date that is not understood).
 }
 \description{
 Reads files that each hold a date column followed by one or more value
@@ -32,8 +43,8 @@ mark are recognised in every file separately, unless they are given.
 The first column must hold dates in one of these forms, the same in the
 whole file:\tabular{lll}{
    Form \tab Example \tab Date used \cr
-   year-month-day \tab \code{2001-01-15} \tab that day \cr
-   day/month/year \tab \code{15/01/2001} \tab that day \cr
+   year-month-day \tab \code{2001-01-15} or \code{2001/01/15} \tab that day \cr
+   day-month-year \tab \code{15/01/2001}, \code{15-01-2001} or \verb{15.01.2001} \tab that day \cr
    year-month \tab \code{2001-01} \tab the first day of the month \cr
    year and quarter \tab \verb{2001Q1} \tab the first day of the quarter \cr
    year and half \tab \verb{2001S1} \tab the first day of the half-year \cr
@@ -41,10 +52,15 @@ whole file:\tabular{lll}{
 }
 
 
+Day-month-year dates are read day first, so \code{02/01/2001} is 2 January,
+not 1 February. A time of midnight after a date (\verb{2001-01-15 00:00:00},
+as Excel writes dates) is ignored.
+
 The source frequency (daily, weekly, monthly, quarterly, semiannual or
-annual) is then recognised from the spacing of the dates. Empty cells
-are dropped from that series only, so the series of one file may cover
-different periods.
+annual) is then recognised from the spacing of the dates. Empty cells,
+and the cells in \code{na}, are dropped from that series only, so the series
+of one file may cover different periods. Each series needs at least two
+observations.
 }
 \examples{
 dir <- tempfile()
