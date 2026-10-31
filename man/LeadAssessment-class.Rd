@@ -21,5 +21,5 @@ turning points.}
 }}
 
 \seealso{
-[cli_assess()]
+\code{\link[=cli_assess]{cli_assess()}}
 }

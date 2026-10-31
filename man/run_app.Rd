@@ -10,28 +10,28 @@ run_app(language = c("id", "en"), ...)
 rcli_app(language = c("id", "en"))
 }
 \arguments{
-\item{language}{Interface language: `"id"` (Indonesian) or `"en"`.}
+\item{language}{Interface language: \code{"id"} (Indonesian) or \code{"en"}.}
 
-\item{...}{Passed to [shiny::runApp()], e.g. `launch.browser`.}
+\item{...}{Passed to \code{\link[shiny:runApp]{shiny::runApp()}}, e.g. \code{launch.browser}.}
 }
 \value{
-`run_app()` is called for its side effect and returns the value of
-  [shiny::runApp()]; `rcli_app()` returns a `shiny.appobj`.
+\code{run_app()} is called for its side effect and returns the value of
+\code{\link[shiny:runApp]{shiny::runApp()}}; \code{rcli_app()} returns a \code{shiny.appobj}.
 }
 \description{
-`run_app()` opens a Shiny application that walks through the workflow in
+\code{run_app()} opens a Shiny application that walks through the workflow in
 ten steps: data, candidate metadata, specification, cycles, turning
 points, classification, composite, validation with the quality scorecard,
-coincident index ([cci_build()]), and export (results, a `CliResult`
+coincident index (\code{\link[=cci_build]{cci_build()}}), and export (results, a \code{CliResult}
 object and an R script that reproduces the analysis). Each step unlocks
 the next one; re-running a step clears the results that depend on it. The
 coincident index needs only the classification, so it can be built before
 or after the composite leading indicator.
 }
 \details{
-`rcli_app()` returns the application object without running it, for
+\code{rcli_app()} returns the application object without running it, for
 deployment on Shiny Server or Posit Connect (see
-`system.file("app", package = "rcli")`) and for automated tests.
+\code{system.file("app", package = "rcli")}) and for automated tests.
 }
 \examples{
 if (interactive()) {

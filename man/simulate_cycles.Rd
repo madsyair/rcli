@@ -22,10 +22,10 @@ simulate_cycles(
 \item{freq}{12 (monthly) or 4 (quarterly).}
 
 \item{leads}{Named vector of leads in periods (negative values lag).
-`NULL` gives leads of 6, 3, 0 and -3 months, or 2, 1, 0 and -1 quarters.}
+\code{NULL} gives leads of 6, 3, 0 and -3 months, or 2, 1, 0 and -1 quarters.}
 
 \item{counter}{Named vector of leads of counter-cyclical candidates;
-`NULL` gives 4 months or 1 quarter.}
+\code{NULL} gives 4 months or 1 quarter.}
 
 \item{n_noise}{Number of candidates without cyclical signal.}
 
@@ -34,23 +34,23 @@ the cycle.}
 
 \item{period}{Average cycle length in years.}
 
-\item{start}{Start of the sample (passed to [stats::ts()]).}
+\item{start}{Start of the sample (passed to \code{\link[stats:ts]{stats::ts()}}).}
 
 \item{seed}{Optional seed; when given, the random number generator state
 of the session is restored on exit.}
 }
 \value{
-A multivariate `ts` whose first column is `reference`; attribute
-  `truth` is a data frame with columns `name`, `lead`, `class` and
-  `inverted`.
+A multivariate \code{ts} whose first column is \code{reference}; attribute
+\code{truth} is a data frame with columns \code{name}, \code{lead}, \code{class} and
+\code{inverted}.
 }
 \description{
 Generates a common cycle from a stationary AR(2) process with complex
-roots (period `period` years) and builds positive series around a growth
+roots (period \code{period} years) and builds positive series around a growth
 trend: a reference series, candidates that are the common cycle shifted by
 known leads, counter-cyclical candidates (inverted and shifted), and pure
 noise candidates. Every series carries its own AR(1) idiosyncratic noise.
-The truth is returned in the `truth` attribute and is used by the
+The truth is returned in the \code{truth} attribute and is used by the
 simulation harness of the package tests.
 }
 \examples{

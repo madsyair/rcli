@@ -7,29 +7,29 @@
 cli_build(candidates, spec = NULL)
 }
 \arguments{
-\item{candidates}{A [CandidateSet-class].}
+\item{candidates}{A \linkS4class{CandidateSet}.}
 
-\item{spec}{A [CliSpec-class]; by default [cli_spec()] at the frequency of
+\item{spec}{A \linkS4class{CliSpec}; by default \code{\link[=cli_spec]{cli_spec()}} at the frequency of
 the data.}
 }
 \value{
-A [CliResult-class].
+A \linkS4class{CliResult}.
 }
 \description{
-Runs the whole workflow: cycle extraction ([cli_cycles()]), turning-point
-dating ([cli_turning_points()]), classification ([cli_assess()]),
-aggregation of the leading candidates ([cli_composite()]) and validation
-([cli_validate()]). When the composite fails the leading criteria, the
+Runs the whole workflow: cycle extraction (\code{\link[=cli_cycles]{cli_cycles()}}), turning-point
+dating (\code{\link[=cli_turning_points]{cli_turning_points()}}), classification (\code{\link[=cli_assess]{cli_assess()}}),
+aggregation of the leading candidates (\code{\link[=cli_composite]{cli_composite()}}) and validation
+(\code{\link[=cli_validate]{cli_validate()}}). When the composite fails the leading criteria, the
 selection loop removes, one at a time, the component whose removal gives
 the best composite (backward elimination) and tests again. The loop stops
-when the composite passes, when `spec@min_components` components remain or
-after `spec@max_iter` iterations. Every iteration is written to the audit
-log ([audit_log()]).
+when the composite passes, when \code{spec@min_components} components remain or
+after \code{spec@max_iter} iterations. Every iteration is written to the audit
+log (\code{\link[=audit_log]{audit_log()}}).
 }
 \details{
-When `spec@lag_shift` is `TRUE`, every composite is built from components
+When \code{spec@lag_shift} is \code{TRUE}, every composite is built from components
 shifted so that their median leads align on the shortest one (OECD
-lag-shifting; see [cli_composite()]).
+lag-shifting; see \code{\link[=cli_composite]{cli_composite()}}).
 
 Composites are ranked by the score
 \deqn{10 \times \textrm{criteria met} + \min(\textrm{lead}, 2\,
@@ -37,8 +37,8 @@ Composites are ranked by the score
 (\textrm{missed share} + \textrm{extra share}),}
 where the lead is that of the cross-correlation peak.
 
-When `spec@oos_cutoffs` is not empty the selection-bias harness
-([cli_selection_bias()]) is run as well and stored in the validation.
+When \code{spec@oos_cutoffs} is not empty the selection-bias harness
+(\code{\link[=cli_selection_bias]{cli_selection_bias()}}) is run as well and stored in the validation.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)

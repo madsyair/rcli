@@ -58,8 +58,8 @@
 \item{...}{Unused.}
 }
 \value{
-`show()` returns `object` invisibly; `summary()` returns a list of
-  the main results invisibly after printing them.
+\code{show()} returns \code{object} invisibly; \code{summary()} returns a list of
+the main results invisibly after printing them.
 }
 \description{
 Print and summarise rcli objects

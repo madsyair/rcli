@@ -7,40 +7,40 @@
 cci_build(x, spec = NULL, components = NULL, select = TRUE)
 }
 \arguments{
-\item{x}{A [CandidateSet-class] or a [CliResult-class].}
+\item{x}{A \linkS4class{CandidateSet} or a \linkS4class{CliResult}.}
 
-\item{spec}{A [CliSpec-class]. By default the specification of `x` (a
-`CliResult`) or [cli_spec()] at the frequency of the data. Giving a
-specification with a `CliResult` reruns the cycles and the
+\item{spec}{A \linkS4class{CliSpec}. By default the specification of \code{x} (a
+\code{CliResult}) or \code{\link[=cli_spec]{cli_spec()}} at the frequency of the data. Giving a
+specification with a \code{CliResult} reruns the cycles and the
 classification.}
 
 \item{components}{Optional names of the components to start from; by
 default the candidates classified as coincident.}
 
 \item{select}{Logical; remove components by backward elimination when the
-index fails? With `FALSE` the index keeps every component.}
+index fails? With \code{FALSE} the index keeps every component.}
 }
 \value{
-A [CciResult-class].
+A \linkS4class{CciResult}.
 }
 \description{
 A coincident index summarises the current state of the cycle, as the
 Conference Board coincident economic index does next to its leading
-index. `cci_build()` aggregates the candidates that [cli_assess()]
-classified as coincident with the specification's [Aggregator-class]
-(the same machinery as [cli_build()], without lag-shifting), validates
-the index with [cci_validate()] and, when it fails, removes components by
+index. \code{cci_build()} aggregates the candidates that \code{\link[=cli_assess]{cli_assess()}}
+classified as coincident with the specification's \linkS4class{Aggregator}
+(the same machinery as \code{\link[=cli_build]{cli_build()}}, without lag-shifting), validates
+the index with \code{\link[=cci_validate]{cci_validate()}} and, when it fails, removes components by
 backward elimination until it passes or a stopping rule of the
 specification applies. Every step is written to the audit log.
 }
 \details{
-Give a [CliResult-class] to reuse its cycles and classification, so that
+Give a \linkS4class{CliResult} to reuse its cycles and classification, so that
 the leading and the coincident index come from one run. When
-`spec@oos_cutoffs` is not empty, [cli_selection_bias()] is run with
-`role = "coincident"`.
+\code{spec@oos_cutoffs} is not empty, \code{\link[=cli_selection_bias]{cli_selection_bias()}} is run with
+\code{role = "coincident"}.
 
 A coincident index can replace a quarterly reference series: see
-[cci_as_reference()].
+\code{\link[=cci_as_reference]{cci_as_reference()}}.
 }
 \examples{
 sim <- simulate_cycles(leads = c(lead_6 = 6, lead_3 = 3, coin_a = 0,
@@ -53,5 +53,5 @@ coincidents(cci)
 cli_quality(cci)
 }
 \seealso{
-[cci_validate()], [coincident_criteria()], [cci_as_reference()]
+\code{\link[=cci_validate]{cci_validate()}}, \code{\link[=coincident_criteria]{coincident_criteria()}}, \code{\link[=cci_as_reference]{cci_as_reference()}}
 }

@@ -25,27 +25,29 @@ bbq(window = NA, min_phase = NA, min_cycle = NA, end_exclusion = NA)
 point is accepted.}
 }
 \value{
-A `Dater` object.
+A \code{Dater} object.
 }
 \description{
-A `Dater` holds the censoring rules of a turning-point algorithm. Both
+A \code{Dater} holds the censoring rules of a turning-point algorithm. Both
 built-in daters implement the Bry and Boschan (1971) logic as simplified by
 Harding and Pagan (2002) and the OECD:
 }
 \details{
-1. a peak (trough) is a local maximum (minimum) within `window`
-   observations on each side;
-2. peaks and troughs must alternate; of two consecutive peaks (troughs) the
-   higher (lower) is kept;
-3. turning points closer than `end_exclusion` observations to either end
-   are dropped, as are first or last peaks (troughs) lower (higher) than the
-   end values;
-4. a cycle (peak to peak or trough to trough) lasts at least `min_cycle`
-   observations and a phase at least `min_phase` observations.
+\enumerate{
+\item a peak (trough) is a local maximum (minimum) within \code{window}
+observations on each side;
+\item peaks and troughs must alternate; of two consecutive peaks (troughs) the
+higher (lower) is kept;
+\item turning points closer than \code{end_exclusion} observations to either end
+are dropped, as are first or last peaks (troughs) lower (higher) than the
+end values;
+\item a cycle (peak to peak or trough to trough) lasts at least \code{min_cycle}
+observations and a phase at least \code{min_phase} observations.
+}
 
-`bry_boschan()` uses the monthly defaults (window 5, phase 5, cycle 15,
-end exclusion 6); `bbq()` uses the quarterly defaults of Harding and Pagan
-(window 2, phase 2, cycle 5, end exclusion 2). Parameters left at `NA`
+\code{bry_boschan()} uses the monthly defaults (window 5, phase 5, cycle 15,
+end exclusion 6); \code{bbq()} uses the quarterly defaults of Harding and Pagan
+(window 2, phase 2, cycle 5, end exclusion 2). Parameters left at \code{NA}
 are resolved from the series frequency, so either dater can be applied to
 monthly or quarterly data.
 }
@@ -54,12 +56,12 @@ bry_boschan()
 bbq(min_cycle = 6)
 }
 \references{
-Bry, G. and Boschan, C. (1971). *Cyclical Analysis of Time Series: Selected
-Procedures and Computer Programs*. NBER, New York.
+Bry, G. and Boschan, C. (1971). \emph{Cyclical Analysis of Time Series: Selected
+Procedures and Computer Programs}. NBER, New York.
 
 Harding, D. and Pagan, A. (2002). Dissecting the cycle: a methodological
-investigation. *Journal of Monetary Economics*, 49(2), 365--381.
+investigation. \emph{Journal of Monetary Economics}, 49(2), 365--381.
 }
 \seealso{
-[date_turning_points()]
+\code{\link[=date_turning_points]{date_turning_points()}}
 }

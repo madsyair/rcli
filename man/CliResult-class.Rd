@@ -10,24 +10,24 @@ Result of the full workflow
 \section{Slots}{
 
 \describe{
-\item{\code{spec}}{The [CliSpec-class].}
+\item{\code{spec}}{The \linkS4class{CliSpec}.}
 
-\item{\code{candidates}}{The [CandidateSet-class].}
+\item{\code{candidates}}{The \linkS4class{CandidateSet}.}
 
-\item{\code{cycles}}{Named list of [CycleSeries-class].}
+\item{\code{cycles}}{Named list of \linkS4class{CycleSeries}.}
 
-\item{\code{turning_points}}{Named list of [TurningPoints-class].}
+\item{\code{turning_points}}{Named list of \linkS4class{TurningPoints}.}
 
-\item{\code{assessment}}{The [LeadAssessment-class].}
+\item{\code{assessment}}{The \linkS4class{LeadAssessment}.}
 
-\item{\code{composite}}{The final [CompositeIndex-class] (or `NULL` when no
+\item{\code{composite}}{The final \linkS4class{CompositeIndex} (or \code{NULL} when no
 candidate qualifies).}
 
-\item{\code{validation}}{The final [CliValidation-class] (or `NULL`).}
+\item{\code{validation}}{The final \linkS4class{CliValidation} (or \code{NULL}).}
 
 \item{\code{audit}}{Data frame recording every iteration of the selection loop.}
 }}
 
 \seealso{
-[cli_build()]
+\code{\link[=cli_build]{cli_build()}}
 }

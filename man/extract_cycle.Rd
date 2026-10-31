@@ -22,15 +22,15 @@ extract_cycle(filter, x, ...)
 \S4method{extract_cycle}{HamiltonFilter}(filter, x, ...)
 }
 \arguments{
-\item{filter}{A [CycleFilter-class] object.}
+\item{filter}{A \linkS4class{CycleFilter} object.}
 
-\item{x}{A monthly or quarterly `ts` without internal missing values.}
+\item{x}{A monthly or quarterly \code{ts} without internal missing values.}
 
 \item{...}{Unused.}
 }
 \value{
-A `ts` with the same time attributes as `x`; values the filter
-  cannot compute (for example the ends of the Baxter-King filter) are `NA`.
+A \code{ts} with the same time attributes as \code{x}; values the filter
+cannot compute (for example the ends of the Baxter-King filter) are \code{NA}.
 }
 \description{
 Extract the cyclical component of a series
@@ -40,5 +40,5 @@ x <- ts(sin(2 * pi * (1:160) / 40) + (1:160) / 20, frequency = 4)
 extract_cycle(cf_filter(), x)
 }
 \seealso{
-[CycleFilter-class]
+\linkS4class{CycleFilter}
 }

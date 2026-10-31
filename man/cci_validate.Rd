@@ -7,31 +7,33 @@
 cci_validate(composite, reference, spec)
 }
 \arguments{
-\item{composite}{A [CompositeIndex-class].}
+\item{composite}{A \linkS4class{CompositeIndex}.}
 
-\item{reference}{The reference [CycleSeries-class].}
+\item{reference}{The reference \linkS4class{CycleSeries}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 }
 \value{
-A [CliValidation-class] with role `"coincident"`.
+A \linkS4class{CliValidation} with role \code{"coincident"}.
 }
 \description{
 Tests a coincident index against the reference cycle, as
-[cli_validate()] does for a composite leading indicator, but with timing
+\code{\link[=cli_validate]{cli_validate()}} does for a composite leading indicator, but with timing
 in place of lead:
 }
 \details{
-* **turning points**: the index is dated and assessed like a candidate;
-  `passed` is `TRUE` when it meets every [coincident_criteria()] of the
-  specification's classifier;
-* **current state**: the logit of the reference contraction state at time
-  \eqn{t} on the change of the index over the quarter ending at \eqn{t}
-  (horizon 0) gives the quadratic probability score and the area under
-  the ROC curve;
-* **direction**: the Pesaran and Timmermann (1992) test that the sign of
-  the index's change matches the sign of the reference change in the same
-  period.
+\itemize{
+\item \strong{turning points}: the index is dated and assessed like a candidate;
+\code{passed} is \code{TRUE} when it meets every \code{\link[=coincident_criteria]{coincident_criteria()}} of the
+specification's classifier;
+\item \strong{current state}: the logit of the reference contraction state at time
+\eqn{t} on the change of the index over the quarter ending at \eqn{t}
+(horizon 0) gives the quadratic probability score and the area under
+the ROC curve;
+\item \strong{direction}: the Pesaran and Timmermann (1992) test that the sign of
+the index's change matches the sign of the reference change in the same
+period.
+}
 }
 \examples{
 sim <- simulate_cycles(leads = c(coin_a = 0, coin_b = 0, lead_6 = 6),
@@ -44,9 +46,9 @@ cci_validate(cci, cyc$reference, spec)
 }
 \references{
 Pesaran, M. H. and Timmermann, A. (1992). A simple nonparametric test of
-predictive performance. *Journal of Business and Economic Statistics*,
+predictive performance. \emph{Journal of Business and Economic Statistics},
 10(4), 461--465.
 }
 \seealso{
-[cci_build()], [cli_quality()]
+\code{\link[=cci_build]{cci_build()}}, \code{\link[=cli_quality]{cli_quality()}}
 }

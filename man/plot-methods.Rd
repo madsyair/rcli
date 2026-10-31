@@ -21,19 +21,21 @@
 
 \item{y}{Unused.}
 
-\item{...}{Further arguments passed to [graphics::plot()].}
+\item{...}{Further arguments passed to \code{\link[graphics:plot.default]{graphics::plot()}}.}
 }
 \value{
-`x`, invisibly.
+\code{x}, invisibly.
 }
 \description{
-* `TurningPoints`: the series with peaks (down triangles) and troughs (up
-  triangles).
-* `CycleSeries`: the normalised cycle.
-* `CompositeIndex`: the composite index.
-* `CliResult`: the normalised composite and reference cycles, with the
-  reference contractions shaded.
-* `CciResult`: the same for the coincident index.
+\itemize{
+\item \code{TurningPoints}: the series with peaks (down triangles) and troughs (up
+triangles).
+\item \code{CycleSeries}: the normalised cycle.
+\item \code{CompositeIndex}: the composite index.
+\item \code{CliResult}: the normalised composite and reference cycles, with the
+reference contractions shaded.
+\item \code{CciResult}: the same for the coincident index.
+}
 }
 \examples{
 sim <- simulate_cycles(seed = 1)

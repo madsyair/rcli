@@ -15,35 +15,35 @@ holiday_effect(
 \S4method{show}{HolidayEffect}(object)
 }
 \arguments{
-\item{dates}{Dates of the holiday (class `Date`), covering every year of
+\item{dates}{Dates of the holiday (class \code{Date}), covering every year of
 the data.}
 
-\item{name}{Short name, used for the regressors (`<name>_<window>`).}
+\item{name}{Short name, used for the regressors (\verb{<name>_<window>}).}
 
-\item{windows}{Named list of windows, each `c(first, last)` in days
+\item{windows}{Named list of windows, each \code{c(first, last)} in days
 relative to the holiday (negative = before).}
 
-\item{center}{Centring of the regressors, passed to [seasonal::genhol()].}
+\item{center}{Centring of the regressors, passed to \code{\link[seasonal:genhol]{seasonal::genhol()}}.}
 
-\item{object}{A `HolidayEffect`.}
+\item{object}{A \code{HolidayEffect}.}
 }
 \value{
-A `HolidayEffect` object.
+A \code{HolidayEffect} object.
 }
 \description{
 A moving holiday, such as Eid al-Fitr (Idulfitri) in Indonesia, falls in a
 different month from year to year, so fixed monthly seasonal factors
-cannot remove it. `holiday_effect()` describes such a holiday by its dates
+cannot remove it. \code{holiday_effect()} describes such a holiday by its dates
 and by one or more windows of days around it; each window becomes one
 regressor of the regARIMA model of X-13ARIMA-SEATS (built with
-[seasonal::genhol()]), and the estimated effect is removed from the
-seasonally adjusted series. Pass the effects to [cli_spec()] through
-`holidays`, together with `seasonal_adjust = TRUE`.
+\code{\link[seasonal:genhol]{seasonal::genhol()}}), and the estimated effect is removed from the
+seasonally adjusted series. Pass the effects to \code{\link[=cli_spec]{cli_spec()}} through
+\code{holidays}, together with \code{seasonal_adjust = TRUE}.
 }
 \details{
 The default windows suit Idulfitri in Indonesia: demand rises in the two
 weeks before the holiday, production falls during the week of collective
-leave that starts on it. Centring with `"mean"` follows the advice of the
+leave that starts on it. Centring with \code{"mean"} follows the advice of the
 'seasonal' package for Ramadan-type holidays.
 }
 \examples{
@@ -62,8 +62,8 @@ if (requireNamespace("seasonal", quietly = TRUE)) {
 \references{
 Lestari, E., Widiharih, T. and Rahmawati, R. (2018). Peramalan ekspor
 nonmigas dengan variasi kalender Islam menggunakan X-13-ARIMA-SEATS.
-*Jurnal Gaussian*, 7(3), 236--247.
+\emph{Jurnal Gaussian}, 7(3), 236--247.
 }
 \seealso{
-[idulfitri_dates()], [cli_spec()]
+\code{\link[=idulfitri_dates]{idulfitri_dates()}}, \code{\link[=cli_spec]{cli_spec()}}
 }

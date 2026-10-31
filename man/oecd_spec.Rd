@@ -16,45 +16,47 @@ oecd_spec(
 \item{freq}{Data frequency, 12 or 4. The OECD system is monthly; for
 quarterly data the month thresholds are converted to quarters.}
 
-\item{seasonal_adjust, holidays}{See [cli_spec()].}
+\item{seasonal_adjust, holidays}{See \code{\link[=cli_spec]{cli_spec()}}.}
 
-\item{engine}{Engine of [tramo_outliers()] and of the log/level test.}
+\item{engine}{Engine of \code{\link[=tramo_outliers]{tramo_outliers()}} and of the log/level test.}
 
-\item{...}{Further arguments of [cli_spec()].}
+\item{...}{Further arguments of \code{\link[=cli_spec]{cli_spec()}}.}
 }
 \value{
-A [CliSpec-class].
+A \linkS4class{CliSpec}.
 }
 \description{
-A [cli_spec()] with every step set as in the OECD system of composite
+A \code{\link[=cli_spec]{cli_spec()}} with every step set as in the OECD system of composite
 leading indicators (Gyomai and Guidetti 2012):
 }
 \details{
-* outliers: TRAMO, additive outliers and transitory changes replaced by
-  estimates ([tramo_outliers()]);
-* logarithm or levels: TRAMO test (`transform = "test"`);
-* end of the series: TRAMO forecasts before the filter
-  ([tramo_outliers()]);
-* cycle: double Hodrick-Prescott filter, 12 to 120 months
-  ([hp_double_filter()]);
-* turning points: simplified Bry-Boschan ([bry_boschan()]);
-* classification: median lead, coincident within +/- 2 months
-  ([oecd_classifier()]);
-* lag-shifting: the leads of the components aligned (`lag_shift = TRUE`);
-* aggregation: chained average growth with the 60 percent rule
-  ([oecd_aggregate()]);
-* presentation: amplitude adjusted, trend restored and 12-month rate of
-  change ([cli_presentation()]).
+\itemize{
+\item outliers: TRAMO, additive outliers and transitory changes replaced by
+estimates (\code{\link[=tramo_outliers]{tramo_outliers()}});
+\item logarithm or levels: TRAMO test (\code{transform = "test"});
+\item end of the series: TRAMO forecasts before the filter
+(\code{\link[=tramo_outliers]{tramo_outliers()}});
+\item cycle: double Hodrick-Prescott filter, 12 to 120 months
+(\code{\link[=hp_double_filter]{hp_double_filter()}});
+\item turning points: simplified Bry-Boschan (\code{\link[=bry_boschan]{bry_boschan()}});
+\item classification: median lead, coincident within +/- 2 months
+(\code{\link[=oecd_classifier]{oecd_classifier()}});
+\item lag-shifting: the leads of the components aligned (\code{lag_shift = TRUE});
+\item aggregation: chained average growth with the 60 percent rule
+(\code{\link[=oecd_aggregate]{oecd_aggregate()}});
+\item presentation: amplitude adjusted, trend restored and 12-month rate of
+change (\code{\link[=cli_presentation]{cli_presentation()}}).
+}
 
 Seasonal adjustment, which the OECD applies only to series that are not
 already adjusted at the source, uses X-13ARIMA-SEATS (the successor of
-X-12-ARIMA, with SEATS) when `seasonal_adjust = TRUE`. Quarterly
-components are interpolated linearly by [cli_align()] with
-`method = "linear"`, as the OECD does. The selection loop of
-[cli_build()] then evaluates composites with the OECD classifier.
+X-12-ARIMA, with SEATS) when \code{seasonal_adjust = TRUE}. Quarterly
+components are interpolated linearly by \code{\link[=cli_align]{cli_align()}} with
+\code{method = "linear"}, as the OECD does. The selection loop of
+\code{\link[=cli_build]{cli_build()}} then evaluates composites with the OECD classifier.
 
 The minimum median lead of the out-of-sample check is set to the
-coincident band (2 months). Other arguments are passed to [cli_spec()].
+coincident band (2 months). Other arguments are passed to \code{\link[=cli_spec]{cli_spec()}}.
 }
 \examples{
 oecd_spec()
@@ -69,10 +71,10 @@ if (requireNamespace("seasonal", quietly = TRUE)) {
 }
 }
 \references{
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 }
 \seealso{
-[cli_spec()] for the package defaults and the reasons they
-  differ (`vignette("rcli")`).
+\code{\link[=cli_spec]{cli_spec()}} for the package defaults and the reasons they
+differ (\code{vignette("rcli")}).
 }

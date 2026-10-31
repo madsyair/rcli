@@ -34,68 +34,70 @@ treat_outliers(method, x, ...)
 \arguments{
 \item{threshold}{Robust z-score above which a change is extreme.}
 
-\item{engine}{`"auto"`, `"tramo"` (RJDemetra) or `"x13"` (seasonal).}
+\item{engine}{\code{"auto"}, \code{"tramo"} (RJDemetra) or \code{"x13"} (seasonal).}
 
-\item{remove}{Outlier types whose effects are removed: any of `"AO"`,
-`"TC"`, `"LS"`.}
+\item{remove}{Outlier types whose effects are removed: any of \code{"AO"},
+\code{"TC"}, \code{"LS"}.}
 
 \item{forecast}{Number of periods of forecasts appended before the cycle
-filter; `NULL` means one year (12 months or 4 quarters). With 0 the
+filter; \code{NULL} means one year (12 months or 4 quarters). With 0 the
 regARIMA model gives no forecasts and the extension of the
-specification applies instead (since 0.2.0 [ar_extension()] by
-default; add `extension = no_extension()` for none). The OECD describes
+specification applies instead (since 0.2.0 \code{\link[=ar_extension]{ar_extension()}} by
+default; add \code{extension = no_extension()} for none). The OECD describes
 these forecasts as "short horizon" without giving the number.}
 
-\item{critical}{Critical t-value of the outlier detection; `NULL` uses
+\item{critical}{Critical t-value of the outlier detection; \code{NULL} uses
 the program's default, which depends on the length of the series.}
 
-\item{method}{An `OutlierTreatment`.}
+\item{method}{An \code{OutlierTreatment}.}
 
-\item{x}{A `ts` (already transformed, without missing values).}
+\item{x}{A \code{ts} (already transformed, without missing values).}
 
 \item{...}{Unused.}
 
 \item{object}{An object to print.}
 }
 \value{
-An `OutlierTreatment` object.
+An \code{OutlierTreatment} object.
 }
 \description{
-An `OutlierTreatment` cleans a (transformed) series of outliers before
+An \code{OutlierTreatment} cleans a (transformed) series of outliers before
 its cycle is extracted, and may extend it with forecasts.
 }
 \details{
-* `robust_outliers()`: the default of the package. An observation is an
-  outlier when its change from the previous period and the next change
-  are both more than `threshold` robust z-scores (deviation from the
-  median change divided by the median absolute deviation) and of
-  opposite sign, that is, a one-period spike. Spikes are replaced by
-  linear interpolation. No model and no external program are needed.
-* `tramo_outliers()`: the OECD treatment (Gyomai and Guidetti 2012,
-  p. 6--7). A regARIMA model with automatic outlier detection finds
-  additive outliers (AO), transitory changes (TC) and level shifts (LS);
-  the estimated effects of the types in `remove` are subtracted from the
-  series, which replaces the outlying observations by their estimated
-  values. The same model provides `forecast` periods of forecasts that
-  extend the series before the cycle filter, which stabilises the end of
-  the cycle. With `engine = "tramo"` the model is TRAMO, through the
-  \pkg{RJDemetra} package (JDemetra+, needs Java), as at the OECD; with
-  `engine = "x13"` it is the regARIMA part of X-13ARIMA-SEATS through
-  \pkg{seasonal}, which uses the same outlier types and detection
-  procedure (Chen and Liu 1993); `"auto"` takes TRAMO when \pkg{RJDemetra}
-  is installed and X-13 otherwise.
+\itemize{
+\item \code{robust_outliers()}: the default of the package. An observation is an
+outlier when its change from the previous period and the next change
+are both more than \code{threshold} robust z-scores (deviation from the
+median change divided by the median absolute deviation) and of
+opposite sign, that is, a one-period spike. Spikes are replaced by
+linear interpolation. No model and no external program are needed.
+\item \code{tramo_outliers()}: the OECD treatment (Gyomai and Guidetti 2012,
+p. 6--7). A regARIMA model with automatic outlier detection finds
+additive outliers (AO), transitory changes (TC) and level shifts (LS);
+the estimated effects of the types in \code{remove} are subtracted from the
+series, which replaces the outlying observations by their estimated
+values. The same model provides \code{forecast} periods of forecasts that
+extend the series before the cycle filter, which stabilises the end of
+the cycle. With \code{engine = "tramo"} the model is TRAMO, through the
+\pkg{RJDemetra} package (JDemetra+, needs Java), as at the OECD; with
+\code{engine = "x13"} it is the regARIMA part of X-13ARIMA-SEATS through
+\pkg{seasonal}, which uses the same outlier types and detection
+procedure (Chen and Liu 1993); \code{"auto"} takes TRAMO when \pkg{RJDemetra}
+is installed and X-13 otherwise.
+}
 
 By default only AO and TC (temporary shocks) are removed. Level shifts
 are detected, so that they are not mistaken for other outliers, but kept:
 in monthly activity data the automatic procedure often labels the onset
 of a recession a level shift, and removing it would erase a genuine
-cyclical movement. Use `remove = c("AO", "TC", "LS")` for the fully
+cyclical movement. Use \code{remove = c("AO", "TC", "LS")} for the fully
 linearised series.
 
 New treatments are added by defining a subclass and a method for the
-generic `treat_outliers()`, which returns a list with the cleaned series
-`x`, the number of outliers `n`, a description `step` and a numeric
-vector `forecast` (possibly empty).
+generic \code{treat_outliers()}, which returns a list with the cleaned series
+\code{x}, the number of outliers \code{n}, a description \code{step} and a numeric
+vector \code{forecast} (possibly empty).
 }
 \examples{
 robust_outliers()
@@ -103,16 +105,16 @@ tramo_outliers(engine = "x13")
 }
 \references{
 Chen, C. and Liu, L.-M. (1993). Joint estimation of model parameters and
-outlier effects in time series. *Journal of the American Statistical
-Association*, 88(421), 284--297.
+outlier effects in time series. \emph{Journal of the American Statistical
+Association}, 88(421), 284--297.
 
 Gómez, V. and Maravall, A. (2001). Automatic modeling methods for
-univariate series. In D. Peña, G. C. Tiao and R. S. Tsay (eds.), *A
-Course in Time Series Analysis*, 171--201. Wiley, New York.
+univariate series. In D. Peña, G. C. Tiao and R. S. Tsay (eds.), \emph{A
+Course in Time Series Analysis}, 171--201. Wiley, New York.
 
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 }
 \seealso{
-[cli_spec()], [oecd_spec()]
+\code{\link[=cli_spec]{cli_spec()}}, \code{\link[=oecd_spec]{oecd_spec()}}
 }

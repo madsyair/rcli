@@ -7,14 +7,14 @@
 concordance(x, y, shift = 0)
 }
 \arguments{
-\item{x, y}{[TurningPoints-class] objects of the same frequency and length.}
+\item{x, y}{\linkS4class{TurningPoints} objects of the same frequency and length.}
 
-\item{shift}{Periods by which `x` is moved forward before comparing (use
-the lead of `x`).}
+\item{shift}{Periods by which \code{x} is moved forward before comparing (use
+the lead of \code{x}).}
 }
 \value{
-A list with `index`, `expected` (value under independence) and
-  `p_value`.
+A list with \code{index}, \code{expected} (value under independence) and
+\code{p_value}.
 }
 \description{
 Harding and Pagan (2002) concordance: the share of periods in which the
@@ -30,6 +30,6 @@ concordance(date_turning_points(bry_boschan(), a),
             date_turning_points(bry_boschan(), b), shift = 6)
 }
 \references{
-Harding, D. and Pagan, A. (2006). Synchronization of cycles. *Journal of
-Econometrics*, 132(1), 59--79.
+Harding, D. and Pagan, A. (2006). Synchronization of cycles. \emph{Journal of
+Econometrics}, 132(1), 59--79.
 }

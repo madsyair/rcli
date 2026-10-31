@@ -1,18 +1,17 @@
 # 06 — Review
 
-- Increment: rcli 0.3.0, semula 0.2.2 (FR-006, FR-007)
+- Increment: rcli 0.3.1 (FR-008)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 2 (putaran 1 terhadap 31c2d41; putaran 2 terhadap a95fda9)
-- Keadaan yang direview: putaran 1 pada cabang `rcli-0.2.2`, HEAD 31c2d41,
-  terhadap basis 5be0d5a (0.2.1 di main). Komit yang dibaca:
-  - c7f66e5: judul berversi dan indeks sejalan sebagai acuan (FR-006);
-  - 11e6928: frekuensi asal, acuan semesteran/tahunan, kolom GUI (FR-007);
-  - f913e3b: skrip verifikasi numerik F-04, keterlacakan FR-006;
-  - 31c2d41: kolom `frequency` di `show()` untuk `CandidateSet` (masuk
-    selama review atas pemberitahuan koordinator; ikut direview).
+- Putaran: 3 (putaran 1 terhadap 4152863; putaran 2 terhadap 567153e;
+  putaran 3 terhadap f05097c)
+- Keadaan yang direview: putaran 1 pada cabang `rcli-0.3.1`, HEAD 4152863,
+  terhadap basis 595dba8 (0.3.0 di main). Komit yang dibaca:
+  - 4152863: pemisah kolom dan tanda desimal berkas CSV unggahan di GUI
+    (FR-008), versi 0.3.1.
 
-  Putaran 2 pada cabang `rcli-0.3.0` (nama baru), HEAD a95fda9; lihat
-  bagian "Review putaran 2".
+  Putaran 2 pada cabang yang sama, HEAD 567153e; lihat bagian "Review
+  putaran 2". Putaran 3 pada HEAD f05097c; lihat bagian "Review
+  putaran 3" di akhir berkas.
 
   Semua uji, mutasi, dan `R CMD check` dijalankan pada salinan
   `git archive` di direktori sementara. Uji peramban memakai pustaka
@@ -21,474 +20,600 @@
 
 ## Yang diperiksa
 
-### FR-007 / F-04 (R/align.R, R/candidates.R)
-- Baris demi baris terhadap F-04 §1, §3 dan §7:
-  - `constraint_matrix(m, tp, k)`: w = (1, …, 1), (1/k, …, 1/k) dan
-    (0, …, 0, 1); C = I_m ⊗ wᵀ lewat `kronecker(diag(m), t(w))`. Sesuai §1.
-  - `denton_cholette(q, tp, to)`: k = to/f, D = `diff(diag(n))`, sistem KKT
-    [2DᵀD Cᵀ; C 0][x; λ] = [0; y] diselesaikan dengan `solve()` (LU), tanpa
-    inversi eksplisit. Sesuai §3 langkah 1 dan §6. Untuk k = 3, C, D dan
-    `target_frame(q, 12)` sama dengan `monthly_frame()` 0.2.1 (§3 langkah 3).
-  - `target_frame(q, to)`: awal = subperiode pertama dari periode rendah
-    pertama, `k·(st[2] − 1) + 1`. Sesuai §1 ("dimulai pada subperiode
-    pertama").
-  - `interpolate_reference()`: v = y/k untuk aliran; posisi (k + 1)/2 atau k;
-    `approx(rule = 2)` (konstan di luar ujung); NA di luar rentang periode
-    rendah; minimal dua nilai. Sesuai §1 dan §3 langkah 4.
-  - `chow_lin(..., to)`: indikator harus berfrekuensi `to`; jendela mulai
-    pada subperiode pertama periode rendah pertama.
-  - `convert_one()`: kandidat semesteran/tahunan → `abort_low_frequency()`
-    (`rcli_error_frequency`); acuan memilih jalur menurut `method`. Sesuai
-    §7.
-- Verifikasi independen (skrip saya sendiri, bukan skrip harness):
-  - Terhadap `tempdisagg::td(method = "denton-cholette")`, 30 kombinasi
-    f ∈ {1, 2, 4}, to ∈ {4, 12}, tiga tipe, awal pada periode pertama dan
-    terakhir tahun (termasuk `ts` semesteran mulai `c(2003, 2)`): selisih
-    maksimum 7,8·10⁻¹²; `start()` sama dengan `td()` di semua kasus.
-  - Terhadap penyelesaian kuadrat terkecil berkendala lewat ruang nol
-    (`MASS::Null`, `qr.solve`), implementasi ketiga yang tidak memakai KKT:
-    selisih maksimum 6,3·10⁻¹³.
-  - k = 3 terhadap `denton_cholette()` 0.2.1 yang dimuat dari
-    `git show 5be0d5a:R/align.R` (12 kasus, NA di kedua ujung, awal triwulan
-    1–4): selisih tepat 0.
-- Kasus tepi lewat `cli_align()`:
-  - Data frame semesteran bertanggal akhir periode (30 Juni/31 Desember),
-    mulai pada semester kedua, NA di kedua ujung, target bulanan dan
-    triwulanan, ketiga tipe: awal jatuh pada subperiode pertama semester,
-    galat kendala ≤ 2,4·10⁻¹³.
-  - `ts` tahunan dengan NA di kedua ujung ke triwulanan: kendala
-    1,4·10⁻¹⁴. Chow–Lin tahunan ke bulanan dan ke triwulanan: kendala
-    ≤ 5,7·10⁻¹³; indikator berfrekuensi salah ditolak dengan pesan yang
-    menyebut frekuensi target.
-  - `period_key()`/`key_start()` untuk f = 1 dan 2 benar (Januari/Juni →
-    semester 1, Juli/Desember → semester 2). Tanggal tahunan 31 Desember
-    dan 1 Juli, serta semesteran 1 Januari/1 Juli, terdeteksi benar.
-  - Mingguan dan harian tetap berjalan (termasuk `frequency = c(wk =
-    "weekly", dy = "daily")`); `position` untuk kandidat triwulanan tetap
-    berlaku.
-  - Frekuensi yang dinyatakan: salah → `rcli_error_frequency` yang menyebut
-    keduanya; nama/nilai tak dikenal, vektor tanpa nama, `list`, `NA` →
-    `rcli_error_argument`.
-  - Acuan tahunan satu nilai: Denton memberi seri datar (m = 1, KKT tetap
-    tak singular); `"linear"` → `rcli_error_short_series`. NA di tengah →
-    `rcli_error_argument`.
-- `cli_candidates()`: kolom `frequency` diisi dari `alignment$from` lalu
-  ditimpa `meta`; nilai tak dikenal → `rcli_error_argument`; semesteran/
-  tahunan → `rcli_error_frequency`. Acuan tidak masuk metadata, jadi acuan
-  tahunan tidak ditolak. `cci_as_reference()` membawa kolom ini.
-- 31c2d41: `show()` menampilkan kolom `frequency` bila ada nilai; objek lama
-  tanpa kolom itu tetap aman (`col %in% names(m)`).
+### FR-008 (R/app.R, R/app-text.R)
+- `csv_format(path, sep, dec)` (R/app.R:76-100) terhadap AC-FR-008.2:
+  pemisah = yang paling sering muncul di antara koma, titik koma, dan tab
+  pada baris judul (seri pertama menang bila seri: koma); tanda desimal
+  koma bila pemisah bukan koma dan baris data pertama memuat
+  `[0-9],[0-9]`; selain itu titik; pemisah = tanda desimal →
+  `rcli_error_argument`. Kode sesuai AC kata demi kata. Masalahnya ada
+  pada aturan itu sendiri (R1, R2) dan pada pembacaan baris (R3).
+- `csv_choice()` (R/app.R:104-116): `NULL`/`"auto"` → `"auto"`; nama tak
+  dikenal → `rcli_error_argument`. Benar.
+- Isian `csv_sep`/`csv_dec` di UI: `shiny` hanya dipanggil sebagai
+  `shiny::`; kedelapan kunci teks ada di `app_text$id` dan `app_text$en`.
+  Kunci ini tidak dipakai di tabel atau grafik, jadi tidak perlu masuk
+  `app_phrases_id`.
+- Server langkah 1 hanya memanggil fungsi paket (`csv_format()`,
+  `csv_choice()`, `read_cli_data()`); format disimpan di
+  `rv$loaded$sep/dec` saat `run1`, sehingga pilihan yang diubah sesudahnya
+  tidak mengubah skrip (diuji, dan saya periksa sendiri).
+- `data_lines()`: `deparse_value("\t")` menulis `"\t"` di skrip; `sep`/`dec`
+  hanya ditulis bila berbeda dari `","`/`"."`. Skrip menyertakan format
+  juga di prelude, karena prelude dibuat lewat `app_script()`.
+- `current_state()`: `reference` NULL bila `rv$cand` NULL, `lag_shift`
+  FALSE bila `rv$spec` NULL. Hanya membuat fungsi aman dipanggil sebelum
+  langkah 2/3; perilaku sesudah langkah 7 tidak berubah.
+- Jalur data contoh (testServer): dengan `csv_sep = "comma"`,
+  `csv_dec = "comma"` (pilihan kontradiktif), langkah 1 tetap selesai,
+  `rv$loaded$sep` NULL, dan skrip menulis `simulate_cycles()`. Unggah
+  `write.csv2()` lalu kembali ke contoh triwulanan: `sep`/`dec` hilang
+  dari state dan skrip. Tidak ada kebocoran.
+- NEWS.md, `@param ...` di `?read_cli_data`, dan DESCRIPTION 0.3.1 sesuai
+  dengan perilaku kode. `man/` sinkron dengan roxygen.
 
-### FR-006 (R/app.R, R/app-text.R)
-- Judul `sprintf("rcli %s: %s", packageVersion, t("title"))`, kunci
-  `title`, `cci_ref*`, `var_freq`, `freq_*` ada di kedua bahasa. `shiny`
-  hanya dipanggil sebagai `shiny::`; server hanya memanggil fungsi paket.
-- Skenario keadaan yang saya jalankan dengan `shiny::testServer()` dan
-  `eval()` skrip ekspor, membandingkan indeks skrip dengan indeks GUI
-  (`composite(res)` atau `cli` untuk mode manual):
+### Kasus tepi `csv_format()` + `read_cli_data()` (jalur GUI persis)
 
-  | Skenario | Hasil |
-  |---|---|
-  | Tombol tanpa indeks sejalan | peringatan, `prelude` tetap NULL |
-  | Auto → acuan `cci` → langkah 3–7 | skrip = GUI |
-  | Sesudah peralihan, acuan diganti `lead_6`, langkah 2 diulang (`cand_rebuilt`) | skrip = GUI (`cli_candidates(cand@data, reference = "lead_6")`) |
-  | Komposit manual di kedua analisis | skrip = GUI |
-  | Peralihan dua kali (prelude bersarang, dua `cci_as_reference`) | skrip = GUI |
-  | Metode OECD (mesin TRAMO dimatikan dengan mock, karena rJava di mesin ini rusak), manual, dua kali | skrip = GUI |
-  | Langkah 2 gagal (kandidat semesteran) | langkah 2 dikosongkan |
-  | Langkah 1 diulang | `prelude` dan `cand_rebuilt` dihapus |
-  | Komposit manual di analisis 1, langkah 9 tanpa langkah 7 di analisis 2, peralihan kedua | **skrip galat** (R3) |
-  | Data dimuat, langkah 2 selesai, acuan diganti | **metadata pindah menurut posisi** (R1; juga di Chrome) |
+| Kasus | Hasil `sep`/`dec` | Akibat |
+|---|---|---|
+| Koma, titik koma, tab berdesimal koma (berkas uji) | benar | data sama |
+| Tab berdesimal titik | `"\t"`/`.` | benar |
+| Titik koma, bilangan bulat saja | `;`/`.` | benar (tak ambigu untuk bilangan bulat) |
+| Titik koma, satu baris data | `;`/`,` | benar, `ts` satu baris |
+| CRLF (Windows) dan CR saja (Mac lama) | `;`/`,` | benar |
+| BOM UTF-8, kolom pertama tanggal | `;`/`,` | benar (BOM ikut kolom tanggal yang dibuang) |
+| BOM UTF-8, tanpa kolom tanggal | `;`/`,` | nilai benar, nama seri pertama `"﻿pdb"` (R5) |
+| Kolom pertama numerik tanpa tanggal, `frequency`/`start` diberikan | benar (`;` dan `,`) | benar |
+| Hanya judul / berkas kosong | — | galat terbaca ("No numeric column found" / "no lines available in input") |
+| Titik koma, nama berkoma seri 2:2 (`PDB (ADHK, miliar)`) | **`,`/`.`** | galat menyesatkan "Dates must look like…" (R1) |
+| Sama, tanpa kolom tanggal (2 koma : 1 titik koma) | **`,`/`.`** | **angka salah tanpa galat**: kolom `PDB (ADHK` = 100, 101, 102; `triliun)` = 1, 9, 5 (R1) |
+| Koma, nama berkutip memuat 3 titik koma | **`;`** | galat "at least two columns" (R1) |
+| Titik koma, baris data pertama kosong atau `NA` | **`;`/`.`** | galat "No numeric column found" (R2) |
+| Titik koma, indeks basis 100 di baris pertama | **`;`/`.`** | galat "No numeric column found" (R2) |
+| Titik koma, kolom cacah + kolom indeks, baris pertama bulat | **`;`/`.`** | **kolom indeks hilang tanpa pesan** (R2) |
+| Tab, pemisah ribuan koma (`1,100.5`) | **`"\t"`/`,`** | galat "No numeric column found" (R2) |
+| Titik koma, pemisah ribuan titik (`2.345,5`) | `;`/`,` | kolom `pdb` hilang tanpa pesan (R8) |
+| Windows-1252 (byte 0x96/0xA0) di judul atau baris 2, lokal UTF-8 | — | **galat "input string 1 is invalid UTF-8"**, juga dengan pilihan eksplisit; 0.3.0 membaca berkas yang sama (R3) |
 
-### Gerbang yang dijalankan sendiri (HEAD 31c2d41)
-- `devtools::test()` lengkap: 0 gagal, 0 galat, 1 dilewati (seasonal),
-  3 peringatan tak tertangani (R8), termasuk `test-app-e2e.R` di Chrome
-  headless (uji baru "the coincident index becomes the reference in the
-  browser" lulus).
+### Reproduksi skrip ekspor (testServer, langkah 1–7, `eval()` skrip)
+
+| Berkas | Baris skrip | Data dan indeks skrip = GUI |
+|---|---|---|
+| `write.csv2()`, otomatis | `sep = ";", dec = ","` | ya |
+| `write.csv2()`, eksplisit | `sep = ";", dec = ","` | ya |
+| tab berdesimal koma, otomatis | `sep = "\t", dec = ","` | ya |
+| tab berdesimal titik, otomatis | `sep = "\t", dec = "."` | ya |
+| koma, otomatis | tanpa `sep`/`dec` | ya |
+| `write.csv2()` dengan BOM | `sep = ";", dec = ","` | ya |
+| `write.csv2()`, acuan bernama `PDB riil` | `sep = ";", dec = ","` | **tidak**: skrip membaca `PDB.riil` dan gagal (R4) |
+| koma, acuan bernama `PDB riil` | tanpa `sep`/`dec` | **tidak** (sama; sudah ada sejak sebelum 0.3.1) |
+
+### Gerbang yang dijalankan sendiri (HEAD 4152863)
+- `devtools::test()` lengkap dengan `NOT_CRAN=true` dan pustaka sementara:
+  `[ FAIL 0 | WARN 0 | SKIP 1 | PASS 1683 ]`; satu-satunya yang dilewati
+  adalah uji `seasonal`, jadi uji peramban (termasuk unggahan
+  `write.csv2()`) ikut berjalan di Chrome headless.
 - `lintr::lint_package()`: 0 temuan.
 - `roxygen2::roxygenise()`: `man/` dan `NAMESPACE` sinkron.
-- `R CMD build` + `R CMD check --as-cran --no-manual`: 0 galat,
+- Baris > 80 karakter di berkas yang diubah: hanya test-app-e2e.R:124-125
+  (sudah ada sebelumnya).
+- `R CMD build` + `R CMD check --as-cran --no-manual` (0.3.1): 0 galat,
   0 peringatan, 3 NOTE dari lingkungan (URL GitHub 403 lewat proksi,
-  "unable to verify current time", `JAVA_TOOL_OPTIONS`). Vignette (termasuk
-  chunk `align-annual`) dibangun ulang tanpa masalah.
-- Mutasi (filter `frequency|align|app-reference`, baseline 167 lulus):
+  "unable to verify current time", `JAVA_TOOL_OPTIONS`), sama dengan
+  review 0.3.0; contoh, `\donttest{}`, uji, dan vignette lolos.
+- Mesin uji berlokal `C` (ASCII). Kasus R3 hanya muncul di lokal UTF-8
+  (`LANG=C.UTF-8`), yaitu lokal bawaan R ≥ 4.2 di Windows, macOS, dan
+  kebanyakan Linux.
+- Mutasi (filter `app-csv`, baseline 36 lulus):
 
   | Mutan | Uraian | Status |
   |---|---|---|
-  | M4 | aliran tidak dibagi k di `interpolate_reference()` | mati (3) |
-  | M6 | kandidat tahunan diterima `cli_align()` | mati (1) |
-  | M7 | frekuensi yang dinyatakan tidak diperiksa | mati (1) |
-  | M8 | bobot stok pada subperiode pertama | mati (8) |
-  | M9 | kandidat semesteran diterima di metadata | mati (3) |
-  | M10 | `from` tidak disalin ke `frequency` | mati (1) |
-  | M11 | langkah 1 tidak menghapus `prelude` | mati (1) |
-  | M12 | `cand_rebuilt` tidak pernah TRUE | mati (2) |
-  | M13 | langkah 2 gagal tanpa `reset_from(2)` | mati (2) |
-  | M16 | isian `frq_i` tidak dibaca | mati (4) |
-  | M1 | `target_frame()` memakai 3 alih-alih k untuk awal | **bertahan** (R4) |
-  | M5 | jendela indikator Chow–Lin memakai 3 alih-alih k | **bertahan** (R4) |
-  | M2 | stok ditempatkan di tengah periode (`"linear"`) | **bertahan** (R4) |
-  | M3 | NA di luar rentang periode rendah tidak dipasang | **bertahan** (R4) |
-  | M17 | batas akhir `last` digeser k | **bertahan** (R4) |
-  | M18 | Denton tanpa pemotongan NA di ujung | **bertahan** (R4) |
-  | M14 | `keep()` hanya menurut posisi (`known <- NULL`) | **bertahan** (R1) |
-  | M15 | jendela semesteran 175–182 hari | bertahan (R13) |
+  | M1 | desimal otomatis tanpa syarat `sep != ","` | mati (1 galat) |
+  | M2 | desimal otomatis selalu titik | mati (12) |
+  | M4 | pemeriksaan `sep == dec` dihapus | mati (1) |
+  | M6 | `csv_choice()` selalu `"auto"` | mati (2) |
+  | M9 | pilihan pemisah GUI diabaikan | mati (2) |
+  | M10 | `rv$loaded$sep` dari isian, bukan hasil pengenalan | mati (3) |
+  | M11 | `reference = reference()` tanpa pengaman | mati (2 galat) |
+  | M12 | `lag_shift` tanpa pengaman `rv$spec` | mati (2 galat) |
+  | M13 | urutan pemisah dibalik pada seri | mati (7) |
+  | M8 | pilihan tanda desimal GUI diabaikan | **bertahan** (R6) |
+  | M5 | `sep != "," \|\| dec != "."` → `&&` di `data_lines()` | **bertahan** (R6) |
+  | M7 | peta `csv_choice()` tanpa `kind` (titik diterima sebagai pemisah) | **bertahan** (R6) |
+  | M3 | faktor kehadiran `regexpr(...) > 0` dihapus | bertahan (R7) |
+  | M14 | pemisah cadangan `";"` alih-alih `","` | bertahan (R7) |
+  | M15 | baris kosong tidak dibuang | bertahan (R7) |
 
 ## Temuan
-- [x] [R1][major] R/app.R:643-647 (observer `input$reference`),
-  R/app.R:681-695 (`keep()`), NEWS.md:16-17 dan
-  tests/testthat/test-app-frequency.R:29-34 — NEWS menyatakan "The candidate
-  metadata of step 2 is kept by candidate name when the list of candidates
-  changes, instead of by position". Dalam alur biasa itu tidak terjadi.
-  Penggantian acuan menjalankan `reset_from(2L)`, yang mengosongkan
-  `rv$meta`, sehingga `known` bernilai NULL saat `meta_ui` digambar ulang
-  dan `keep()` kembali memakai `input[[id]]` menurut posisi. Selain itu,
-  nama yang tidak ada di `known` selalu mewarisi isian posisi yang sama.
-  Bukti (testServer dan Chrome headless): data contoh, `typ_1 = "stock"`
-  (lead_6), `typ_2 = "flow"`, `frq_2 = "quarterly"` (lead_3), langkah 2
-  dijalankan, lalu acuan diganti `noise_2`. Baris `reference` mendapat
-  stock milik lead_6, baris `lead_6` mendapat flow/quarterly milik lead_3,
-  dan baris `lead_3` kosong. Tipe dan frekuensi asal yang salah lalu masuk
-  metadata dan skrip ekspor tanpa peringatan. Uji "kept by name when the
-  reference changes" tidak membedakan nama dari posisi, karena lead_3 tetap
-  di posisi 2 sebelum dan sesudah penggantian acuan ke `lead_6`; mutan M14
-  (`known <- NULL`) lulus semua uji. Hal yang sama berlaku untuk uji lead_3
-  di test-app-reference.R. Saran: simpan metadata menurut nama di nilai
-  reaktif tersendiri (mis. `rv$meta_by_name`) yang diperbarui di `run2` dan
-  tidak dikosongkan oleh `reset_from(2)`, atau rekam semua isian `rat_`,
-  `typ_`, `frq_`, `src_` per nama sebelum digambar ulang. Untuk nama yang
-  tidak dikenal, pakai nilai bawaan, bukan isian posisi yang sama. Uji
-  dengan acuan yang menggeser posisi (mis. `noise_2`), dan periksa baris
-  `reference` serta `lead_6`.
-  - Perbaikan (A5, putaran 2): `meta_ui` mencari isian menurut nama: pertama isian kandidat yang sama pada tampilan terakhir (`shown_cands`), lalu metadata himpunan kandidat terakhir (`rv$meta_known`, tidak dihapus oleh `reset_from(2)`), lalu bawaan. Uji "R1: step-2 entries follow the candidate names, not positions" (test-app-frequency.R) memakai pergantian acuan ke `lead_3` sehingga posisi dan nama berbeda; merah sebelum perbaikan.
-- [x] [R2][major] R/quality.R:111-115 dan 227-234, `?cli_quality`,
-  vignettes/rcli.Rmd:197-199 (catatan acuan triwulanan) — Baris informasi dan catatan "reference
-  disaggregated … uncertain by about one month" hanya muncul bila metode
-  diawali `"quarterly to monthly"`. Acuan tahunan atau semesteran yang
-  didisagregasi ke bulan atau triwulan (`"annual to monthly
-  (denton-cholette)"`, dst.) tidak mendapat catatan apa pun. Saya uji
-  `cli_build()` dengan acuan tahunan dari `simulate_cycles(seed = 1)`:
-  kartu skor tanpa baris disagregasi, sedangkan acuan triwulanan dari data
-  yang sama mendapatkannya. Padahal ketidakpastian titik balik acuan
-  tahunan jauh lebih besar (jalur bulanan di dalam tahun sepenuhnya hasil
-  penghalusan), dan alasan paket sendiri untuk menolak kandidat tahunan
-  ("one or two values a year cannot show a lead of a few months",
-  `?series_frequencies`, NEWS) berlaku juga untuk acuan. Kartu skor menjadi
-  menyesatkan tepat untuk fitur baru ini. Saran: umumkan
-  `quality_reference()` untuk setiap baris `alignment` acuan dengan
-  `from` lebih rendah dari target; tulis ketidakpastian sekitar k/2
-  subperiode (± 1 bulan untuk triwulanan, ± 3 untuk semesteran, ± 6 untuk
-  tahunan; atau teks per frekuensi); perbarui teks catatan, `?cli_quality`,
-  vignette, dan `app_phrases_id`. Pertimbangkan juga `rcli_warn()` di
-  `cli_align()` saat acuan semesteran/tahunan didisagregasi ke bulan. Uji
-  untuk acuan tahunan dan semesteran.
-  - Perbaikan (A5, putaran 2): `disaggregation()` di R/quality.R mengenali acuan triwulanan, semesteran, dan tahunan; baris informasi dan catatan menyebut ±1, ±3, atau ±6 bulan; terjemahan Indonesia ditambah; `?cli_quality` diperbarui. Uji "R2" (tahunan dan semesteran); merah sebelum perbaikan.
-- [x] [R3][major] R/app.R:1093 (`state <- current_state()` di
-  observer `cci_ref`) dan R/app.R:550-554 (`fields`) — `rv$mode` dan
-  `rv$components` bukan bagian dari `fields`, sehingga tidak ikut
-  dikosongkan oleh `reset_from()`. Langkah 9 hanya mensyaratkan langkah 6,
-  sedangkan `script()` mensyaratkan langkah 7. Akibatnya prelude dapat
-  dibuat dari mode komposit analisis sebelumnya. Reproduksi
-  (testServer): analisis 1 dengan komposit manual `c("lead_6",
-  "coincident")` dan indeks sejalan manual `c("coincident", "lag_3")`;
-  beralih; analisis 2 menjalankan langkah 3–6 dan 9 tanpa langkah 7;
-  beralih lagi; analisis 3 menjalankan langkah 3–7. Skrip ekspor menulis
-  `cli_composite(cycles(res), c("lead_6", "coincident"), …)` untuk analisis
-  2, padahal `coincident` sudah keluar dari kandidat, sehingga `eval()`
-  gagal dengan "`components` must name at least one element of `cycles`".
-  Ini melanggar AC-FR-006.4 dan aturan CLAUDE.md "the exported R script
-  must reproduce the composite built in the app". Saran: masukkan `mode`
-  dan `components` ke `fields$7` (dengan nilai bawaan "auto" dan
-  `character(0)` saat dikosongkan), atau tulis baris komposit di
-  `analysis_lines()` hanya bila langkah 7 selesai (mis. `state$step7 =
-  7L %in% rv$done`). Tambahkan uji untuk langkah 9 tanpa langkah 7 sebelum
-  peralihan.
-  - Perbaikan (A5, putaran 2): `mode` dan `components` masuk kelompok langkah 7 di `fields`, sehingga ikut dihapus `reset_from()`. Uji "R3: a manual composite from before a reset does not leak"; merah sebelum perbaikan.
-- [x] [R4][minor] tests/testthat/test-frequency.R — Enam mutan bertahan pada
-  inti FR-007:
-  - M1 (`target_frame()` dengan 3 alih-alih k) dan M5 (jendela Chow–Lin):
-    tidak ada uji dengan seri rendah yang mulai di periode kedua (mis.
-    `ts(…, start = c(2001, 2), frequency = 2)` atau data frame semesteran
-    mulai Juli), satu-satunya kasus ketika k·(st[2] − 1) berbeda;
-  - M2 (posisi stok `"linear"`), M3 dan M17 (NA di luar rentang): uji
-    interpolasi linear hanya memakai aliran tahunan tanpa NA;
-  - M18: tidak ada acuan semesteran/tahunan dengan NA di ujung untuk
-    Denton.
+- [x] [R1][major] R/app.R:84-91 (`csv_format()`, pengenalan pemisah) dan
+  AC-FR-008.2 — Pemisah dipilih dari jumlah karakter di baris judul saja,
+  tanpa memperhatikan kutip dan tanpa memeriksa baris data; bila seri,
+  koma menang karena urutan `seps`. Judul berbahasa Indonesia dengan
+  satuan sering memuat koma (`PDB (ADHK, miliar)`, `Kredit (Rp,
+  triliun)`), dan Excel tidak mengutip nama yang memuat koma bila
+  pemisahnya titik koma. Bukti:
+  - judul `tanggal;PDB (ADHK, miliar);Kredit (Rp, triliun)` (2:2) → koma;
+    langkah 1 gagal dengan "Dates must look like…", yang menyesatkan
+    karena tanggalnya benar;
+  - tanpa kolom tanggal (`frequency`/`start` diberikan), judul
+    `PDB (ADHK, miliar);Kredit (Rp, triliun)` (2 koma : 1 titik koma) →
+    koma; langkah 1 **selesai dengan angka salah**: seri `PDB (ADHK` =
+    100, 101, 102 (bagian bulat) dan `triliun)` = 1, 9, 5 (bagian desimal
+    seri kedua);
+  - berkas koma dengan nama berkutip `"a;b;c;d"` → titik koma → galat.
 
-  Perilaku saat ini benar (saya periksa manual di atas). Saran: tambahkan
-  (a) `ts` semesteran mulai `c(y, 2)` terhadap `tempdisagg::td()` termasuk
-  `start()`; (b) Chow–Lin semesteran mulai semester kedua; (c) interpolasi
-  linear stok dengan nilai hitungan tangan; (d) acuan tahunan dengan NA di
-  kedua ujung, untuk Denton dan `"linear"`, dengan posisi NA yang diperiksa.
-  - Perbaikan (A5, putaran 2): uji baru: acuan yang mulai di periode kedua (Denton bulanan/triwulanan dan linear), NA di ujung (Denton dan linear) serta NA di tengah, stok linear, jendela Chow–Lin.
-- [x] [R5][minor] R/candidates.R:97-114 dan R/app.R:741-744 (isian `frq_i`) — Kolom
-  `frequency` dari `meta` menimpa catatan `cli_align()` tanpa pemeriksaan.
-  `cli_candidates(x, meta = data.frame(name = "lead_6", frequency =
-  "weekly"))` diterima untuk seri yang terdeteksi bulanan, dan isian GUI
-  `frq_i` juga tidak dibandingkan dengan apa pun. Di `cli_align()`
-  ketidakcocokan yang sama adalah galat (AC-FR-007.5). Saran: bila
-  `alignment` punya `from` untuk nama itu dan berbeda dari `meta`, galat
-  `rcli_error_frequency` dengan pesan yang sama seperti `cli_align()`; atau
-  dokumentasikan bahwa `meta` menang.
-  - Perbaikan (A5, putaran 2): `complete_meta()` membandingkan `frequency` di `meta` dengan `from` catatan `cli_align()`; beda → `rcli_error_frequency` yang menyebut keduanya. Uji "R5"; merah sebelum perbaikan.
-- [x] [R6][minor] R/align.R:174-180 dan 403 — Kandidat semesteran atau
-  tahunan tanpa `type` mendapat galat "give its type in `type`"
-  (`rcli_error_argument`). Setelah tipe diberikan, barulah pengguna diberi
-  tahu bahwa seri itu tidak boleh menjadi kandidat. Saran: periksa
-  `s$from %in% c("semiannual", "annual") && !identical(nm, reference)`
-  sebelum pemeriksaan tipe, lalu panggil `abort_low_frequency()`.
-  - Perbaikan (A5, putaran 2): `cli_align()` menolak kandidat semesteran/tahunan sebelum memeriksa tipe. Uji "R6"; merah sebelum perbaikan.
-- [x] [R7][minor] R/align.R:500-541 — `interpolate_quarterly(q, tp, pos)`
-  adalah kasus khusus `interpolate_reference()` (k = 3, posisi dapat
-  diatur), dengan rumus yang sama tetapi ditulis dua kali (DRY,
-  software-principles §2). `monthly_frame()` tinggal pembungkus satu baris.
-  Saran: satu fungsi `interpolate_low(q, tp, to, pos = NULL)` yang dipakai
-  kedua jalur, dengan uji lama sebagai pengaman.
-  - Perbaikan (A5, putaran 2): `interpolate_quarterly()` kini memanggil `interpolate_reference(q, tp, 12, pos)`; rumus tinggal satu. Uji lama interpolasi triwulanan tetap lolos.
-- [x] [R8][nit] tests/testthat/test-frequency.R:160, 178 dan 184 — Tiga
-  peringatan `rcli_warning_rationale` tidak ditangani dan muncul di laporan
-  uji. Saran: beri `rationale` untuk semua kandidat atau bungkus dengan
-  `expect_warning(…, class = "rcli_warning_rationale")`.
-  - Perbaikan (A5, putaran 2): peringatan rasional di test-frequency.R diredam dengan `suppressWarnings(classes = "rcli_warning_rationale")`.
-- [x] [R9][nit] tests/testthat/test-app-reference.R:72 — 81 karakter;
-  CLAUDE.md meminta ≤ 80 (lintr tidak menandai baris yang berakhir dengan
-  literal string).
-  - Perbaikan (A5, putaran 2): baris dipecah.
-- [x] [R10][nit] R/align.R:406-412 dan `?cli_align` (`@param position`) —
-  `position` diam-diam diabaikan untuk acuan semesteran/tahunan dengan
-  `method = "linear"`. Saran: sebutkan di `@param position` bahwa argumen
-  ini hanya untuk seri triwulanan, atau tolak nama acuan rendah.
-  - Perbaikan (A5, putaran 2): `period_position()` (1 sampai k) dipakai untuk acuan semesteran/tahunan dengan `method = "linear"`; di luar rentang → `rcli_error_argument`; `?cli_align` diperbarui. Uji "R4/R10"; merah sebelum perbaikan.
-- [x] [R11][nit] tests/testthat/test-frequency.R:120 — Uji Chow–Lin memakai
-  toleransi 1e-6, sedangkan AC-FR-007.2 menyebut 1e-8; galat sebenarnya
-  5,7·10⁻¹³. Saran: `tolerance = 1e-8`.
-  - Perbaikan (A5, putaran 2): toleransi uji Chow–Lin 1e-8, sesuai AC-FR-007.2 (lolos).
-- [x] [R12][nit] R/candidates.R:31-40 — `cli_candidates()` kini punya dua
-  "frequency" yang berbeda arti: argumen `frequency` (bilangan, atribut
-  waktu data frame) dan kolom `meta$frequency` (frekuensi asal, teks).
-  Saran: satu kalimat di `@param start,frequency` yang membedakannya dari
-  kolom metadata.
-  - Perbaikan (A5, putaran 2): dokumentasi `meta` di `?cli_candidates` membedakan kolom `frequency` (frekuensi asal) dari argumen `frequency` (periode per tahun). Nama argumen tidak diubah agar kompatibel.
-- [x] [R13][nit] R/align.R:338 — Mutan M15 (jendela semesteran 175–182)
-  bertahan, karena uji hanya memakai tanggal 1 Januari/1 Juli. Saran: uji
-  tanggal akhir periode (30 Juni/31 Desember) dan tahun kabisat untuk
-  semesteran dan tahunan.
-  - Perbaikan (A5, putaran 2): uji "R13" untuk jendela tanggal: 175 dan 190 hari → semesteran, 360 dan 370 → tahunan, 150/200/300/380 → galat.
-- [x] [R14][nit] vignettes/rcli.Rmd:204-205 dan NEWS.md — Kalimat "with
-  every year (or half-year) kept exactly" hanya benar untuk Denton–Cholette
-  dan Chow–Lin, tidak untuk `"linear"`. Penambahan objek ekspor dan argumen
-  baru lazimnya menaikkan versi minor menurut semantic versioning;
-  keputusan 0.2.2 ada pada pemelihara (STATE), tetapi sebaiknya dicatat di
-  08-release.
+  Saran: hitung jumlah kolom per baris dengan
+  `utils::count.fields(textConnection(lines), sep = s, quote = "\"")`
+  untuk judul dan baris data; pilih titik koma, lalu tab, bila jumlahnya
+  sama di semua baris dan lebih dari 1; selain itu koma. Saya uji
+  aturan ini pada keempat contoh di atas: semuanya benar (titik koma 3 3 3
+  dan 2 2 2; koma untuk nama berkutip berisi titik koma dan untuk
+  `tanggal,a;b,c`). Perbarui AC-FR-008.2 dan NEWS; tambahkan uji untuk
+  ketiga contoh.
+  - Perbaikan (A5, putaran 2): pemisah dikenali dengan `count.fields()` (tanda kutip dihormati): yang membagi setiap baris menjadi jumlah kolom sama dan terlebar; bila seri, tab, titik koma, lalu koma. Uji "R1" (nama kolom berkoma, bertanda kutip, dan berkas koma dengan titik koma di nama).
+- [x] [R2][major] R/app.R:92-95 (`csv_format()`, tanda desimal) dan
+  AC-FR-008.2 — Tanda desimal koma hanya dikenali bila **baris data
+  pertama** memuat `1,5`. Data indikator sering diawali `NA`/sel kosong
+  (seri mulai belakangan) atau nilai bulat (indeks dengan basis 100 pada
+  periode pertama). Bukti (titik koma, semua bentuk Excel ID):
+  - baris pertama `2001Q1;;` atau `2001Q1;NA;NA` → titik → "No numeric
+    column found";
+  - `2010-01;100;100`, sesudahnya `101,3;99,8` → titik → galat yang sama;
+  - `tanggal;izin;ihk` dengan `2010-01;12;100`, sesudahnya `15;101,3` →
+    titik → langkah 1 **selesai, kolom `ihk` hilang tanpa pesan**
+    (`read_cli_data()` membuang kolom non-numerik);
+  - kebalikannya: tab dengan pemisah ribuan koma (`1,100.5`) → koma →
+    "No numeric column found".
 
-  - Perbaikan (A5, putaran 2): vinyet menyebut bahwa kendala dipenuhi persis untuk Denton–Cholette dan Chow–Lin, serta catatan ketidakpastian di kartu skor. Versi tetap 0.2.2 sesuai keputusan pemelihara ("dikerjakan sebagai versi 0.2.2"); saran 0.3.0 dicatat untuk dilaporkan ke pemelihara.
+  Saran: periksa semua baris yang sudah dibaca (lebih baik seluruh berkas
+  atau beberapa ratus baris) per sel: koma bila ada sel
+  `^[-+]?[0-9]+,[0-9]+$` dan tidak ada sel `^[-+]?[0-9]*\.[0-9]+$`; atau
+  baca dengan kedua tanda desimal dan pilih yang menghasilkan lebih banyak
+  kolom numerik (seri → titik). Perbarui kalimat AC-FR-008.2 dan NEWS
+  ("the first data line"). Uji: baris pertama `NA`, kosong, dan basis
+  100, termasuk kasus kolom yang hilang.
+  - Perbaikan (A5, putaran 2): tanda desimal mengikuti mayoritas sel pecahan dari sampai 500 baris (`1,5`/`1.234,5` koma; `1.5`/`1,234.5` titik), bukan hanya baris pertama. Uji "R2" (baris kosong/NA/bulat di awal, berkas tab dengan koma ribuan).
+- [x] [R3][major] R/app.R:82-83 dan 85-94 (`readLines()`, `trimws()`,
+  `gregexpr()`, `grepl()`) — Regresi untuk berkas Windows-1252. Excel di
+  Windows menyimpan "CSV (dipisahkan koma)" dalam kode halaman ANSI;
+  karakter seperti en dash (0x96), spasi tak terputus (0xA0), atau `²`
+  (0xB2) di judul atau baris data pertama bukan UTF-8 yang sah. Dalam
+  lokal UTF-8 (bawaan R ≥ 4.2 di Windows, juga macOS dan Linux),
+  `trimws()` dan fungsi regex lainnya berhenti dengan "input string 1 is
+  invalid UTF-8". Langkah 1 gagal **juga dengan pilihan eksplisit**,
+  karena `trimws()` selalu dijalankan. Di 0.3.0, `read_cli_data(f,
+  check.names = FALSE)` membaca berkas yang sama tanpa masalah (saya uji
+  dengan `LANG=C.UTF-8`). Uji paket tidak menangkapnya karena mesin uji
+  berlokal `C`. Saran: `Encoding(lines) <- "bytes"` sesudah `readLines()`
+  (saya periksa: `trimws`, `gregexpr`, dan `grepl` lalu berjalan dan
+  hasilnya benar), atau `iconv(lines, "", "UTF-8", sub = "byte")`; lewati
+  pembacaan baris bila kedua pilihan eksplisit. Uji dengan berkas yang
+  memuat byte 0x96 di bawah `withr::local_locale(c(LC_CTYPE =
+  "C.UTF-8"))`, dilewati bila lokal itu tidak tersedia.
+  - Perbaikan (A5, putaran 2): semua pola dicocokkan dengan `useBytes = TRUE` dan sel dibaca sebagai teks; tanpa `trimws()` biasa. Uji "R3" dengan berkas Windows-1252, di lokal bawaan dan C.UTF-8.
+- [x] [R4][major] R/app.R:488-505 (`data_lines()`) terhadap R/app.R:696,
+  AC-FR-008.4 dan aturan CLAUDE.md "the exported R script must reproduce
+  the composite built in the app" — GUI membaca dengan
+  `check.names = FALSE`, sedangkan skrip memanggil `read_cli_data()` tanpa
+  argumen itu. Nama kolom dengan spasi atau tanda baca, yang lazim di
+  berkas Excel (`PDB riil`), menjadi `PDB.riil` di skrip, sehingga
+  `cli_candidates(data, reference = "PDB riil")` gagal: "`reference` must
+  name one column of `data`" (saya jalankan langkah 1–7 lalu `eval()`
+  skrip, untuk berkas titik koma dan koma). Cacat ini sudah ada sebelum
+  0.3.1, tetapi `data_lines()` baru ditulis untuk langkah 1, dan
+  AC-FR-008.4 menyatakan skrip "mereproduksi data GUI". Uji AC-1/4 hanya
+  membandingkan `as.numeric()`, jadi nama tidak pernah diperiksa. Saran:
+  tulis `check.names = FALSE` di baris `read_cli_data()` skrip untuk
+  unggahan (selalu, atau bila `make.names(nama) != nama`); di uji,
+  bandingkan juga `colnames(env$data)` dengan `colnames(rv$data)`, dan
+  tambahkan kasus dengan nama berspasi.
+  - Perbaikan (A5, putaran 2): `data_lines()` menulis `check.names = FALSE` dan nama berkas lewat `deparse_value()`. Uji "R4" (nama kolom berspasi, skrip menghasilkan data identik; nama berkas bertanda kutip).
+- [x] [R5][minor] R/app.R:691-697 dan `read_cli_data()` — BOM UTF-8
+  (Excel "CSV UTF-8") tetap menempel pada nama kolom pertama. Bila kolom
+  pertama adalah seri (tanpa kolom tanggal), nama seri menjadi
+  `"﻿pdb"`: tampil seperti `pdb` di GUI, tetapi
+  `cli_candidates(reference = "pdb")` di R gagal. Saran: buang `^﻿`
+  dari nama kolom pertama di `read_cli_data()` (bukan lewat
+  `fileEncoding = "UTF-8-BOM"`, karena itu akan merusak berkas
+  Windows-1252 pada R3); uji tanpa kolom tanggal.
+  - Perbaikan (A5, putaran 2): `read_cli_data()` membaca berkas ber-BOM dengan `fileEncoding = "UTF-8-BOM"` (kecuali pengguna memberi `fileEncoding`). Uji "R5".
+- [x] [R6][minor] tests/testthat/test-app-csv.R:39-71 dan 86-97 — Tiga
+  mutan bertahan:
+  - M8 (pilihan tanda desimal GUI diabaikan): uji "eksplisit" memakai
+    pilihan yang sama dengan hasil pengenalan otomatis, jadi tidak
+    membuktikan bahwa pilihan dipakai. Uji AC-3 lulus karena alasan lain:
+    bila `csv_dec` diabaikan, pemisah koma pada berkas titik koma
+    menghasilkan satu kolom, sehingga `rv$data` tetap NULL tanpa galat
+    `sep == dec`.
+  - M5 (`||` → `&&` di `data_lines()`): tidak ada uji skrip untuk
+    `sep = ";", dec = "."`; mutan itu menghapus `sep` dari skrip, dan
+    skrip lalu membaca berkas dengan koma.
+  - M7 (peta pilihan tanpa `kind`): `csv_choice("point", "sep")` diterima.
 
+  Saran: (a) berkas titik koma dengan baris pertama bulat (kasus R2) dan
+  `csv_dec = "comma"`, lalu periksa nilai desimalnya; (b) uji AC-3 dengan
+  berkas berpemisah koma, sehingga hanya galat `sep == dec` yang dapat
+  membuat langkah 1 gagal, atau periksa kelas galat lewat
+  `csv_format()` dengan nilai dari `csv_choice()`; (c)
+  `data_lines(list(source = "upload", sep = ";", dec = ".", ...))` memuat
+  `sep = ";"`; (d) `expect_error(csv_choice("point", "sep"), class =
+  "rcli_error_argument")`.
+  - Perbaikan (A5, putaran 2): uji "R6": pilihan titik koma + titik dipakai dan masuk skrip; `csv_choice()` diuji langsung; uji AC-3 kini memakai berkas bilangan bulat yang akan terbaca tanpa pemeriksaan.
+- [x] [R7][nit] R/app.R:85-90 dan tests/testthat/test-app-csv.R:18-29 —
+  M3, M14, dan M15 bertahan: tidak ada uji dengan judul dua kolom (`t;a`,
+  tempat faktor `regexpr(...) > 0` menentukan hasil), berkas tanpa
+  pemisah, atau baris kosong sebelum judul. Hitungan
+  `length(gregexpr(...)) * (regexpr(...) > 0)` juga sulit dibaca. Bila
+  R1 diperbaiki dengan `count.fields()`, bagian ini hilang; bila tidak,
+  pakai `lengths(regmatches(head, gregexpr(x, head, fixed = TRUE)))` dan
+  tambahkan ketiga uji itu.
+  - Perbaikan (A5, putaran 2): penghitungan pemisah diganti `detect_separator()` berbasis `count.fields()`; aturannya dijelaskan di komentar.
+- [x] [R8][minor] `read_cli_data()` (R/app.R:20-39) — Kolom non-numerik
+  dibuang tanpa pesan. Dengan FR-008 ini lebih sering terjadi: angka Excel
+  ID berpemisah ribuan (`2.345,5`) dibaca sebagai teks, dan kolom `pdb`
+  hilang begitu saja (begitu juga kasus R2). Perilaku ini terdokumentasi,
+  tetapi pengguna GUI tidak diberi tahu. Saran: `rcli_warn()` yang
+  menyebut kolom yang dibuang (GUI menampilkannya lewat `safely()`); uji
+  dengan `expect_warning(class = ...)`.
+  - Perbaikan (A5, putaran 2): `read_cli_data()` memberi peringatan `rcli_warning_dropped` yang menyebut kolom yang dibuang; GUI menampilkannya sebagai notifikasi. Uji "R8".
+- [x] [R9][nit] R/app.R:205 dan NEWS.md — `fileInput` kini juga menerima
+  `.txt`; NEWS tidak menyebutnya, dan berkas tab dari aplikasi lain sering
+  berakhiran `.tsv`. Saran: tambahkan `.tsv` dan sebutkan di NEWS.
+  - Perbaikan (A5, putaran 2): `.tsv` ditambahkan; NEWS menyebut `.txt` dan `.tsv`.
+- [x] [R10][nit] tests/testthat/test-app-csv.R:51-52 — AC-FR-008.1
+  meminta nilai "sama persis", sedangkan uji memakai `expect_equal()`
+  (toleransi 1,5·10⁻⁸). Nilainya memang identik. Saran:
+  `expect_identical()`.
+
+  - Perbaikan (A5, putaran 2): `expect_identical()` untuk data GUI dan data skrip.
 ## Catatan di luar cakupan (sudah ada sebelum increment ini)
-- R/app.R `current_state()` membaca `input$seed`, `input$source` dan
-  `input$start` saat skrip dibuat, bukan saat langkah 1 dijalankan. Bila
-  pengguna mengubah benih di langkah 1 tanpa menekan tombol lagi, skrip
-  memakai benih baru. Dengan prelude, nilai itu kini juga dibekukan pada
-  saat peralihan. Saran: simpan nilai langkah 1 di `rv` saat `run1`.
-- Eskalasi lama (`lag_shift` di uji bias seleksi) masih terbuka di
-  STATE.md.
+- DESCRIPTION tidak memuat `Roxygen: list(markdown = TRUE)`, sehingga
+  tanda petik terbalik dan `[utils::read.csv()]` di `?read_cli_data`
+  (dan 50 halaman lain) tampil apa adanya, bukan sebagai `\code{}` atau
+  tautan. Kalimat baru di `@param ...` ikut terkena.
+- `app_script()`/`data_lines()` menulis nama berkas dengan
+  `"\"%s\""` tanpa *escape*; nama berkas yang memuat `"` atau `\`
+  menghasilkan skrip yang tidak dapat diurai. Saran: `deparse_value()`.
 
-Tindak lanjut A5: skrip ekspor kini memakai sumber data dan benih saat langkah 1 dijalankan (`rv$loaded`); uji "the script uses the data as loaded in step 1".
+Tindak lanjut A5 untuk catatan di luar increment: `Roxygen: list(markdown = TRUE)` di DESCRIPTION, 56 berkas Rd ditulis ulang (kode dan tautan benar); nama berkas di skrip di-escape (lihat R4).
 
 ## Review putaran 2
-- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang `rcli-0.3.0`, HEAD
-  a95fda9. Komit yang dibaca sejak 31c2d41:
-  - 1671c02: perbaikan R1–R14 dan masalah benih/sumber di luar cakupan;
-  - a95fda9: hanya string versi (DESCRIPTION 0.3.0, judul dan satu kalimat
-    NEWS, komentar tiga berkas uji, tiga judul harness). Saya periksa
-    `git diff 1671c02..a95fda9`: tidak ada perubahan di R/, man/ atau
-    vignettes/; `diff -r` R/ kedua salinan identik.
+- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang `rcli-0.3.1`, HEAD
+  567153e. Komit yang dibaca sejak 4152863:
+  - 567153e: perbaikan R1–R10, revisi AC-FR-008.2 dan AC-FR-008.4,
+    `Roxygen: list(markdown = TRUE)` (56 berkas Rd ditulis ulang).
 
-  Semua pemeriksaan dijalankan pada salinan `git archive`.
-- Kotak `[x]` di atas dicentang oleh A5. Status di bawah ini adalah
-  verifikasi saya.
+  Semua pemeriksaan dijalankan pada salinan `git archive` 567153e dengan
+  pustaka sementara. Kotak `[x]` di atas dicentang oleh A5. Status di
+  bawah ini adalah verifikasi saya; kotak R1 saya kembalikan ke `[ ]`
+  karena belum tertutup.
 - Gerbang yang saya jalankan sendiri:
-  - `devtools::test()` lengkap (1671c02, kode R sama dengan a95fda9):
-    0 gagal, 0 galat, 0 peringatan, 1 dilewati (seasonal), termasuk e2e
-    Chrome;
+  - `devtools::test()` lengkap dengan `NOT_CRAN=true`:
+    `[ FAIL 0 | WARN 0 | SKIP 1 | PASS 1701 ]`; satu-satunya yang dilewati
+    adalah `seasonal`, jadi uji peramban ikut berjalan;
   - `lintr::lint_package()`: 0 temuan;
-  - `roxygenise()`: `man/` dan `NAMESPACE` sinkron;
-  - `R CMD build` + `R CMD check --as-cran --no-manual` pada a95fda9
-    (0.3.0): 0 galat, 0 peringatan, 3 NOTE dari lingkungan (sama dengan
-    putaran 1); contoh, `\donttest{}`, uji, dan vignette lolos;
-  - tidak ada baris > 80 karakter di berkas R, uji, dan NEWS yang diubah
-    (selain test-app-e2e.R:124-125 dari versi pertama).
-- Skenario keadaan putaran 1 diulang (testServer, `eval()` skrip ekspor):
-  - reproduksi R3 (komposit manual di analisis 1, langkah 9 tanpa langkah 7
-    di analisis 2, peralihan kedua): `rv$mode` kosong sesudah langkah 3,
-    dan skrip kini berjalan;
-  - acuan diganti sesudah peralihan, peralihan dua kali, komposit manual,
-    dan metode OECD (TRAMO dimatikan dengan mock): indeks skrip = indeks
-    GUI.
-- Chrome headless (pustaka sementara): data contoh, isian berbeda untuk
-  lead_6 (stock/weekly), lead_3 (flow/quarterly), coincident
-  (rapid_response) dan noise_2 (average), langkah 2 dijalankan.
-  - Acuan diganti `noise_2`: setiap baris tetap pada namanya; baris baru
-    `reference` mendapat bawaan.
-  - Langkah 3–6 dan 9, lalu `cci_ref`: lead_6, lead_3 dan noise_2 tetap
-    pada namanya, dan coincident (komponen indeks) keluar.
-- Kartu skor R2 (`simulate_cycles(seed = 1)`, `cli_build()` dengan
-  `cli_spec(freq = to)`):
+  - `roxygen2::roxygenise()`: `man/` dan `NAMESPACE` sinkron;
+  - `R CMD build` + `R CMD check --as-cran --no-manual`: 0 galat,
+    0 peringatan, 3 NOTE dari lingkungan (sama dengan putaran 1);
+    "checking Rd cross-references ... OK";
+  - tidak ada baris > 80 karakter di R/app.R, test-app-csv.R, dan NEWS.md.
+- Konversi Markdown Rd (4152863 → 567153e, 56 berkas): saya merender
+  kedua versi dengan `tools::Rd2txt()` dan membandingkan kata demi kata
+  sesudah membuang tanda format (`[ ]`, `-class`, petik, `_`, `*`).
+  Satu-satunya perbedaan isi adalah kalimat baru yang disengaja di
+  `?read_cli_data`. Semua 44 `\emph{}` baru adalah judul jurnal/buku atau
+  istilah (*sidang isbat*), dan 22 `\strong{}` adalah label butir yang
+  memang ditulis `**…**`; tidak ada rumus yang berubah menjadi penekanan.
+  `\enumerate{}`/`\itemize{}` baru berasal dari daftar bernomor/berbutir di
+  roxygen. Tautan `[fungsi()]`, `[Kelas-class]` (`\linkS4class{}`),
+  `[stats::ar()]`, dan `[utils::read.csv()]` (→ `utils:read.table`) valid
+  menurut `R CMD check`. Tidak ada tautan rusak atau makna yang berubah.
+- Contoh gagal putaran 1 diulang (jalur GUI persis, lokal `C` dan
+  `C.UTF-8`):
 
-  | Asal → target | Baris informasi | Catatan |
+  | Kasus | Putaran 1 | Putaran 2 |
   |---|---|---|
-  | tahunan → bulanan | annual, ± 6 months | about 6 months |
-  | tahunan → triwulanan | annual, ± 6 months | about 6 months |
-  | semesteran → bulanan | semiannual, ± 3 months | about 3 months |
-  | semesteran → triwulanan | semiannual, ± 3 months | about 3 months |
-  | triwulanan → bulanan | quarterly, ± 1 month | about one month |
+  | Titik koma, nama berkoma 2:2, ada tanggal | `,` → galat tanggal | `;`/`,` benar |
+  | Sama, **tanpa kolom tanggal** (2 koma : 1 titik koma) | `,` → angka salah | **`,` → angka masih salah** (100, 101, 102 / 1, 9, 5), kini dengan peringatan kolom dibuang (R1) |
+  | Koma, nama berkutip berisi titik koma (2 dan 3 buah) | `;` → galat | `,`/`.` benar |
+  | Titik koma, baris pertama kosong/`NA`/basis 100 | galat | `;`/`,` benar |
+  | Kolom cacah + kolom indeks, baris pertama bulat | kolom hilang tanpa pesan | `;`/`,`, kedua kolom terbaca |
+  | Tab, ribuan koma (`1,100.5`) | galat | `"\t"`/`.`; kolom itu dibuang dengan peringatan (benar: `read.csv()` tidak membaca pemisah ribuan) |
+  | Titik koma, ribuan titik (`2.345,5`) | kolom hilang tanpa pesan | `;`/`,`; kolom dibuang dengan `rcli_warning_dropped` |
+  | Windows-1252 di judul, lokal UTF-8 | galat, juga eksplisit | `;`/`,` benar |
+  | Windows-1252 di kolom teks, lokal UTF-8 | — | benar; kolom teks dibuang dengan peringatan |
+  | BOM tanpa kolom tanggal | nama `"﻿pdb"` | `pdb` |
+  | CRLF, CR, satu baris data, bilangan bulat saja, tab bertitik | benar | benar |
+  | Hanya judul / berkas kosong | galat terbaca | sama |
 
-  Keempat frasa baru ada di `app_phrases_id`.
-- Mutasi (filter `frequency|align|app-reference|quality`, baseline
-  234 lulus):
+- Kasus baru:
+
+  | Kasus | Hasil | Akibat |
+  |---|---|---|
+  | Titik koma, bilangan bulat berformat ribuan Excel ID (`987`, `1.012`, `1.045`) | `;`/`.` | **seri 987; 1,012; 1,045 tanpa pesan** (R11) |
+  | Tab, bilangan bulat berformat ribuan (`12,345`) | `"\t"`/`,` | **12,345 dibaca 12.345 tanpa pesan** (R11) |
+  | Titik koma, kolom tanpa nama karena `;` di akhir baris | `;`/`,` | peringatan "dropped: ." (R12) |
+  | Baris sumber di akhir (`Sumber: BPS`) | `;`/`,` | galat tanggal; sudah begitu di 0.3.0 |
+  | Spasi tak terputus 0xA0 menempel pada angka, lokal UTF-8 | `;`/`,` | galat `read.csv()` "invalid multibyte string"; sama di putaran 1 dan 0.3.0 |
+  | BOM + nama non-ASCII, lokal `C` | `;`/`,` | nama `m<c2><b2>`; GUI dan skrip sama, data utuh |
+
+- Reproduksi skrip ekspor (testServer langkah 1–7, `eval()` skrip):
+  `write.csv2()` otomatis dan eksplisit, tab berdesimal koma dan titik,
+  koma, BOM, dan acuan bernama `PDB riil` (berkas titik koma dan koma):
+  nama kolom, data, dan indeks skrip = GUI di kedelapan kasus. Pilihan
+  data contoh tetap tidak bocor (jalur tidak berubah).
+- Mutasi (filter `app-csv`, baseline 54 lulus):
 
   | Mutan | Uraian | Status |
   |---|---|---|
-  | M1 | `target_frame()` dengan 3 alih-alih k | **mati** (3 gagal) |
-  | M2 | stok di tengah periode (`interpolate_reference()`) | **mati** (1) |
-  | M3 | NA di luar rentang tidak dipasang | **mati** (2) |
-  | M17 | batas akhir `last` digeser k | **mati** (1) |
-  | M18 | Denton tanpa pemotongan NA di ujung | **mati** (3) |
-  | M14 | `keep()` tanpa pencarian di tampilan terakhir | **mati** (2) |
-  | M15 | jendela semesteran 175–182 hari | **mati** (1 galat) |
-  | M19 | `rv$meta_known` tidak dipakai | mati (1) |
-  | M21 | semesteran ± 1 bulan | mati (2) |
-  | M22 | pola hanya "quarterly to monthly" | mati (6) |
-  | M23 | catatan disagregasi dihapus | mati (3) |
-  | M24 | `mode`/`components` tidak ikut di-reset | mati (2) |
-  | M25 | pemeriksaan frekuensi `meta` vs `cli_align()` dihapus | mati (1) |
-  | M26 | penolakan dini kandidat rendah dihapus | mati (1 galat) |
-  | M28 | `position` diabaikan untuk acuan rendah | mati (2) |
-  | M29 | skrip kembali membaca `input$seed` | mati (1) |
-  | M30 | posisi bawaan `interpolate_quarterly()` diubah | mati (1) |
-  | M5 | jendela indikator Chow–Lin dengan 3 alih-alih k | **bertahan** (R16) |
-  | M2b | posisi bawaan stok di `period_position()` ke tengah | **bertahan** (R16) |
-  | M27 | rentang `position` 1–3 alih-alih 1–k | **bertahan** (R16) |
-  | M20 | nama baru kembali mewarisi isian menurut posisi | **bertahan** (R15) |
+  | M5 | `\|\|` → `&&` di `data_lines()` | **mati** (1) |
+  | M8 | pilihan tanda desimal GUI diabaikan | **mati** (2) |
+  | N1 | urutan seri koma, titik koma, tab | mati (1) |
+  | N6 | skrip tanpa `check.names = FALSE` | mati (2) |
+  | N7 | `has_bom()` selalu FALSE | mati (1) |
+  | N8 | peringatan kolom dibuang dihapus | mati (1) |
+  | N9 | `detect_decimal()` hanya membaca satu baris | mati (1) |
+  | N10 | nama berkas tanpa `deparse_value()` | mati (1 galat) |
+  | M7 | peta `csv_choice()` tanpa `kind` | **bertahan** (R13) |
+  | N2 | syarat "jumlah kolom sama" diabaikan | bertahan (R13) |
+  | N3 | seri desimal → koma | bertahan (R13) |
+  | N4 | `trimws()`/`grepl()` tanpa `useBytes` di `detect_decimal()` | bertahan (R13) |
+  | N5 | pola koma tanpa kelompok ribuan (`1.234,5`) | bertahan (R13) |
+  | N11 | pengaman `fileEncoding` dari pengguna dihapus | bertahan (R13) |
+  | N12 | pemisah cadangan `";"` | bertahan (R13) |
+
+  Mutan M3, M14, dan M15 putaran 1 tidak berlaku lagi karena kodenya
+  diganti `detect_separator()`.
 
 ### Status temuan putaran 1
-- R1 tertutup. `keep()` mencari isian menurut nama: pertama pada tampilan
-  terakhir (`shown_cands`), lalu `rv$meta_known` (tidak dihapus
-  `reset_from(2)`), lalu bawaan. Tidak ada lagi jalan balik menurut posisi.
-  Uji baru memakai acuan `lead_3`, sehingga posisi dan nama berbeda; M14
-  dan M19 kini mati. Saya juga membuktikannya di Chrome, untuk penggantian
-  acuan maupun peralihan `cci_ref`. NEWS kini menyebut kedua kasus. Sisa
-  celah uji kecil dicatat di R15.
-- R2 tertutup. `disaggregation()` mengenali asal triwulanan, semesteran,
-  dan tahunan ke bulanan atau triwulanan, dengan ± 1, 3 atau 6 bulan
-  (setengah periode asal). Baris informasi, catatan, `?cli_quality`,
-  vignette, NEWS, dan terjemahan Indonesia sudah konsisten. Agregasi
-  bulanan ke triwulanan tidak ditandai, dan itu benar. M21–M23 mati.
-  Peringatan di `cli_align()` tidak ditambahkan; catatan di kartu skor
-  cukup.
-- R3 tertutup. `mode` dan `components` masuk kelompok langkah 7, sehingga
-  dikosongkan oleh `reset_from()`. `analysis_lines()` memperlakukan
-  `mode = NULL` sebagai otomatis. Reproduksi putaran 1 kini menghasilkan
-  skrip yang berjalan, dan M24 mati.
-- R4 tertutup sebagian. M1, M2, M3, M17 dan M18 kini mati, berkat uji
-  acuan semesteran yang mulai di semester kedua (Denton bulanan dan
-  triwulanan, linear), NA di kedua ujung, NA di tengah, dan stok linear.
-  Uji "Chow-Lin uses the indicator from the start of the reference" memakai
-  acuan tahunan yang mulai di periode 1. Di situ k·(st[2] − 1) + 1 =
-  3·0 + 1, jadi M5 tetap bertahan. Sisa ini saya turunkan menjadi nit R16.
-- R5 tertutup. `complete_meta()` membandingkan `meta$frequency` dengan
-  `from` catatan `cli_align()` (`rcli_error_frequency`, menyebut
-  keduanya). Data tanpa catatan (CSV GUI, `cci_as_reference()`) tidak
-  terpengaruh. M25 mati.
-- R6 tertutup. Kandidat semesteran/tahunan ditolak sebelum pemeriksaan
-  tipe (sesudah pemeriksaan frekuensi yang dinyatakan). M26 mati.
-- R7 tertutup. `interpolate_quarterly()` memanggil
-  `interpolate_reference(q, tp, 12, pos)`. Batas NA lama
-  (`min(at) − pos + 1`, `max(at) − pos + 3`) setara dengan rumus baru
-  `k·(i_min − 1) + 1` dan `k·i_max` untuk k = 3. Uji lama `test-align.R`
-  lulus, dan M30 mati. Hanya pesan galat `rcli_error_short_series` yang
-  menjadi umum.
-- R8 tertutup. Laporan uji tanpa peringatan.
-- R9 tertutup. Baris dipecah.
-- R10 tertutup. `period_position()` (1 sampai k) dipakai untuk acuan
-  semesteran/tahunan dengan `method = "linear"`; nilai di luar rentang →
-  `rcli_error_argument` yang menyebut nama dan k; `?cli_align` diperbarui.
-  M28 mati. Batas atas rentang belum diuji (R16).
-- R11 tertutup. Toleransi 1e-8.
-- R12 tertutup. `?cli_candidates` membedakan kolom `meta$frequency` dari
-  argumen `frequency`.
-- R13 tertutup. Uji jendela tanggal pada kedua tepi (175/190 dan 360/370
-  hari) dan di luarnya; M15 mati.
-- R14 tertutup. Vignette membatasi "kept exactly" pada Denton–Cholette dan
-  Chow–Lin, dan menyebut catatan kartu skor. Versi menjadi 0.3.0
-  (a95fda9) atas keputusan pemelihara, dengan alasan di NEWS.
-- Catatan di luar cakupan (benih/sumber langkah 1) tertutup. `rv$loaded`
-  disimpan saat `run1` dan dipakai `current_state()`; uji "the script uses
-  the data as loaded in step 1"; M29 mati.
+- R1 **belum tertutup**. `detect_separator()` memilih pembagian teratur
+  yang *terlebar*. Pada berkas titik koma berdesimal koma, setiap koma
+  desimal menambah satu kolom bila dipisah dengan koma, sehingga
+  pembagian koma bisa sama teratur dan lebih lebar. Contoh putaran 1 tanpa
+  kolom tanggal masih terbaca salah: judul `PDB (ADHK, miliar);Kredit
+  (Rp, triliun)` dan baris `100,5;20,1` → titik koma 2 2 2 2, koma 3 3 3
+  3 → koma; langkah 1 selesai dengan seri `PDB (ADHK` = 100, 101, 102 dan
+  `triliun)` = 1, 9, 5. Peringatan baru menyebut kolom yang dibuang, jadi
+  kini tidak sepenuhnya diam, tetapi angkanya tetap salah. Uji R1 hanya
+  memakai berkas bertanggal (koma ≤ titik koma) dan tidak mencakup kasus
+  ini. Saran: di antara pembagian yang teratur dengan lebih dari satu
+  kolom, pilih tab, lalu titik koma, lalu koma, tanpa melihat lebar;
+  "terlebar" hanya untuk berkas yang tidak teratur. Saya uji aturan itu
+  pada sembilan berkas (empat contoh putaran 1, tiga berkas uji R1, tab
+  dengan koma di nama, koma biasa): semuanya benar, termasuk kasus ini.
+  Tambahkan kasus tanpa tanggal ke uji R1 dan sesuaikan kalimat "yang
+  terlebar" di AC-FR-008.2, NEWS, dan komentar kode.
+- R2 tertutup. Mayoritas sel pecahan dari ≤ 500 baris: baris pertama
+  kosong, `NA`, atau bulat tidak lagi menentukan; tab dengan ribuan koma
+  dikenali titik. N9 mati. Sisa ambiguitas kelompok ribuan dicatat di R11.
+- R3 tertutup. Berkas Windows-1252 (judul dan kolom teks) terbaca di
+  `C.UTF-8` dengan pilihan otomatis dan eksplisit. Uji R3 hanya memuat
+  byte non-UTF-8 di judul, yang tidak pernah melewati `detect_decimal()`
+  (`skip = 1L`), sehingga N4 bertahan (R13).
+- R4 tertutup. Skrip menulis `check.names = FALSE` dan nama berkas lewat
+  `deparse_value()`; skrip mereproduksi nama, data, dan indeks untuk
+  `PDB riil`. N6 dan N10 mati.
+- R5 tertutup. Berkas ber-BOM dibaca dengan `fileEncoding =
+  "UTF-8-BOM"` hanya bila tiga bita pertama memang BOM, jadi berkas
+  Windows-1252 (R3) tidak terpengaruh. Di lokal `C` nama non-ASCII menjadi
+  `<c2><b2>`, tetapi data utuh dan GUI = skrip. N7 mati.
+- R6 tertutup. M5 dan M8 kini mati (uji AC-3 memakai berkas bilangan
+  bulat berpemisah koma, uji R6 memeriksa baris skrip `sep = ";", dec =
+  "."`). M7 masih bertahan karena `csv_choice("point", "sep")` tidak diuji;
+  sisa ini masuk R13.
+- R7 tertutup. Kode penghitungan diganti `detect_separator()`; mutan
+  M3/M14/M15 tidak berlaku lagi.
+- R8 tertutup. `rcli_warning_dropped` menyebut kolom yang dibuang; GUI
+  menampilkannya lewat `safely()`, dan langkah 1 tetap selesai. N8 mati.
+- R9 tertutup. `.tsv` diterima; NEWS menyebut `.txt` dan `.tsv`.
+- R10 tertutup. `expect_identical()` untuk data GUI dan skrip.
+- Catatan di luar cakupan tertutup: `Roxygen: list(markdown = TRUE)`
+  (diperiksa di atas) dan nama berkas lewat `deparse_value()`.
 
 ### Temuan baru
-- [ ] [R15][nit] tests/testthat/test-app-frequency.R ("R1") — Mutan M20
-  bertahan. M20 mengembalikan jalan balik lama: nama yang tidak ada di
-  tampilan terakhir maupun di `rv$meta_known` mewarisi isian posisi yang
-  sama. Uji R1 tidak memeriksa baris kandidat baru (`reference`). Perilaku
-  saat ini benar (baris itu mendapat bawaan; diperiksa di Chrome). Saran:
-  di uji R1, isi `typ_1`/`frq_1` untuk lead_6 lalu ganti acuan ke lead_6
-  atau lead_3, dan periksa bahwa baris `reference` tidak mendapat stock atau
-  weekly.
-- [ ] [R16][nit] tests/testthat/test-frequency.R ("R4: Chow-Lin …",
-  "R4/R10") — Tiga mutan bertahan; perilaku saat ini benar:
-  - M5: uji Chow–Lin memakai acuan tahunan yang mulai di periode 1, jadi
-    tidak membedakan k dari 3. Saran: acuan semesteran
-    `start = c(y, 2)` dengan indikator bulanan, lalu periksa `start(x)` =
-    `c(y, 7)` dan kendala.
-  - M2b: posisi bawaan stok di `period_position()` (dipakai `cli_align()`
-    untuk acuan rendah dan kandidat triwulanan) tidak diuji lewat
-    `cli_align()`. Saran: acuan tahunan stok dengan `method = "linear"`
-    tanpa `position`, lalu periksa nilai Desember.
-  - M27: hanya `position = 1` (sah) dan 13 (tidak sah dalam kedua kasus)
-    yang diuji. Saran: `position = c(gdp = 12)` untuk acuan tahunan harus
-    diterima.
-- [ ] [R17][nit] harness/STATE.md:45 — Baris kosong sebelum log 07:40
-  memutus tabel "Log putaran" (sama dengan R14 di review 0.2.1). Saran:
-  hapus baris kosong itu.
+- [x] [R11][major] R/app.R:134-146 (`detect_decimal()`) dan AC-FR-008.2 —
+  Sel bilangan bulat berformat ribuan dihitung sebagai bukti tanda
+  desimal. `1.012` cocok dengan pola titik dan `12,345` cocok dengan pola
+  koma, padahal di berkas Excel keduanya biasanya angka ribuan (format
+  `#.##0`). Bukti: berkas titik koma `wisman` = `987`, `1.012`, `1.045`,
+  `998` → titik → seri 987; 1,012; 1,045; 998, tanpa galat dan tanpa
+  peringatan. Berkas tab `12,345`, `13,002` → koma → 12,345 dan 13,002.
+  Seri cacah yang melewati 1.000 (wisatawan, izin, unit) lazim di data
+  BPS, dan lonjakan palsu ini masuk langsung ke siklus. Perilaku ini sudah
+  ada di putaran 1 (saya lewatkan saat itu), tetapi aturan baru
+  menjadikannya bagian dari spesifikasi. Saran: anggap sel
+  `^-?[0-9]{1,3}([.,][0-9]{3})+$` dengan satu jenis tanda sebagai ambigu
+  dan jangan dihitung. Bila hanya sel ambigu yang ada, beri `rcli_warn()`
+  yang menyebut kolomnya (mis. "angka seperti 1.012 bisa berarti seribu
+  dua belas; pilih tanda desimal"), atau untuk titik koma pakai koma
+  sehingga kolom itu dibuang dengan `rcli_warning_dropped`, bukan dibaca
+  salah. Uji: kedua contoh di atas.
+- [x] [R12][nit] R/app.R:43-50 (`rcli_warning_dropped`) — Excel kadang
+  menulis `;` di akhir setiap baris. Kolom kosong tanpa nama itu memicu
+  "Columns without numbers were dropped: ." yang membingungkan. Saran:
+  buang kolom yang seluruhnya `NA` tanpa peringatan, atau tulis
+  `(tanpa nama)`.
+- [x] [R13][nit] tests/testthat/test-app-csv.R — Mutan yang bertahan:
+  M7 (`csv_choice("point", "sep")` diterima), N2 (syarat teratur
+  diabaikan), N3 (seri desimal), N4 (`useBytes`; berkas Windows-1252 dengan
+  byte di kolom teks atau sel data), N5 (`1.234,5` sebagai bukti koma),
+  N11 (`fileEncoding` dari pengguna pada berkas ber-BOM: tanpa pengaman,
+  galat "matched by multiple actual arguments"), dan N12. Saran: satu
+  harapan untuk masing-masing; uji N4 di bawah `C.UTF-8` seperti uji R3.
 
 ### Ringkasan putaran 2
-R1–R14 tertutup. Ketiga major terbukti diperbaiki: R1 di testServer dan
-Chrome, R2 untuk lima kombinasi frekuensi, R3 dengan reproduksi putaran 1.
-R4 tertutup kecuali satu mutan, yang diturunkan menjadi nit. 7 dari 8
-mutan yang bertahan di putaran 1 kini mati (M1, M2, M3, M14, M15, M17,
-M18); M5 masih bertahan. Masalah benih/sumber di luar cakupan juga
-diperbaiki. Ada tiga nit baru (R15–R17); tidak ada blocker, major, atau
-minor yang terbuka.
+R2–R10 tertutup dan terverifikasi; catatan di luar cakupan juga ditutup.
+Konversi Markdown 56 berkas Rd tidak mengubah isi, dan tautannya lolos
+`R CMD check`. Uji lengkap, lint, roxygen, dan check bersih. R1 belum
+tertutup: contoh tanpa kolom tanggal dari putaran 1 masih menghasilkan
+angka salah, karena aturan "terlebar" kalah oleh koma desimal. Ada satu
+major baru (R11, kelompok ribuan dibaca sebagai desimal tanpa pesan) dan
+dua nit baru (R12, R13).
 
 ## Putusan
-Putaran 1 — Inti numerik FR-007 benar dan sesuai F-04 baris demi baris.
-Hasilnya diverifikasi independen terhadap `tempdisagg`, terhadap solusi
-ruang nol, dan terhadap implementasi 0.2.1 (selisih 0 untuk k = 3).
-Deteksi frekuensi, `period_key()`/`key_start()`, data bertanggal mulai
-semester kedua, NA di ujung, Chow–Lin, mingguan/harian, dan `position`
-semuanya berjalan benar. Rangkaian prelude FR-006 mereproduksi indeks
-dalam enam skenario, termasuk peralihan dua kali dan metode OECD. Uji
-lengkap (dengan e2e Chrome), lint, roxygen, dan `R CMD check --as-cran`
-bersih.
+Putaran 1 — Bentuk kode sesuai desain dan AC-FR-008 kata demi kata.
+Pilihan eksplisit, pesan galat `rcli_error_argument`, penyimpanan format
+di `rv$loaded`, teks dua bahasa, dan jalur data contoh benar. Skrip ekspor
+mereproduksi data dan indeks GUI untuk berkas koma, titik koma, tab (dengan
+`"\t"`), dan BOM. Uji lengkap (termasuk Chrome), lint, roxygen, dan
+`R CMD check` bersih.
 
-Ada tiga major:
-- R1: klaim "metadata menurut nama" tidak berlaku saat acuan diganti, dan
-  ujinya tidak membedakan nama dari posisi;
-- R2: kartu skor diam untuk acuan tahunan/semesteran yang didisagregasi;
-- R3: skrip ekspor gagal bila langkah 9 dijalankan tanpa langkah 7
-  sesudah komposit manual sebelumnya.
+Namun aturan pengenalan otomatis di AC-FR-008.2 terlalu rapuh untuk berkas
+yang menjadi sasaran fitur ini, dan ada empat major:
+- R1: pemisah dari baris judul saja; nama kolom berkoma membuat berkas
+  titik koma terbaca sebagai koma, dan tanpa kolom tanggal angkanya salah
+  tanpa galat;
+- R2: tanda desimal dari baris data pertama saja; `NA` atau nilai basis
+  100 di baris pertama menyebabkan galat atau kolom hilang tanpa pesan;
+- R3: regresi untuk berkas Windows-1252 di lokal UTF-8; langkah 1 gagal
+  bahkan dengan pilihan eksplisit;
+- R4: skrip ekspor gagal untuk nama kolom berspasi (`check.names`).
 
-Ada empat minor (R4 celah uji inti FR-007, R5–R7) dan tujuh nit. R1–R3 dan
-R4 sebaiknya ditutup sebelum rilis 0.2.2. Putusan putaran 1:
+Ada tiga minor (R5 BOM, R6 celah uji/mutan, R8 kolom dibuang tanpa pesan)
+dan tiga nit (R7, R9, R10). R1–R4 sebaiknya ditutup sebelum rilis 0.3.1,
+dengan pembaruan AC-FR-008.2 dan NEWS. Putusan putaran 1:
 CHANGES-REQUESTED.
 
-Putaran 2 — R1–R14 tertutup dan terverifikasi (R4 dengan sisa nit R16).
-Versi kini 0.3.0. Hanya nit R15–R17 yang terbuka. Jalankan ulang G6 agar
-gate report membaca putusan ini.
+Putaran 2 — R2–R10 tertutup dan terverifikasi. Ada dua major terbuka:
+- R1 (sisa): berkas titik koma berdesimal koma tanpa kolom tanggal, dengan
+  koma di nama kolom, masih terbaca sebagai koma, dan angkanya salah.
+  Perbaikannya kecil: pilih titik koma/tab di antara pembagian teratur
+  tanpa melihat lebar;
+- R11 (baru): bilangan bulat berformat ribuan (`1.012`, `12,345`) dihitung
+  sebagai bukti desimal dan dibaca salah tanpa pesan.
+
+Keduanya menghasilkan data salah dari berkas Excel berbahasa Indonesia,
+sasaran FR-008, dan keduanya perlu uji. R12 dan R13 adalah nit.
+Putusan putaran 2: CHANGES-REQUESTED.
+
+## Tindak lanjut A5 sesudah putaran 2
+- [x] R1: di antara pemisah yang teratur, urutan pilihan tab, titik koma, lalu koma, tanpa melihat lebar; tanpa pemisah teratur, baris judul terlebar. Uji "R1: without a date column decimal commas do not win the split" (contoh putaran 2) beserta N2 dan N12; merah sebelum perbaikan.
+- [x] R11: sel `1.012`/`12,345` (satu tanda, satu kelompok tiga digit) tidak dihitung sebagai bukti; `1.234.567`/`1,234,567` dihitung sebagai pemisah ribuan; tanpa bukti lain, tanda di sel bergolongan dianggap pemisah ribuan sehingga kolom dibuang dengan peringatan. Uji "R11" (titik koma, tab, kelompok ganda, N5); merah sebelum perbaikan.
+- [x] R12: `read_cli_data()` membuang diam-diam kolom tanpa nama yang seluruhnya kosong. Uji "R12"; merah sebelum perbaikan.
+- [x] R13: uji "R13" untuk M7 (`csv_choice("point", "sep")` dan sebaliknya), N4 (bita Windows-1252 di sel data di bawah C.UTF-8), N11 (`fileEncoding` dari pengguna pada berkas ber-BOM); N2, N3, N5, N12 di uji R1 dan R11.
+
+## Review putaran 3
+- Reviewer: A6 (konteks bersih: ya). Keadaan: cabang `rcli-0.3.1`, HEAD
+  f05097c. Komit yang dibaca sejak 567153e:
+  - d334514: laporan gerbang (tanpa perubahan kode);
+  - f05097c: perbaikan R1 (sisa) dan R11–R13, revisi AC-FR-008.2, NEWS.
+
+  Semua pemeriksaan dijalankan pada salinan `git archive` f05097c dengan
+  pustaka sementara. Kotak R1, R11, R12, dan R13 di atas saya centang
+  sesudah verifikasi di bawah.
+- Gerbang yang saya jalankan sendiri:
+  - `devtools::test()` lengkap dengan `NOT_CRAN=true`:
+    `[ FAIL 0 | WARN 0 | SKIP 1 | PASS 1719 ]` (yang dilewati hanya
+    `seasonal`; uji peramban ikut berjalan);
+  - `lintr::lint_package()`: 0 temuan; `roxygenise()`: `man/` dan
+    `NAMESPACE` sinkron;
+  - `R CMD build` + `R CMD check --as-cran --no-manual`: 0 galat,
+    0 peringatan, 3 NOTE dari lingkungan (sama dengan putaran 1 dan 2);
+    Rd cross-references OK;
+  - baris > 80 karakter: tests/testthat/test-app-csv.R:240 dan
+    NEWS.md:15 (81 karakter; R16).
+- Contoh gagal putaran 2 diulang (jalur GUI persis, lokal `C` dan
+  `LANG=C.UTF-8`):
+
+  | Kasus | Putaran 2 | Putaran 3 |
+  |---|---|---|
+  | Titik koma tanpa kolom tanggal, nama berkoma (`PDB (ADHK, miliar);Kredit (Rp, triliun)`) | `,` → 100, 101, 102 / 1, 9, 5 | `;`/`,`, 100,5 dan 20,1 benar |
+  | Titik koma, `987`, `1.012`, `1.045`, `998` saja | `.` → 1,012 tanpa pesan | `,` → kolom `wisman` dibuang dengan `rcli_warning_dropped` |
+  | Sama, ditambah kolom indeks `101,3` | — | `;`/`,`; `wisman` dibuang dengan peringatan, `ihk` benar |
+  | Tab, `12,345` saja | `,` → 12,345 tanpa pesan | `.` → kolom dibuang |
+  | Titik koma, `1.234.567` | — | `,`; kolom dibuang dengan peringatan (pemisah ribuan tidak dibaca `read.csv()`) |
+  | Titik koma, `;` di akhir setiap baris | peringatan "dropped: ." | kolom kosong dibuang diam-diam |
+  | Windows-1252 di judul dan di kolom teks, `LANG=C.UTF-8` | benar | benar (pemeriksaan kolom kosong tidak memecahkan R3) |
+  | Semua kasus putaran 1 dan 2 lainnya (nama berkoma/berkutip, baris pertama kosong/`NA`/basis 100, ribuan `1,100.5` dan `2.345,5`, BOM, CRLF/CR, satu baris, hanya judul, tanpa tanggal) | benar | sama |
+
+- Kasus baru:
+
+  | Kasus | Hasil | Akibat |
+  |---|---|---|
+  | Titik koma, tiga desimal tetap gaya Excel ID (`0,125`; `101,325`) | `;`/`.` | galat "No numeric column found" (R14) |
+  | Tab, tiga desimal tetap (`0.125`; `101.325`) | `"\t"`/`,` | galat yang sama (R14) |
+
+  Di putaran 2 kedua berkas ini terbaca benar. Hasilnya tidak salah diam,
+  dan pilihan eksplisit membacanya benar.
+- Reproduksi skrip ekspor (testServer langkah 1–7, `eval()` skrip):
+  delapan kasus putaran 2 (titik koma otomatis/eksplisit, tab berdesimal
+  koma/titik, koma, BOM, `PDB riil` pada titik koma dan koma): nama, data,
+  dan indeks skrip = GUI.
+- Mutasi (filter `app-csv`, baseline 72 lulus):
+
+  | Mutan | Uraian | Status |
+  |---|---|---|
+  | M7 | peta `csv_choice()` tanpa `kind` | **mati** (2) |
+  | N2 | syarat "jumlah kolom sama" diabaikan | **mati** (3) |
+  | N3 | seri desimal → koma | **mati** (1) |
+  | N4 | `trimws()`/`grepl()` tanpa `useBytes` | **mati** (1 galat) |
+  | N11 | pengaman `fileEncoding` dihapus | **mati** (1 galat) |
+  | P1 | sel `1.012`/`12,345` dihitung lagi sebagai bukti | mati (1) |
+  | P3 | tanpa aturan cadangan "tanda di sel bergolongan = ribuan" | mati (1) |
+  | P4 | kembali ke pembagian teratur terlebar | mati (2) |
+  | P5 | kolom kosong tanpa nama tidak dibuang | mati (1) |
+  | P6 | nama `X`/`X.1` tidak dikenali | mati (1) |
+  | P8 | sel ambigu tidak dikenali sama sekali | mati (2) |
+  | N5 | pola koma tanpa `1.234,5` | bertahan (R15) |
+  | P2 | `1.234.567` tidak dihitung sebagai bukti koma | bertahan (R15) |
+  | P7 | syarat "seluruhnya NA" dihapus dari pembuangan kolom | bertahan (R15) |
+  | N12 | cadangan `";"` bila semua pembagian satu kolom | bertahan; praktis setara (berkas satu kolom gagal dengan galat yang sama) |
+
+### Status temuan putaran 2
+- R1 tertutup. Di antara pembagian teratur dipilih tab, titik koma, lalu
+  koma tanpa melihat lebar; contoh tanpa kolom tanggal kini benar, dan
+  uji "R1: without a date column …" memuatnya. P4 dan N2 mati.
+- R11 tertutup. Sel dengan satu tanda dan satu kelompok tiga digit tidak
+  lagi menjadi bukti; tanpa bukti lain, tanda di sel itu dianggap pemisah
+  ribuan. Kedua contoh putaran 2 kini berakhir dengan kolom yang dibuang
+  disertai peringatan, bukan angka salah. P1, P3, dan P8 mati. Efek
+  sampingnya dicatat di R14.
+- R12 tertutup. Kolom tanpa nama (atau `X`, `X.1`) yang seluruhnya `NA`
+  dibuang tanpa peringatan; P5 dan P6 mati.
+- R13 tertutup. M7, N2, N3, N4, dan N11 kini mati. Sisa N5, P2, dan P7
+  dicatat di R15.
+
+### Temuan baru
+- [ ] [R14][minor] R/app.R:142-165 (`detect_decimal()`, aturan cadangan)
+  — Data dengan tiga angka desimal tetap dan bagian bulat ≤ 3 digit
+  (`0,125`, `101,325`; format Excel `0,000`) hanya berisi sel "ambigu".
+  Aturan cadangan lalu memperlakukan tanda itu sebagai pemisah ribuan, dan
+  semua kolom dibuang: "No numeric column found". Di putaran 2 berkas ini
+  terbaca benar, jadi ini regresi kecil dari perbaikan R11. Data tidak
+  terbaca salah, dan pilihan eksplisit membacanya benar. Namun pesan galat
+  tidak menyebut tanda desimal, karena `rcli_abort()` terjadi sebelum
+  peringatan kolom dibuang. Saran: (a) sel dengan bagian bulat `0` atau
+  `-0` (`0,125`, `0.125`) tidak mungkin ribuan, jadi hitung sebagai bukti
+  tegas; (b) tambahkan petunjuk "check the decimal mark" pada galat "No
+  numeric column found" bila ada kolom yang dibuang; (c) uji kedua berkas
+  di atas.
+- [ ] [R15][nit] tests/testthat/test-app-csv.R — Mutan N5 (`1.234,5`
+  sebagai bukti koma), P2 (`1.234.567` sebagai bukti koma), dan P7
+  (pembuangan kolom bernama `X` yang berisi data) bertahan. Saran: satu
+  harapan untuk masing-masing, mis. berkas titik koma yang hanya punya
+  `1.234,5` dan `12` sebagai bukti, dan `read_cli_data()` dengan kolom `X`
+  berisi angka yang harus tetap ada.
+- [ ] [R16][nit] tests/testthat/test-app-csv.R:240 dan NEWS.md:15 — 81
+  karakter; CLAUDE.md meminta ≤ 80 (lintr tidak menandai literal string,
+  dan NEWS tidak di-lint). Saran: pecah baris.
+
+### Ringkasan putaran 3
+Semua temuan blocker dan major sudah tertutup dan terverifikasi: R1–R4
+dan R11 dengan contoh asli, di lokal `C` dan UTF-8. R5–R10 dan R12–R13
+juga tertutup. Uji lengkap, lint, roxygen, dan check bersih, dan skrip
+ekspor mereproduksi GUI di delapan kasus. Tersisa satu minor (R14,
+regresi kecil yang terlihat, dengan jalan keluar lewat pilihan eksplisit)
+dan dua nit (R15, R16). R14 sebaiknya diperbaiki bila masih ada waktu
+sebelum rilis, tetapi tidak menghalangi.
+
+## Putusan putaran 3
+R1 dan R11, dua major yang terbuka sesudah putaran 2, tertutup. Tidak ada
+blocker atau major yang terbuka. Sisa temuan adalah R14 (minor), R15, dan
+R16 (nit). Jalankan ulang G6 agar gate report membaca putusan ini.
 
 Putusan: APPROVE
 
-## Tindak lanjut A5 sesudah putaran 2
-- [x] R15 (nit): uji R1 kini juga memeriksa bahwa kandidat yang baru muncul (`reference`) mendapat isian bawaan (tipe kosong, rasional contoh `early_stage`).
-- [x] R16 (nit): uji "R16" untuk Chow–Lin dengan acuan semesteran yang mulai di semester kedua (k = 6), posisi stok bawaan lewat `cli_align()`, dan `position = 12` untuk acuan tahunan.
-- [x] R17 (nit): baris kosong di tabel log STATE.md dihapus.
+## Tindak lanjut A5 sesudah putaran 3
+- [x] R14 (minor): sel dengan nol di depan (`0,125`, `0.125`) kini bukti tanda desimal yang tegas, karena kelompok ribuan tidak pernah didahului nol; galat "No numeric column found" menyebut pemisah kolom dan tanda desimal. Uji "R14"; merah sebelum perbaikan.
+- [x] R15 (nit): uji "R15" untuk N5 (`1.234,5` sebagai satu-satunya bukti), P2 (`1,234.5`), dan P7 (kolom tanpa nama berisi angka tetap dipakai).
+- [x] R16 (nit): kedua baris dipecah; tidak ada baris lebih dari 80 karakter.

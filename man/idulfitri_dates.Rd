@@ -10,12 +10,12 @@ idulfitri_dates(from = 1980, to = 2040)
 \item{from, to}{First and last Gregorian year.}
 }
 \value{
-A sorted vector of class `Date`.
+A sorted vector of class \code{Date}.
 }
 \description{
 Dates of 1 Syawal (Eid al-Fitr) from the arithmetic (tabular) Islamic
 calendar. The official Indonesian date, set each year by the Ministry of
-Religious Affairs after the *sidang isbat*, can differ from these by one
+Religious Affairs after the \emph{sidang isbat}, can differ from these by one
 or two days. For monthly holiday regressors such a difference rarely
 matters, but the official dates should be used when they are at hand.
 }
@@ -23,5 +23,5 @@ matters, but the official dates should be used when they are at hand.
 idulfitri_dates(2020, 2026)
 }
 \seealso{
-[holiday_effect()]
+\code{\link[=holiday_effect]{holiday_effect()}}
 }

@@ -13,8 +13,8 @@ coincidents(x, ...)
 \S4method{coincidents}{CliResult}(x, ...)
 }
 \arguments{
-\item{x}{A [LeadAssessment-class], [CliResult-class] or
-[CciResult-class].}
+\item{x}{A \linkS4class{LeadAssessment}, \linkS4class{CliResult} or
+\linkS4class{CciResult}.}
 
 \item{...}{Unused.}
 }
@@ -31,5 +31,5 @@ coincidents(cli_assess(cli_candidates(sim, "reference", meta = meta),
                        cli_spec(freq = 12)))
 }
 \seealso{
-[leaders()], [cci_build()]
+\code{\link[=leaders]{leaders()}}, \code{\link[=cci_build]{cci_build()}}
 }

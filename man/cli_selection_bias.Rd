@@ -12,25 +12,25 @@ cli_selection_bias(
 )
 }
 \arguments{
-\item{candidates}{A [CandidateSet-class].}
+\item{candidates}{A \linkS4class{CandidateSet}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 
-\item{cutoffs}{Cut-off dates in decimal time (e.g. `c(2010, 2015)`).}
+\item{cutoffs}{Cut-off dates in decimal time (e.g. \code{c(2010, 2015)}).}
 
-\item{role}{`"leading"` (composite leading indicator) or `"coincident"`
+\item{role}{\code{"leading"} (composite leading indicator) or \code{"coincident"}
 (coincident index).}
 }
 \value{
-A data frame with one row per cut-off: `cutoff`, `n_components`,
-  `components`, in-sample `ccf_lag_in` and `median_lead_in`,
-  out-of-sample `median_lead_out`, `pct_led_out`, `pct_timely_out` (share
-  of later reference turning points matched within the coincident band)
-  and `n_tp_out` (number of reference turning points after the cut-off),
-  `lead_gap`
-  (`median_lead_in - median_lead_out`) and `note`, which explains empty
-  rows (training window too short, or no leading or coincident candidate
-  before the cut-off).
+A data frame with one row per cut-off: \code{cutoff}, \code{n_components},
+\code{components}, in-sample \code{ccf_lag_in} and \code{median_lead_in},
+out-of-sample \code{median_lead_out}, \code{pct_led_out}, \code{pct_timely_out} (share
+of later reference turning points matched within the coincident band)
+and \code{n_tp_out} (number of reference turning points after the cut-off),
+\code{lead_gap}
+(\code{median_lead_in - median_lead_out}) and \code{note}, which explains empty
+rows (training window too short, or no leading or coincident candidate
+before the cut-off).
 }
 \description{
 Leads measured on the sample used to choose the components overstate the
@@ -39,21 +39,23 @@ because they happened to lead in that sample. For every cut-off date
 \eqn{T_0} this harness
 }
 \details{
-1. restricts the data to observations up to \eqn{T_0} and runs the whole
-   selection ([cli_build()]) on that window;
-2. records the in-sample lead of the resulting composite;
-3. rebuilds the composite from the same components on the full sample and
-   measures its lead only at reference turning points after \eqn{T_0}.
+\enumerate{
+\item restricts the data to observations up to \eqn{T_0} and runs the whole
+selection (\code{\link[=cli_build]{cli_build()}}) on that window;
+\item records the in-sample lead of the resulting composite;
+\item rebuilds the composite from the same components on the full sample and
+measures its lead only at reference turning points after \eqn{T_0}.
+}
 
 The component choice is therefore out of sample; the cycles in step 3 are
 still two-sided filter estimates, so this is a pseudo out-of-sample check
 of selection, not a real-time evaluation (for that, store data vintages in
-the [CandidateSet-class]). A large positive `lead_gap` signals that the
+the \linkS4class{CandidateSet}). A large positive \code{lead_gap} signals that the
 in-sample lead is mostly a selection effect.
 
-With `role = "coincident"` the same harness checks a coincident index:
-step 1 runs [cci_build()], and the later timing should stay within the
-coincident band (see [cci_validate()]) rather than stay positive.
+With \code{role = "coincident"} the same harness checks a coincident index:
+step 1 runs \code{\link[=cci_build]{cci_build()}}, and the later timing should stay within the
+coincident band (see \code{\link[=cci_validate]{cci_validate()}}) rather than stay positive.
 }
 \examples{
 \donttest{

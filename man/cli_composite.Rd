@@ -27,28 +27,28 @@ cli_composite(cycles, components, spec, reference = NULL, shifts = NULL)
 \arguments{
 \item{aggregator, z, levels}{Internal arguments of the aggregation methods.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 
-\item{cycles}{Named list of [CycleSeries-class] (counter-cyclical series
-already inverted, as returned in a [CliResult-class]).}
+\item{cycles}{Named list of \linkS4class{CycleSeries} (counter-cyclical series
+already inverted, as returned in a \linkS4class{CliResult}).}
 
 \item{components}{Names of the components to aggregate.}
 
-\item{reference}{Optional [CycleSeries-class] of the reference series for
+\item{reference}{Optional \linkS4class{CycleSeries} of the reference series for
 the amplitude adjustment.}
 
 \item{shifts}{Optional named non-negative numbers of periods by which
 components are moved later before aggregation (OECD lag-shifting; see
-`lag_shift` in [cli_spec()]). The value of a shifted component at date
+\code{lag_shift} in \code{\link[=cli_spec]{cli_spec()}}). The value of a shifted component at date
 \eqn{t} is its value at \eqn{t - s}; values moved past the last date
 are dropped.}
 }
 \value{
-A [CompositeIndex-class].
+A \linkS4class{CompositeIndex}.
 }
 \description{
-Combines the normalised cycles of `components` with the specification's
-[Aggregator-class]. The composite cycle is normalised again; the published
+Combines the normalised cycles of \code{components} with the specification's
+\linkS4class{Aggregator}. The composite cycle is normalised again; the published
 index is that cycle rescaled to the amplitude of the reference cycle (in
 percent deviation from trend) around a long-term average of 100, as in the
 OECD "amplitude adjusted" CLI. For the Conference Board method the index

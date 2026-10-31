@@ -20,18 +20,18 @@
 \S4method{as.data.frame}{CliValidation}(x, row.names = NULL, optional = FALSE, ...)
 }
 \arguments{
-\item{x}{An object of class [TurningPoints-class], [LeadAssessment-class],
-[CompositeIndex-class] or [CliValidation-class].}
+\item{x}{An object of class \linkS4class{TurningPoints}, \linkS4class{LeadAssessment},
+\linkS4class{CompositeIndex} or \linkS4class{CliValidation}.}
 
 \item{row.names, optional}{Ignored.}
 
 \item{...}{Unused.}
 }
 \value{
-A data frame. For turning points: `time` (decimal), `period`
-  (year and month or quarter), `type`, `index` and `value`. For a composite:
-  `time`, `index` and `cycle`. For a validation: one row combining the
-  turning-point and probability statistics.
+A data frame. For turning points: \code{time} (decimal), \code{period}
+(year and month or quarter), \code{type}, \code{index} and \code{value}. For a composite:
+\code{time}, \code{index} and \code{cycle}. For a validation: one row combining the
+turning-point and probability statistics.
 }
 \description{
 Convert results to data frames

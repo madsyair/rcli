@@ -12,22 +12,24 @@ series_frequencies
 }
 \description{
 The frequency at which a series is published, recorded in the metadata
-of [cli_candidates()] and checked by [cli_align()]:
+of \code{\link[=cli_candidates]{cli_candidates()}} and checked by \code{\link[=cli_align]{cli_align()}}:
 }
 \details{
-* `"daily"`, `"weekly"`, `"monthly"`, `"quarterly"`: candidates and
-  reference series; daily and weekly data are aggregated, quarterly
-  candidates are interpolated to months.
-* `"semiannual"`, `"annual"`: the reference series only, which is
-  disaggregated to the target frequency (Denton-Cholette or Chow-Lin).
-  A candidate needs at least quarterly data: one or two values a year
-  cannot show a lead of a few months, and the OECD uses monthly or
-  quarterly components only (Gyomai and Guidetti 2012).
+\itemize{
+\item \code{"daily"}, \code{"weekly"}, \code{"monthly"}, \code{"quarterly"}: candidates and
+reference series; daily and weekly data are aggregated, quarterly
+candidates are interpolated to months.
+\item \code{"semiannual"}, \code{"annual"}: the reference series only, which is
+disaggregated to the target frequency (Denton-Cholette or Chow-Lin).
+A candidate needs at least quarterly data: one or two values a year
+cannot show a lead of a few months, and the OECD uses monthly or
+quarterly components only (Gyomai and Guidetti 2012).
+}
 }
 \examples{
 series_frequencies
 }
 \seealso{
-[cli_align()], [series_types]
+\code{\link[=cli_align]{cli_align()}}, \link{series_types}
 }
 \keyword{datasets}

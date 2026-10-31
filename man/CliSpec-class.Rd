@@ -5,28 +5,28 @@
 \alias{CliSpec-class}
 \title{Specification of a CLI workflow}
 \description{
-A `CliSpec` collects every choice of the workflow: the filter, the
+A \code{CliSpec} collects every choice of the workflow: the filter, the
 turning-point rules, the classification thresholds, the aggregation method
-and the stopping rules of the selection loop. Create it with [cli_spec()]
-and change it with `update()`.
+and the stopping rules of the selection loop. Create it with \code{\link[=cli_spec]{cli_spec()}}
+and change it with \code{update()}.
 }
 \section{Slots}{
 
 \describe{
 \item{\code{freq}}{Data frequency, 4 or 12.}
 
-\item{\code{filter}}{A [CycleFilter-class].}
+\item{\code{filter}}{A \linkS4class{CycleFilter}.}
 
-\item{\code{dater}}{A [Dater-class].}
+\item{\code{dater}}{A \linkS4class{Dater}.}
 
-\item{\code{aggregator}}{An [Aggregator-class].}
+\item{\code{aggregator}}{An \linkS4class{Aggregator}.}
 
-\item{\code{transform}}{`"auto"`, `"log"` or `"none"`.}
+\item{\code{transform}}{\code{"auto"}, \code{"log"} or \code{"none"}.}
 
 \item{\code{seasonal_adjust}}{Logical; X-13ARIMA-SEATS through \pkg{seasonal}.}
 
 \item{\code{outlier_threshold}}{Robust z-score above which a change is treated as
-an outlier and replaced by interpolation (`Inf` disables).}
+an outlier and replaced by interpolation (\code{Inf} disables).}
 
 \item{\code{min_lead}}{Minimum lead (periods) of the cross-correlation peak.}
 
@@ -45,7 +45,7 @@ coincident series.}
 \item{\code{target_lead}}{Lead range (periods) the OECD aims at; reported for
 information.}
 
-\item{\code{lead_window}}{Matching window `c(max_lag, max_lead)` in periods.}
+\item{\code{lead_window}}{Matching window \code{c(max_lag, max_lead)} in periods.}
 
 \item{\code{ccf_lag_max}}{Largest lag of the cross-correlation search.}
 
@@ -56,27 +56,27 @@ Toda-Yamamoto test.}
 
 \item{\code{max_iter,min_components}}{Stopping rules of the selection loop.}
 
-\item{\code{horizon}}{Forecast horizon of the probability tests (`NA`: the
+\item{\code{horizon}}{Forecast horizon of the probability tests (\code{NA}: the
 composite's median lead).}
 
 \item{\code{oos_cutoffs}}{Cut-off dates (decimal time) for the selection-bias
 harness; empty to skip it.}
 
-\item{\code{holidays}}{List of [holiday_effect()] objects removed during seasonal
+\item{\code{holidays}}{List of \code{\link[=holiday_effect]{holiday_effect()}} objects removed during seasonal
 adjustment.}
 
-\item{\code{classifier}}{A [Classifier-class]: the rule that labels series
+\item{\code{classifier}}{A \linkS4class{Classifier}: the rule that labels series
 leading, coincident, lagging or rejected.}
 
-\item{\code{outliers}}{An [OutlierTreatment-class].}
+\item{\code{outliers}}{An \linkS4class{OutlierTreatment}.}
 
 \item{\code{lag_shift}}{Logical; shift the components so that their median leads
 align before aggregation (OECD lag-shifting)?}
 
-\item{\code{extension}}{An [Extension-class]: forecasts appended to each series
+\item{\code{extension}}{An \linkS4class{Extension}: forecasts appended to each series
 before the cycle filter.}
 }}
 
 \seealso{
-[cli_spec()]
+\code{\link[=cli_spec]{cli_spec()}}
 }

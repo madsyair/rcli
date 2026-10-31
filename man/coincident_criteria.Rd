@@ -16,40 +16,42 @@ coincident_criteria(classifier, row, spec)
 \S4method{coincident_criteria}{OecdClassifier}(classifier, row, spec)
 }
 \arguments{
-\item{classifier}{A [Classifier-class].}
+\item{classifier}{A \linkS4class{Classifier}.}
 
 \item{row}{One-row data frame of turning-point statistics.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 }
 \value{
 Named logical vector, one element per criterion.
 }
 \description{
-The criteria a coincident index must meet in [cci_validate()]. They mirror
-the leading criteria of each [Classifier-class], with timing in place of
+The criteria a coincident index must meet in \code{\link[=cci_validate]{cci_validate()}}. They mirror
+the leading criteria of each \linkS4class{Classifier}, with timing in place of
 lead:
 }
 \details{
-* `RcliClassifier`: at least three matched turning points; a positive
-  cross-correlation peak within `coincident_band` periods of lag 0 (the
-  band that labels candidates coincident); a median lead at turning points
-  within the timing band (+/- 2 months, the OECD coincident band, or one
-  period when that is wider, as for quarterly data); few
-  missed and extra turning points; significant concordance. Granger
-  causality is not required: a coincident series need not predict the
-  reference.
-* `OecdClassifier`: at least `min_matched` matched turning points and a
-  median lead strictly inside +/- `coincident` months, the OECD
-  definition of a coincident series.
-* any other `Classifier`: at least three matched turning points and a
-  median lead within the timing band.
+\itemize{
+\item \code{RcliClassifier}: at least three matched turning points; a positive
+cross-correlation peak within \code{coincident_band} periods of lag 0 (the
+band that labels candidates coincident); a median lead at turning points
+within the timing band (+/- 2 months, the OECD coincident band, or one
+period when that is wider, as for quarterly data); few
+missed and extra turning points; significant concordance. Granger
+causality is not required: a coincident series need not predict the
+reference.
+\item \code{OecdClassifier}: at least \code{min_matched} matched turning points and a
+median lead strictly inside +/- \code{coincident} months, the OECD
+definition of a coincident series.
+\item any other \code{Classifier}: at least three matched turning points and a
+median lead within the timing band.
+}
 
-New rules can add a method for `coincident_criteria()`; the scorecard of
-[cli_quality()] reports every criterion it returns.
+New rules can add a method for \code{coincident_criteria()}; the scorecard of
+\code{\link[=cli_quality]{cli_quality()}} reports every criterion it returns.
 
-In the package simulations (`inst/calibration/coincident.csv`, made by
-`data-raw/calibrate_coincident.R`, 100 replications) the default rule
+In the package simulations (\code{inst/calibration/coincident.csv}, made by
+\code{data-raw/calibrate_coincident.R}, 100 replications) the default rule
 passes 96 percent of monthly and 99 percent of quarterly composites of
 truly coincident series at the default noise level, and at most 1 percent
 of composites that lead or lag by 3 months (1 quarter). With twice the
@@ -69,9 +71,9 @@ row <- a@table[a@table$name == "coincident", ]
 coincident_criteria(spec@classifier, row, spec)
 }
 \references{
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 }
 \seealso{
-[cci_validate()], [cci_build()]
+\code{\link[=cci_validate]{cci_validate()}}, \code{\link[=cci_build]{cci_build()}}
 }

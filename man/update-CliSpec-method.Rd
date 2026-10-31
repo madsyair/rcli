@@ -7,12 +7,12 @@
 \S4method{update}{CliSpec}(object, ...)
 }
 \arguments{
-\item{object}{A [CliSpec-class].}
+\item{object}{A \linkS4class{CliSpec}.}
 
-\item{...}{Named slots to replace, e.g. `min_lead = 6`.}
+\item{...}{Named slots to replace, e.g. \code{min_lead = 6}.}
 }
 \value{
-The updated, re-validated [CliSpec-class].
+The updated, re-validated \linkS4class{CliSpec}.
 }
 \description{
 Update a specification

@@ -5,13 +5,13 @@
 \alias{CciResult-class}
 \title{Result of the coincident-index workflow}
 \description{
-A `CciResult` has the slots of a [CliResult-class]; the composite is a
+A \code{CciResult} has the slots of a \linkS4class{CliResult}; the composite is a
 coincident index built from the candidates classified as coincident, and
-its validation has role `"coincident"`. The accessors of `CliResult`
-([components()], [composite()], [validation()], [audit_log()],
-[cycles()], [turning_points()], [assessment()]) and [cli_quality()] work
+its validation has role \code{"coincident"}. The accessors of \code{CliResult}
+(\code{\link[=components]{components()}}, \code{\link[=composite]{composite()}}, \code{\link[=validation]{validation()}}, \code{\link[=audit_log]{audit_log()}},
+\code{\link[=cycles]{cycles()}}, \code{\link[=turning_points]{turning_points()}}, \code{\link[=assessment]{assessment()}}) and \code{\link[=cli_quality]{cli_quality()}} work
 on it.
 }
 \seealso{
-[cci_build()]
+\code{\link[=cci_build]{cci_build()}}
 }

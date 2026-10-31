@@ -7,35 +7,37 @@
 cli_validate(composite, reference, spec)
 }
 \arguments{
-\item{composite}{A [CompositeIndex-class].}
+\item{composite}{A \linkS4class{CompositeIndex}.}
 
-\item{reference}{The reference [CycleSeries-class].}
+\item{reference}{The reference \linkS4class{CycleSeries}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 }
 \value{
-A [CliValidation-class].
+A \linkS4class{CliValidation}.
 }
 \description{
 Tests the composite against the reference cycle in three ways:
 }
 \details{
-* **turning points**: the composite is dated and assessed exactly like a
-  candidate (lead, consistency, missed and extra turning points,
-  cross-correlation, concordance); `passed` is `TRUE` when it meets every
-  leading criterion of the specification;
-* **probability of contraction**: a logit model of the reference
-  contraction state at time \eqn{t} on the change of the composite over
-  the quarter ending at \eqn{t - h} (3 months or 1 quarter) gives the
-  quadratic probability score (QPS, Diebold and Rudebusch 1989) and the
-  area under the ROC curve (Berge and Jordà 2011);
-* **direction**: the Pesaran and Timmermann (1992) test that the sign of
-  the composite's change predicts the sign of the reference change
-  \eqn{h} periods later.
+\itemize{
+\item \strong{turning points}: the composite is dated and assessed exactly like a
+candidate (lead, consistency, missed and extra turning points,
+cross-correlation, concordance); \code{passed} is \code{TRUE} when it meets every
+leading criterion of the specification;
+\item \strong{probability of contraction}: a logit model of the reference
+contraction state at time \eqn{t} on the change of the composite over
+the quarter ending at \eqn{t - h} (3 months or 1 quarter) gives the
+quadratic probability score (QPS, Diebold and Rudebusch 1989) and the
+area under the ROC curve (Berge and Jordà 2011);
+\item \strong{direction}: the Pesaran and Timmermann (1992) test that the sign of
+the composite's change predicts the sign of the reference change
+\eqn{h} periods later.
+}
 
-The horizon \eqn{h} is `spec@horizon` or, when that is `NA`, the lead of
+The horizon \eqn{h} is \code{spec@horizon} or, when that is \code{NA}, the lead of
 the composite's cross-correlation peak (at least 1). These are in-sample
-measures; use [cli_selection_bias()] for the out-of-sample check.
+measures; use \code{\link[=cli_selection_bias]{cli_selection_bias()}} for the out-of-sample check.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)
@@ -47,13 +49,13 @@ cli_validate(cli, cyc$reference, spec)
 }
 \references{
 Berge, T. J. and Jordà, Ò. (2011). Evaluating the classification of
-economic activity into recessions and expansions. *American Economic
-Journal: Macroeconomics*, 3(2), 246--277.
+economic activity into recessions and expansions. \emph{American Economic
+Journal: Macroeconomics}, 3(2), 246--277.
 
 Diebold, F. X. and Rudebusch, G. D. (1989). Scoring the leading
-indicators. *Journal of Business*, 62(3), 369--391.
+indicators. \emph{Journal of Business}, 62(3), 369--391.
 
 Pesaran, M. H. and Timmermann, A. (1992). A simple nonparametric test of
-predictive performance. *Journal of Business and Economic Statistics*,
+predictive performance. \emph{Journal of Business and Economic Statistics},
 10(4), 461--465.
 }

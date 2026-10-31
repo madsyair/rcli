@@ -78,6 +78,16 @@ Ekspor `series_frequencies` (daily, weekly, monthly, quarterly, semiannual, annu
 - AC-FR-007.6  `cli_candidates()` menyimpan kolom `frequency` di metadata: dari `meta`, atau dari catatan `cli_align()` bila tidak diisi; nilai tidak dikenal → `rcli_error_argument`.
 - AC-FR-007.7  GUI langkah 2 punya isian "Frekuensi asal" per kandidat; nilainya masuk metadata dan skrip ekspor; kandidat semesteran/tahunan memberi pesan galat dan langkah 2 tidak selesai.
 
+## Increment rcli 0.3.1 (keputusan pengguna 31 Oktober 2026: "Iya. Beri opsi untuk pemisah csv")
+
+### FR-008 — GUI: pemisah kolom dan tanda desimal berkas CSV
+GUI langkah 1 punya isian `csv_sep` (otomatis, koma, titik koma, tab) dan `csv_dec` (otomatis, titik, koma) untuk berkas yang diunggah.
+- AC-FR-008.1  Berkas berpemisah titik koma dan berdesimal koma (bentuk Excel berbahasa Indonesia) terbaca benar dengan pilihan otomatis maupun pilihan eksplisit; nilainya sama persis dengan berkas berpemisah koma yang setara.
+- AC-FR-008.2  Pengenalan otomatis (revisi sesudah review R1–R3): pemisah adalah yang membagi setiap baris menjadi jumlah kolom yang sama (tanda kutip dihormati), dengan urutan pilihan tab, titik koma, lalu koma, bukan menurut lebar (revisi putaran 2: koma desimal melebarkan pemisah koma); tanda desimal mengikuti mayoritas sel yang tegas (`1,5`, `1.234,5`, `1.234.567` untuk koma; `1.5`, `1,234.5`, `1,234,567` untuk titik), bukan hanya baris pertama; sel seperti `1.012` atau `12,345` tidak dihitung, dan bila hanya sel seperti itu yang ada, tanda yang dipakai di sel itu dianggap pemisah ribuan sehingga kolomnya dibuang dengan peringatan, bukan terbaca keliru; pemisah koma selalu bertitik desimal. Teks diperiksa sebagai bita, sehingga berkas Windows-1252 terbaca pada sesi UTF-8. Berkas berpemisah tab juga terbaca.
+- AC-FR-008.3  Pemisah dan tanda desimal yang sama (koma dan koma) → galat `rcli_error_argument`; langkah 1 tidak selesai.
+- AC-FR-008.4  Skrip R ekspor memakai `sep` dan `dec` yang benar-benar dipakai (hasil pengenalan otomatis), hanya bila berbeda dari bawaan `read.csv()`, serta `check.names = FALSE` seperti GUI, dan mereproduksi data GUI persis (nama kolom ikut sama); pilihan yang diubah sesudah langkah 1 tidak mengubah skrip.
+- AC-FR-008.5  Kedua isian punya teks Indonesia dan Inggris.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.

@@ -10,15 +10,15 @@ Quality scorecard of a composite leading indicator
 \section{Slots}{
 
 \describe{
-\item{\code{table}}{Data frame with one row per criterion: `group`
-(`"turning points"`, `"prediction"`, `"out of sample"`, `"information"`),
-`criterion`, `value`, `threshold` and `passed` (`NA` for information).}
+\item{\code{table}}{Data frame with one row per criterion: \code{group}
+(\code{"turning points"}, \code{"prediction"}, \code{"out of sample"}, \code{"information"}),
+\code{criterion}, \code{value}, \code{threshold} and \code{passed} (\code{NA} for information).}
 
-\item{\code{verdict}}{`"good"`, `"acceptable"` or `"weak"`.}
+\item{\code{verdict}}{\code{"good"}, \code{"acceptable"} or \code{"weak"}.}
 
 \item{\code{note}}{One-sentence explanation of the verdict.}
 }}
 
 \seealso{
-[cli_quality()]
+\code{\link[=cli_quality]{cli_quality()}}
 }

@@ -59,8 +59,8 @@ turning_points(x, ...)
 \S4method{turning_points}{CliResult}(x, ...)
 }
 \arguments{
-\item{x}{A [CliResult-class] (or a [LeadAssessment-class] for
-`leaders()`, a [CompositeIndex-class] for `components()`).}
+\item{x}{A \linkS4class{CliResult} (or a \linkS4class{LeadAssessment} for
+\code{leaders()}, a \linkS4class{CompositeIndex} for \code{components()}).}
 
 \item{...}{Unused.}
 }
@@ -68,11 +68,13 @@ turning_points(x, ...)
 See Description.
 }
 \description{
-* `leaders()`: names of the candidates classified as leading.
-* `components()`: components of the final composite.
-* `audit_log()`: the iterations of the selection loop.
-* `assessment()`, `composite()`, `validation()`, `cycles()`,
-  `turning_points()`: the stored objects.
+\itemize{
+\item \code{leaders()}: names of the candidates classified as leading.
+\item \code{components()}: components of the final composite.
+\item \code{audit_log()}: the iterations of the selection loop.
+\item \code{assessment()}, \code{composite()}, \code{validation()}, \code{cycles()},
+\code{turning_points()}: the stored objects.
+}
 }
 \examples{
 sim <- simulate_cycles(seed = 1)

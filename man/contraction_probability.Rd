@@ -10,14 +10,14 @@ contraction_probability(composite, reference, spec, horizon = NULL)
 roc_curve(score, outcome)
 }
 \arguments{
-\item{composite}{A [CompositeIndex-class].}
+\item{composite}{A \linkS4class{CompositeIndex}.}
 
-\item{reference}{The reference [CycleSeries-class].}
+\item{reference}{The reference \linkS4class{CycleSeries}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 
-\item{horizon}{Lead \eqn{h} in periods; `NULL` uses the lead of the
-cross-correlation peak, as in [cli_validate()].}
+\item{horizon}{Lead \eqn{h} in periods; \code{NULL} uses the lead of the
+cross-correlation peak, as in \code{\link[=cli_validate]{cli_validate()}}.}
 
 \item{score}{Predicted probabilities (or any score, higher meaning more
 likely contraction).}
@@ -25,15 +25,15 @@ likely contraction).}
 \item{outcome}{Observed 0/1 outcome.}
 }
 \value{
-`contraction_probability()`: a data frame with `time`,
-  `contraction` (0/1) and `probability` (`NA` where the model cannot be
-  evaluated), or `NULL` when there are too few observations.
-  `roc_curve()`: a data frame with `threshold`, `fpr` and `tpr`.
+\code{contraction_probability()}: a data frame with \code{time},
+\code{contraction} (0/1) and \code{probability} (\code{NA} where the model cannot be
+evaluated), or \code{NULL} when there are too few observations.
+\code{roc_curve()}: a data frame with \code{threshold}, \code{fpr} and \code{tpr}.
 }
 \description{
-Fits the logit model used by [cli_validate()]: the reference contraction
+Fits the logit model used by \code{\link[=cli_validate]{cli_validate()}}: the reference contraction
 state (1 between a peak and the next trough) at time \eqn{t} on the change
-of the composite over the quarter ending at \eqn{t - h}. `roc_curve()`
+of the composite over the quarter ending at \eqn{t - h}. \code{roc_curve()}
 turns the fitted probabilities into the points of the ROC curve.
 }
 \examples{
