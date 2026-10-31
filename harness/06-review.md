@@ -119,3 +119,6 @@ Perbaikan dua lapis:
 - Uji "R9" (daftar bernama dan string injeksi untuk delapan isian langkah
   3 dan tiga isian langkah 2, serta daftar putih) dan "R10/R12" (skrip
   dengan nama seri acuan injeksi dievaluasi; komposit sama dengan GUI).
+- Bukti merah: uji baru gagal 14 kali pada b7c4820 (termasuk kode yang
+  dijalankan lewat daftar bernama dan skrip dengan nama seri acuan
+  injeksi); semuanya lolos sesudah perbaikan.
