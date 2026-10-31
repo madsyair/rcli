@@ -1,3 +1,36 @@
+# rcli 0.4.0
+
+## Data input
+
+* New `read_cli_series()` reads several CSV files, one or more indicators
+  per file, as statistical offices often publish them. The first column of
+  each file holds dates (`2001-01-15`, `15/01/2001`, `2001-01`, `2001Q1`,
+  `2001S1` or `2001`, one form per file); every other numeric column
+  becomes a series, and a column called `value` or `nilai` takes the name
+  of its file. The column separator and the decimal mark are recognised
+  per file, as in the interface since 0.3.1. Each series is a data frame
+  with `date` and `value`, carries its recognised source frequency, and
+  goes straight into `cli_align()`. A date that does not fit is reported
+  with its file name and value (`rcli_error_dates`).
+* `cli_candidates()`: an empty `type` or `frequency` in `meta` no longer
+  overwrites what `cli_align()` recorded for that candidate.
+
+## Graphical interface
+
+* Step 1 gains the source *Upload several files (one per indicator)*: the
+  files may have different frequencies (daily to annual for the
+  reference), and an *Analysis frequency* (monthly or quarterly) is chosen.
+  The summary lists each series with its file, source frequency, start,
+  end and number of observations; the overview plot puts all series on one
+  time axis. Inputs that do not apply to the chosen source are hidden.
+* Step 2 then asks for the variable type of the reference series as well,
+  fills in the source frequencies that were recognised, and aligns all
+  series with `cli_align()` before building the candidate set. A series
+  that must be converted but has no type stops step 2 with a message.
+* The exported script reads the files with `read_cli_series()` and aligns
+  them with the same `cli_align()` call, so it reproduces the analysis,
+  also when the coincident index later becomes the reference.
+
 # rcli 0.3.1
 
 ## Graphical interface

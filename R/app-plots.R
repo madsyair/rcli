@@ -21,15 +21,7 @@ shade_contractions <- function(tp, ylim) {
 # All series indexed to 100 at their first observation (log scale).
 plot_series_overview <- function(data, reference, tr = function(x) x) {
   x <- data
-  for (j in seq_len(ncol(x))) {
-    v <- x[, j]
-    first <- v[which(!is.na(v))[1]]
-    x[, j] <- if (isTRUE(first > 0) && all(v > 0, na.rm = TRUE)) {
-      100 * v / first
-    } else {
-      100 + (v - first) / stats::sd(v, na.rm = TRUE) * 10
-    }
-  }
+  for (j in seq_len(ncol(x))) x[, j] <- index_first(x[, j])
   cols <- grDevices::hcl.colors(ncol(x), "Dark 3")
   ref <- which(colnames(x) == reference)
   cols[ref] <- "black"
@@ -233,4 +225,36 @@ plot_selection_bias <- function(sb, tr = function(x) x) {
                    fill = c("grey60", "#1b7837"),
                    border = NA,
                    legend = c(tr("in sample"), tr("after cut-off")))
+}
+
+# A series as an index of its first value (100), or, when it has values at
+# or below zero, as standardised deviations from its first value.
+index_first <- function(v) {
+  first <- v[which(!is.na(v))[1]]
+  if (isTRUE(first > 0) && all(v > 0, na.rm = TRUE)) {
+    100 * v / first
+  } else {
+    100 + (v - first) / stats::sd(v, na.rm = TRUE) * 10
+  }
+}
+
+# Overview of series read from several files (read_cli_series()), each on
+# its own dates, so that daily, monthly and quarterly series share one axis.
+plot_series_dated <- function(series, reference, tr = function(x) x) {
+  y <- lapply(series, function(s) index_first(s$value))
+  dates <- do.call(c, lapply(series, `[[`, "date"))
+  vals <- unlist(y)
+  cols <- grDevices::hcl.colors(length(series), "Dark 3")
+  ref <- which(names(series) == reference)
+  cols[ref] <- "black"
+  lwd <- ifelse(seq_along(series) == ref, 2.5, 1)
+  graphics::plot(range(dates), range(vals[vals > 0], na.rm = TRUE),
+                 type = "n", log = "y", xlab = "",
+                 ylab = tr("index (first value = 100)"))
+  for (j in seq_along(series)) {
+    graphics::lines(series[[j]]$date, y[[j]], col = cols[j], lwd = lwd[j])
+  }
+  graphics::legend("topleft", legend = names(series), col = cols, lwd = lwd,
+                   bg = grDevices::adjustcolor("white", 0.8), box.col = NA,
+                   cex = 0.8, ncol = 2)
 }

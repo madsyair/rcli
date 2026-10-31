@@ -13,6 +13,8 @@
 #' @param ... Passed to [utils::read.csv()], e.g. `sep = ";", dec = ","` for
 #'   a file saved by Excel with Indonesian settings.
 #' @return A multivariate `ts`.
+#' @seealso [read_cli_series()] for one file per indicator, at different
+#'   frequencies.
 #' @examples
 #' df <- data.frame(date = c("2001Q1", "2001Q2", "2001Q3"),
 #'                  gdp = c(100, 101, 103), sales = c(50, 52, 51))
@@ -265,26 +267,43 @@ app_ui <- function(language = "id") {
         shiny::fluidRow(
           shiny::column(5,
             shiny::radioButtons("source", t("source"), stats::setNames(
-              c("example_m", "example_q", "upload"),
-              c(t("src_example_m"), t("src_example_q"), t("src_upload")))),
-            shiny::numericInput("seed", t("seed"), 2026, min = 1),
-            shiny::fileInput("file", t("file"),
-                             accept = c(".csv", ".txt", ".tsv")),
-            shiny::fluidRow(
-              shiny::column(6, shiny::selectInput(
-                "csv_sep", t("csv_sep"), stats::setNames(
-                  c("auto", "comma", "semicolon", "tab"),
-                  c(t("sep_auto"), t("sep_comma"), t("sep_semicolon"),
-                    t("sep_tab"))))),
-              shiny::column(6, shiny::selectInput(
-                "csv_dec", t("csv_dec"), stats::setNames(
-                  c("auto", "point", "comma"),
-                  c(t("sep_auto"), t("dec_point"), t("dec_comma")))))
-            ),
-            shiny::selectInput("freq", t("freq"), stats::setNames(
-              c("auto", "12", "4"),
-              c(t("freq_auto"), t("monthly"), t("quarterly")))),
-            shiny::textInput("start", t("start"), ""),
+              c("example_m", "example_q", "upload", "upload_multi"),
+              c(t("src_example_m"), t("src_example_q"), t("src_upload"),
+                t("src_upload_multi")))),
+            shiny::conditionalPanel(
+              "input.source == 'example_m' || input.source == 'example_q'",
+              shiny::numericInput("seed", t("seed"), 2026, min = 1)),
+            shiny::conditionalPanel(
+              "input.source == 'upload'",
+              shiny::fileInput("file", t("file"),
+                               accept = c(".csv", ".txt", ".tsv"))),
+            shiny::conditionalPanel(
+              "input.source == 'upload_multi'",
+              shiny::fileInput("files", t("files"), multiple = TRUE,
+                               accept = c(".csv", ".txt", ".tsv")),
+              shiny::selectInput("target_freq", t("target_freq"),
+                                 stats::setNames(c("12", "4"),
+                                                 c(t("monthly"),
+                                                   t("quarterly"))))),
+            shiny::conditionalPanel(
+              "input.source == 'upload' || input.source == 'upload_multi'",
+              shiny::fluidRow(
+                shiny::column(6, shiny::selectInput(
+                  "csv_sep", t("csv_sep"), stats::setNames(
+                    c("auto", "comma", "semicolon", "tab"),
+                    c(t("sep_auto"), t("sep_comma"), t("sep_semicolon"),
+                      t("sep_tab"))))),
+                shiny::column(6, shiny::selectInput(
+                  "csv_dec", t("csv_dec"), stats::setNames(
+                    c("auto", "point", "comma"),
+                    c(t("sep_auto"), t("dec_point"), t("dec_comma")))))
+              )),
+            shiny::conditionalPanel(
+              "input.source == 'upload'",
+              shiny::selectInput("freq", t("freq"), stats::setNames(
+                c("auto", "12", "4"),
+                c(t("freq_auto"), t("monthly"), t("quarterly")))),
+              shiny::textInput("start", t("start"), "")),
             shiny::actionButton("run1", t("run1"), class = "btn-primary")
           ),
           shiny::column(7,
@@ -494,6 +513,31 @@ data_summary <- function(data) {
   do.call(rbind, rows)
 }
 
+# Summary of series read from several files: one row per series.
+series_summary <- function(series, p = function(x) x) {
+  rows <- lapply(names(series), function(nm) {
+    s <- series[[nm]]
+    from <- attr(s, "frequency")
+    data.frame(series = nm, file = attr(s, "file"), frequency = p(from),
+               start = date_label(min(s$date), from),
+               end = date_label(max(s$date), from),
+               observations = nrow(s))
+  })
+  do.call(rbind, rows)
+}
+
+# A date written as the period of its frequency.
+date_label <- function(d, from) {
+  y <- as.integer(format(d, "%Y"))
+  m <- as.integer(format(d, "%m"))
+  switch(from,
+         monthly = format(d, "%Y-%m"),
+         quarterly = sprintf("%dQ%d", y, (m - 1L) %/% 3L + 1L),
+         semiannual = sprintf("%dS%d", y, (m - 1L) %/% 6L + 1L),
+         annual = as.character(y),
+         format(d, "%Y-%m-%d"))
+}
+
 assessment_display <- function(tab, p = function(x) x) {
   out <- data.frame(
     candidate = paste0(tab$name, ifelse(tab$inverted, " *", "")),
@@ -553,6 +597,7 @@ app_script <- function(state) {
 # Step 1 of the script: the data as loaded, with the column separator and
 # decimal mark of an uploaded file when they differ from read.csv()'s.
 data_lines <- function(state) {
+  if (identical(state$source, "upload_multi")) return(multi_lines(state))
   if (!identical(state$source, "upload")) {
     return(c("# 1. Data",
              sprintf("data <- simulate_cycles(freq = %s, seed = %s)",
@@ -570,6 +615,31 @@ data_lines <- function(state) {
                    "\n                      check.names = FALSE%s)"),
             deparse_value(state$file_name), deparse_value(state$frequency),
             deparse_value(state$start), fmt))
+}
+
+# Step 1 of the script for one file per indicator: the files as read, and
+# the frequency alignment done in step 2.
+multi_lines <- function(state) {
+  fmt <- ""
+  if (!identical(state$sep, "auto")) {
+    fmt <- paste0(fmt, ", sep = ", deparse_value(state$sep))
+  }
+  if (!identical(state$dec, "auto")) {
+    fmt <- paste0(fmt, ", dec = ", deparse_value(state$dec))
+  }
+  lines <- c("# 1. Data: one file per indicator",
+             sprintf("series <- read_cli_series(%s%s)",
+                     deparse_value(state$file_name), fmt))
+  al <- state$align
+  if (is.null(al)) return(lines)
+  args <- c(sprintf("series, freq = %s", al$freq),
+            if (length(al$type) > 0L) {
+              sprintf("type = %s", deparse_value(al$type))
+            },
+            sprintf("reference = %s", deparse_value(al$reference)))
+  c(lines, "# brought to one frequency in step 2",
+    sprintf("data <- cli_align(%s)",
+            paste(args, collapse = ",\n                  ")))
 }
 
 # Step 2 of the script: the metadata and the candidate set built from `data`.
@@ -684,9 +754,10 @@ app_server <- function(language = "id") {
       validation = NULL, audit = NULL, done = integer(0), meta = NULL,
       spec_call = NULL, mode = "auto", components = character(0),
       cci = NULL, cci_mode = NULL, prelude = NULL, cand_rebuilt = FALSE,
-      loaded = NULL, meta_known = NULL
+      loaded = NULL, meta_known = NULL, series = NULL, align = NULL
     )
-    fields <- list(`1` = "data", `2` = c("cand", "meta"),
+    fields <- list(`1` = c("data", "series"),
+                   `2` = c("cand", "meta", "align"),
                    `3` = c("spec", "spec_call"), `4` = "cycles", `5` = "tps",
                    `6` = c("assessment", "cycles_used"),
                    `7` = c("composite", "validation", "audit", "cci",
@@ -751,47 +822,70 @@ app_server <- function(language = "id") {
     })
 
     # 1. Data --------------------------------------------------------------
+    # the series names: the columns of one data set, or the series read from
+    # several files (aligned in step 2)
+    series_names <- function() {
+      if (is.null(rv$series)) colnames(rv$data) else names(rv$series)
+    }
+    multi <- function() !is.null(rv$series)
     shiny::observeEvent(input$run1, {
-      data <- safely({
-        if (input$source == "upload") {
-          shiny::req(input$file)
-          freq <- if (input$freq == "auto") NULL else as.numeric(input$freq)
-          fmt <- csv_format(input$file$datapath,
-                            sep = csv_choice(input$csv_sep, "sep"),
-                            dec = csv_choice(input$csv_dec, "dec"))
-          out <- read_cli_data(input$file$datapath, frequency = freq,
-                               start = parse_start(input$start),
-                               check.names = FALSE, sep = fmt$sep,
-                               dec = fmt$dec)
-          attr(out, "csv_format") <- fmt
-          out
-        } else {
-          freq <- if (input$source == "example_m") 12 else 4
-          simulate_cycles(freq = freq, seed = input$seed)
-        }
-      })
-      if (is.null(data)) return()
-      fmt <- attr(data, "csv_format")
-      attr(data, "csv_format") <- NULL
+      sep <- csv_choice(input$csv_sep, "sep")
+      dec <- csv_choice(input$csv_dec, "dec")
+      if (input$source == "upload_multi") {
+        shiny::req(input$files)
+        series <- safely(read_cli_series(
+          stats::setNames(input$files$datapath, input$files$name),
+          sep = sep, dec = dec))
+        if (is.null(series)) return()
+        data <- NULL
+        fmt <- list(sep = sep, dec = dec)
+        freq <- as.numeric(input$target_freq)
+      } else {
+        data <- safely({
+          if (input$source == "upload") {
+            shiny::req(input$file)
+            f <- if (input$freq == "auto") NULL else as.numeric(input$freq)
+            fmt <- csv_format(input$file$datapath, sep = sep, dec = dec)
+            out <- read_cli_data(input$file$datapath, frequency = f,
+                                 start = parse_start(input$start),
+                                 check.names = FALSE, sep = fmt$sep,
+                                 dec = fmt$dec)
+            attr(out, "csv_format") <- fmt
+            out
+          } else {
+            f <- if (input$source == "example_m") 12 else 4
+            simulate_cycles(freq = f, seed = input$seed)
+          }
+        })
+        if (is.null(data)) return()
+        series <- NULL
+        fmt <- attr(data, "csv_format")
+        attr(data, "csv_format") <- NULL
+        freq <- stats::frequency(data)
+      }
       rv$data <- data
+      rv$series <- series
       # the script reproduces the data as loaded, not later edits of step 1
+      file_name <- switch(input$source,
+                          upload = if (is.null(input$file)) "data.csv" else
+                            input$file$name,
+                          upload_multi = input$files$name,
+                          "data.csv")
       rv$loaded <- list(
-        source = input$source,
-        file_name = if (is.null(input$file)) "data.csv" else input$file$name,
+        source = input$source, file_name = file_name,
         start = if (input$source == "upload") parse_start(input$start) else
           NULL,
-        seed = input$seed,
-        sep = fmt$sep, dec = fmt$dec
+        seed = input$seed, sep = fmt$sep, dec = fmt$dec, frequency = freq
       )
       rv$meta_known <- NULL
       rv$prelude <- NULL
       rv$cand_rebuilt <- FALSE
       finish(1L)
-      sel <- if ("reference" %in% colnames(data)) "reference" else
-        colnames(data)[1]
-      shiny::updateSelectInput(session, "reference", choices = colnames(data),
+      nms <- series_names()
+      sel <- if ("reference" %in% nms) "reference" else nms[1]
+      shiny::updateSelectInput(session, "reference", choices = nms,
                                selected = sel)
-      monthly <- stats::frequency(data) == 12
+      monthly <- freq == 12
       shiny::updateNumericInput(session, "min_lead",
                                 value = if (monthly) 3 else 1)
       shiny::updateNumericInput(session, "min_median_lead",
@@ -805,26 +899,33 @@ app_server <- function(language = "id") {
     }, ignoreInit = TRUE)
     output$data_summary <- shiny::renderTable({
       need(1L)
-      translate_names(data_summary(rv$data), p)
+      tab <- if (multi()) series_summary(rv$series, p) else
+        data_summary(rv$data)
+      translate_names(tab, p)
     })
     output$overview <- shiny::renderPlot({
       need(1L)
-      shiny::req(input$reference %in% colnames(rv$data))
-      plot_series_overview(rv$data, input$reference, tr = p)
+      shiny::req(input$reference %in% series_names())
+      if (multi()) {
+        plot_series_dated(rv$series, input$reference, tr = p)
+      } else {
+        plot_series_overview(rv$data, input$reference, tr = p)
+      }
     })
 
     # 2. Metadata ----------------------------------------------------------
     candidates_now <- shiny::reactive({
       need(1L)
-      setdiff(colnames(rv$data), input$reference)
+      setdiff(series_names(), input$reference)
     })
     shown_cands <- character(0)
     output$meta_ui <- shiny::renderUI({
       # depends only on the data and the reference, so that the choices the
       # user made are not reset when later steps run
-      shiny::req(rv$data, input$reference)
-      cands <- setdiff(colnames(rv$data), input$reference)
-      example <- shiny::isolate(input$source) != "upload"
+      shiny::req(!is.null(rv$data) || multi(), input$reference)
+      cands <- setdiff(series_names(), input$reference)
+      example <- !shiny::isolate(input$source) %in% c("upload",
+                                                      "upload_multi")
       labels <- if (language == "id") oecd_rationales_id else oecd_rationales
       choices <- c(stats::setNames("", t("none")),
                    stats::setNames(names(labels), labels))
@@ -859,6 +960,11 @@ app_server <- function(language = "id") {
         }
         default
       }
+      # the frequency of a series read from a file is the detected one
+      frq_selected <- function(i) {
+        if (multi()) return(attr(rv$series[[cands[i]]], "frequency"))
+        keep(paste0("frq_", i), "")
+      }
       rows <- lapply(seq_along(cands), function(i) {
         shiny::fluidRow(
           shiny::column(2, shiny::tags$p(shiny::strong(cands[i]),
@@ -872,14 +978,25 @@ app_server <- function(language = "id") {
             selected = keep(paste0("typ_", i), ""))),
           shiny::column(2, shiny::selectInput(
             paste0("frq_", i), NULL, freq_choices,
-            selected = keep(paste0("frq_", i), ""))),
+            selected = frq_selected(i))),
           shiny::column(3, shiny::textInput(
             paste0("src_", i), NULL, keep(paste0("src_", i), ""),
             placeholder = t("data_source")))
         )
       })
       shown_cands <<- cands
+      ref_row <- if (multi() && input$reference %in% names(rv$series)) {
+        old <- shiny::isolate(input$ref_type)
+        from <- attr(rv$series[[input$reference]], "frequency")
+        shiny::fluidRow(shiny::column(6, shiny::selectInput(
+          "ref_type",
+          sprintf("%s: %s (%s)", t("ref_type"), input$reference,
+                  t(paste0("freq_", from))),
+          type_choices, selected = if (is.null(old)) "" else old),
+          shiny::helpText(t("ref_type_help"))))
+      }
       shiny::tagList(
+        ref_row,
         shiny::fluidRow(shiny::column(2, shiny::strong("")),
                         shiny::column(3, shiny::strong(t("rationale"))),
                         shiny::column(2, shiny::strong(t("var_type"))),
@@ -910,7 +1027,23 @@ app_server <- function(language = "id") {
         }, character(1)),
         stringsAsFactors = FALSE
       )
-      cand <- safely(cli_candidates(rv$data, input$reference, meta = meta))
+      align <- NULL
+      data <- rv$data
+      if (multi()) {
+        rt <- if (is.null(input$ref_type)) NA_character_ else input$ref_type
+        type <- stats::setNames(c(rt, meta$type),
+                                c(input$reference, cands))
+        type <- type[!is.na(type) & nzchar(type)]
+        type <- type[intersect(names(rv$series), names(type))]
+        align <- list(freq = rv$loaded$frequency, type = type,
+                      reference = input$reference)
+        data <- safely(cli_align(rv$series, freq = align$freq,
+                                 type = if (length(type) > 0L) type,
+                                 reference = align$reference))
+      }
+      cand <- if (!is.null(data)) {
+        safely(cli_candidates(data, input$reference, meta = meta))
+      }
       if (is.null(cand)) {
         # a refused metadata set leaves no stale candidate set behind
         reset_from(2L)
@@ -919,6 +1052,7 @@ app_server <- function(language = "id") {
       rv$cand <- cand
       rv$meta <- meta
       rv$meta_known <- meta
+      rv$align <- align
       rv$cand_rebuilt <- !is.null(rv$prelude)
       finish(2L)
     })
@@ -933,7 +1067,7 @@ app_server <- function(language = "id") {
         shiny::showNotification(t("need_prev"), type = "warning")
         return()
       }
-      freq <- stats::frequency(rv$data)
+      freq <- stats::frequency(rv$cand@data)
       spec <- if (identical(input$method, "oecd")) safely(oecd_spec(
         freq = freq, seasonal_adjust = input$seasonal, alpha = input$alpha,
         min_auc = input$min_auc, min_components = input$min_components,
@@ -1262,6 +1396,7 @@ app_server <- function(language = "id") {
       prelude <- app_script(state)
       reset_from(2L)
       rv$data <- cand@data
+      rv$series <- NULL
       rv$cand <- cand
       rv$meta <- cand@meta
       rv$meta_known <- cand@meta
@@ -1332,7 +1467,7 @@ app_server <- function(language = "id") {
       list(
         source = rv$loaded$source,
         file_name = rv$loaded$file_name,
-        frequency = stats::frequency(rv$data),
+        frequency = rv$loaded$frequency, align = rv$align,
         start = rv$loaded$start,
         seed = rv$loaded$seed, sep = rv$loaded$sep, dec = rv$loaded$dec,
         meta = rv$meta,

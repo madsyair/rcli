@@ -88,6 +88,18 @@ GUI langkah 1 punya isian `csv_sep` (otomatis, koma, titik koma, tab) dan `csv_d
 - AC-FR-008.4  Skrip R ekspor memakai `sep` dan `dec` yang benar-benar dipakai (hasil pengenalan otomatis), hanya bila berbeda dari bawaan `read.csv()`, serta `check.names = FALSE` seperti GUI, dan mereproduksi data GUI persis (nama kolom ikut sama); pilihan yang diubah sesudah langkah 1 tidak mengubah skrip.
 - AC-FR-008.5  Kedua isian punya teks Indonesia dan Inggris.
 
+## Increment rcli 0.4.0 (keputusan pengguna 1 November 2026: "Iya. Buatkan menerima beberapa berkas.")
+
+### FR-009 — Beberapa berkas, satu per indikator
+Fungsi baru `read_cli_series()` dan sumber data baru di GUI langkah 1, "Unggah beberapa berkas (satu per indikator)", sehingga seri dengan frekuensi berbeda dapat diunggah dalam berkas masing-masing lalu diselaraskan dengan `cli_align()`.
+- AC-FR-009.1  `read_cli_series(files)` membaca satu atau beberapa berkas CSV. Kolom pertama setiap berkas berisi tanggal, kolom lain berisi nilai. Setiap kolom nilai menjadi satu seri (data frame `date`, `value`) dalam daftar bernama. Kolom bernama `value` atau `nilai` dinamai menurut nama berkas tanpa ekstensi. Nama seri yang sama di dua berkas → `rcli_error_argument`.
+- AC-FR-009.2  Format tanggal yang dikenali: `2001-01-15`, `15/01/2001` (hari/bulan/tahun), `2001-01`, `2001Q1`, `2001S1`, `2001`. Tanggal yang tidak dikenali → `rcli_error_dates` yang menyebut berkas dan nilai pertama yang salah.
+- AC-FR-009.3  Pemisah kolom dan tanda desimal dikenali per berkas dengan aturan FR-008, atau mengikuti `sep` dan `dec` yang diberikan. Atribut `frequency` setiap seri berisi frekuensi asal yang dikenali `cli_align()` (harian sampai tahunan), dan atribut `file` berisi nama berkasnya.
+- AC-FR-009.4  Hasil `read_cli_series()` dapat langsung dipakai `cli_align()`. Untuk berkas bulanan dan triwulanan, hasilnya sama dengan membaca berkas lebar setara dengan `read_cli_data()`.
+- AC-FR-009.5  GUI: sumber `upload_multi` dengan isian `files` (banyak berkas) dan `target_freq` (bulanan, triwulanan). Langkah 1 menampilkan setiap seri dengan berkas, frekuensi asal, awal, akhir, dan jumlah observasi, serta grafik semua seri. Seri acuan dipilih dari semua seri.
+- AC-FR-009.6  GUI langkah 2 (mode beberapa berkas): isian tipe seri acuan; frekuensi asal setiap kandidat terisi dari hasil pengenalan. "Bentuk himpunan kandidat" menjalankan `cli_align()` lalu `cli_candidates()`. Seri yang frekuensinya harus diubah tetapi tidak bertipe → pesan galat dan langkah 2 tidak selesai.
+- AC-FR-009.7  Skrip R ekspor mereproduksi data GUI dengan `read_cli_series()` dan `cli_align()`, lalu komposit yang sama. Langkah 3–10 dan tombol indeks sejalan sebagai acuan tetap bekerja.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.

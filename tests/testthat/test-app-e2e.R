@@ -229,6 +229,52 @@ test_that("an uploaded quarterly CSV runs through the Indonesian interface", {
   expect_no_browser_errors(app)
 })
 
+test_that("several files at different frequencies run in the browser", {
+  skip_if_no_browser()
+  files <- multi_files()
+  app <- start_app("upload-multi", "id")
+  on.exit(app$stop(), add = TRUE)
+  app$set_inputs(source = "upload_multi", wait_ = FALSE)
+  app$upload_file(files = files$datapath)
+  app$click("run1")
+  app$wait_for_idle()
+  summary <- app$get_value(output = "data_summary")
+  for (s in c("indikator.csv", "triwulanan", "bulanan", "berkas")) {
+    expect_match(summary, s, fixed = TRUE)
+  }
+  expect_plot(app, "overview")
+  shot(app, "upload-multi-step1")
+  go_to(app, 2L)
+  expect_equal(app$get_value(input = "frq_5"), "quarterly")
+  expect_equal(app$get_value(input = "frq_1"), "monthly")
+  inputs <- stats::setNames(as.list(rep("early_stage", 5)),
+                            paste0("rat_", 1:5))
+  do.call(app$set_inputs, c(inputs, wait_ = FALSE))
+  # without the reference type the series cannot be aligned
+  app$click("run2")
+  app$wait_for_idle()
+  expect_match(notifications(app), "type")
+  app$set_inputs(ref_type = "average", typ_5 = "flow", wait_ = FALSE)
+  app$click("run2")
+  app$wait_for_idle()
+  expect_match(app$get_value(output = "cand_print"), "pdb")
+  shot(app, "upload-multi-step2")
+  for (k in 3:7) {
+    go_to(app, k)
+    app$click(paste0("run", k))
+    app$wait_for_idle(timeout = 120000)
+  }
+  expect_plot(app, "composite_plot")
+  go_to(app, 8L)
+  go_to(app, 9L)
+  go_to(app, 10L)
+  script <- readLines(app$get_download("dl_script"))
+  expect_true(any(grepl("read_cli_series(", script, fixed = TRUE)))
+  expect_true(any(grepl("cli_align(series, freq = 12", script,
+                        fixed = TRUE)))
+  expect_no_browser_errors(app)
+})
+
 test_that("a malformed CSV gives an error message and the app keeps working", {
   skip_if_no_browser()
   path <- tempfile(fileext = ".csv")

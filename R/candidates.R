@@ -116,9 +116,12 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
                             paste(unknown, collapse = ", ")),
                     "rcli_error_argument")
     }
+    # a missing entry keeps what cli_align() recorded
+    at <- match(meta$name, names)
     for (col in intersect(c("rationale", "source", "release_lag", "type",
                             "frequency"), names(meta))) {
-      base[[col]][match(meta$name, names)] <- meta[[col]]
+      given <- !is.na(meta[[col]])
+      base[[col]][at[given]] <- meta[[col]][given]
     }
   }
   bad_type <- !is.na(base$type) & !base$type %in% names(series_types)
