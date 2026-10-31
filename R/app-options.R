@@ -5,9 +5,17 @@
 
 # ---- code text -------------------------------------------------------------
 
-# Whether an input holds a value (an empty numeric input is NA).
+# Whether an input holds a value (an empty numeric input is NA). Inputs
+# come from the browser and may be anything a crafted message holds, so
+# only a single atomic value counts.
 given <- function(x) {
-  !is.null(x) && length(x) == 1L && !is.na(x) && !identical(x, "")
+  is.atomic(x) && length(x) == 1L && !is.na(x) && !identical(x, "")
+}
+
+# Refuse an input that cannot be written as code safely.
+bad_input <- function(id) {
+  rcli_abort(sprintf("Invalid value of the input '%s'.", id),
+             "rcli_error_argument")
 }
 
 # `fun(name = value, ...)` with the given arguments; values are code text.
@@ -18,12 +26,26 @@ call_text <- function(fun, args = list()) {
          ")")
 }
 
-# Code text of an input value, or NULL when the input is empty. Numbers
-# are written as doubles (the browser sends whole numbers as integers).
-value_text <- function(x) {
-  if (!given(x)) return(NULL)
-  if (is.numeric(x)) x <- as.numeric(x)
-  deparse_value(x)
+# Code text of a numeric input, or NULL when it is empty. Only a single
+# finite number passes; it is written as a double (the browser sends whole
+# numbers as integers), so the text holds nothing but the number.
+value_text <- function(x, id = "number") {
+  if (is.null(x) || (is.atomic(x) && length(x) == 1L && is.na(x))) {
+    return(NULL)
+  }
+  if (!is.atomic(x) || length(x) != 1L || is.logical(x)) bad_input(id)
+  v <- suppressWarnings(as.numeric(unname(x)))
+  if (!is.finite(v)) bad_input(id)
+  deparse_value(v)
+}
+
+# Code text of a choice input, which must be one of `allowed`.
+choice_text <- function(x, allowed, id = "choice") {
+  if (!is.atomic(x) || length(x) != 1L || !is.character(x) ||
+      !x %in% allowed) {
+    bad_input(id)
+  }
+  chr_text(unname(x))
 }
 
 # Code text of a character vector, names included, that reads back as the
@@ -31,26 +53,39 @@ value_text <- function(x) {
 # names come from file names and column headers, and the interface runs
 # this text. A vector that does not read back exactly is refused.
 chr_text <- function(x) {
+  if (!is.atomic(x)) bad_input("text")
   nm <- names(x)
   x <- as.character(x)
-  vals <- encodeString(unname(x), quote = "\"")
-  out <- if (is.null(nm)) {
-    if (length(x) == 1L) vals else paste0("c(", paste(vals, collapse = ", "),
-                                          ")")
-  } else if (all(nzchar(nm) & make.names(nm) == nm)) {
-    paste0("c(", paste(nm, "=", vals, collapse = ", "), ")")
-  } else {
-    paste0("stats::setNames(c(", paste(vals, collapse = ", "), "), c(",
-           paste(encodeString(nm, quote = "\""), collapse = ", "), "))")
-  }
-  back <- tryCatch(eval(parse(text = out), envir = baseenv()),
-                   error = function(e) NULL)
-  ref <- x
-  if (!is.null(nm)) names(ref) <- nm
-  if (!identical(back, ref)) {
+  fail <- function() {
     rcli_abort(paste("A series name or value cannot be written as R code;",
                      "rename the file or column."), "rcli_error_argument")
   }
+  vals <- tryCatch(encodeString(unname(x), quote = "\""),
+                   error = function(e) fail())
+  # plain names only for ASCII names that need no quotes, so that the
+  # script also runs in sessions that are not UTF-8
+  plain <- !is.null(nm) && tryCatch(
+    all(nzchar(nm) & !grepl("[^ -~]", nm, useBytes = TRUE) &
+          make.names(nm) == nm),
+    error = function(e) FALSE)
+  out <- if (is.null(nm)) {
+    if (length(x) == 1L) vals else paste0("c(", paste(vals, collapse = ", "),
+                                          ")")
+  } else if (plain) {
+    paste0("c(", paste(nm, "=", vals, collapse = ", "), ")")
+  } else {
+    nms <- tryCatch(encodeString(nm, quote = "\""),
+                    error = function(e) fail())
+    paste0("stats::setNames(c(", paste(vals, collapse = ", "), "), c(",
+           paste(nms, collapse = ", "), "))")
+  }
+  # read back with nothing but `c`, `::` and the literals available
+  safe <- list2env(list(c = base::c, `::` = base::`::`), parent = emptyenv())
+  back <- tryCatch(eval(parse(text = out), envir = safe),
+                   error = function(e) NULL)
+  ref <- x
+  if (!is.null(nm)) names(ref) <- nm
+  if (!identical(back, ref)) fail()
   out
 }
 
@@ -79,17 +114,37 @@ assign_text <- function(name, fun, args, width = 78L) {
   paste(c(lines, cur), collapse = "\n")
 }
 
+# Names the generated code may use besides the exported functions of the
+# package: assignment, vectors, subsetting and `stats::setNames`.
+code_names <- c("<-", "(", "c", "::", "stats", "setNames", "[", "!=",
+                "names", "-", "numeric")
+
 # Run code text written for the exported script and return one object.
-# `values` are the objects the code refers to (for instance `series`).
+# `values` are the objects the code refers to (for instance `series`). As a
+# second line of defence, code that names anything else than exported
+# functions, `code_names`, `name` and `values` is refused before it runs.
 eval_code <- function(text, name, values = list()) {
+  exprs <- parse(text = text)
+  used <- all.names(exprs)
+  other <- setdiff(used, c(getNamespaceExports("rcli"), code_names, name,
+                           names(values)))
+  if (length(other) > 0L) {
+    rcli_abort(sprintf("The generated code uses unexpected names: %s.",
+                       paste(other, collapse = ", ")),
+               "rcli_error_argument")
+  }
   env <- list2env(values, parent = asNamespace("rcli"))
-  eval(parse(text = text), envir = env)
+  for (e in exprs) eval(e, envir = env)
   get(name, envir = env, inherits = FALSE)
 }
 
 # Two numbers typed as "6, 9".
 pair_text <- function(text, name) {
-  if (!given(text) || !nzchar(trimws(text))) return(NULL)
+  if (is.null(text)) return(NULL)
+  if (!is.atomic(text) || length(text) != 1L || !is.character(text)) {
+    bad_input(name)
+  }
+  if (!nzchar(trimws(text))) return(NULL)
   v <- suppressWarnings(as.numeric(strsplit(trimws(text), "[,; ]+")[[1]]))
   if (length(v) != 2L || anyNA(v)) {
     rcli_abort(sprintf("`%s` needs two numbers, e.g. 6, 9.", name),
@@ -100,8 +155,19 @@ pair_text <- function(text, name) {
 
 # ---- specification (step 3) ----------------------------------------------
 
+# A choice input used as a key, checked against `allowed`.
+choice_key <- function(x, allowed, id) {
+  if (!is.atomic(x) || length(x) != 1L || !is.character(x) ||
+      !x %in% allowed) {
+    bad_input(id)
+  }
+  x
+}
+
 filter_text <- function(input) {
-  switch(input$filter,
+  key <- choice_key(input$filter, c("hp_double", "hp", "cf", "bk",
+                                    "hamilton"), "filter")
+  switch(key,
     hp_double = call_text("hp_double_filter", list(
       trend_period = value_text(input$hp_trend_period),
       smooth_period = value_text(input$hp_smooth_period))),
@@ -118,7 +184,9 @@ filter_text <- function(input) {
 
 aggregator_text <- function(input) {
   cov <- value_text(input$agg_min_coverage)
-  switch(input$aggregator,
+  key <- choice_key(input$aggregator, c("equal", "equal_level", "oecd",
+                                        "pca", "cb", "dfm"), "aggregator")
+  switch(key,
     equal = call_text("equal_weight", list(min_coverage = cov)),
     equal_level = call_text("equal_weight", list(
       min_coverage = cov, ragged_edge = "\"level\"")),
@@ -167,7 +235,8 @@ spec_call <- function(input, freq) {
     freq = freq, filter = filter_text(input),
     dater = dater_text(input, freq),
     aggregator = aggregator_text(input),
-    transform = deparse_value(input$transform),
+    transform = choice_text(input$transform, c("auto", "log", "none",
+                                                "test"), "transform"),
     seasonal_adjust = deparse_value(isTRUE(input$seasonal)),
     holidays = holidays_text(input),
     outlier_threshold = if (!tramo) value_text(input$outlier),
@@ -254,6 +323,9 @@ advanced_ui <- function(t) {
 # Code of the alignment: `data <- cli_align(series, ...)`; `al` holds the
 # choices of step 2.
 align_text <- function(al) {
+  if (!is.null(al$indicator) && !is.atomic(al$indicator)) {
+    bad_input("align_indicator")
+  }
   chow <- identical(al$method, "chow-lin") && given(al$indicator)
   # the indicator of Chow-Lin explains the reference, so it is not a
   # candidate (see ?cli_align)
@@ -266,15 +338,15 @@ align_text <- function(al) {
     sprintf("cli_align(series[%s], freq = %s)[, %s]",
             chr_text(al$indicator), al$freq, chr_text(al$indicator))
   }
-  cov <- if (given(al$min_coverage) && al$min_coverage != 0.7) {
-    value_text(al$min_coverage)
-  }
+  cov <- value_text(al$min_coverage, "align_coverage")
+  if (identical(cov, "0.7")) cov <- NULL
   args <- list(
     first, freq = al$freq,
     type = if (length(al$type) > 0L) chr_text(al$type),
     reference = chr_text(al$reference),
-    method = if (given(al$method) && al$method != "denton-cholette") {
-      chr_text(al$method)
+    method = if (!is.null(al$method) &&
+                 !identical(al$method, "denton-cholette")) {
+      choice_text(al$method, c("chow-lin", "linear"), "align_method")
     },
     indicator = indicator,
     week_date = if (identical(al$week_date, "end")) "\"end\"",

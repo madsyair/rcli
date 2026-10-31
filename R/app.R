@@ -339,7 +339,7 @@ app_ui <- function(language = "id") {
               "input.seasonal",
               shiny::checkboxInput("idulfitri", t("idulfitri"), FALSE)),
             shiny::conditionalPanel(
-              "input.method == 'oecd' || input.outlier_method != 'tramo'",
+              "input.method == 'rcli' && input.outlier_method != 'tramo'",
               shiny::numericInput("outlier", t("outlier"), 5, min = 1)),
             shiny::checkboxInput("extend", t("extend"), TRUE),
             shiny::textInput("oos_cutoffs", t("oos_cutoffs"), "")
@@ -646,9 +646,8 @@ candidate_lines <- function(state, data) {
             deparse_value(meta$source),
             deparse_value(meta_column(meta, "type")),
             deparse_value(meta_column(meta, "frequency"))),
-    sprintf(paste0("cand <- cli_candidates(%s, reference = ",
-                   "\"%s\", meta = meta)"),
-            data, state$reference))
+    sprintf("cand <- cli_candidates(%s, reference = %s, meta = meta)",
+            data, chr_text(state$reference)))
 }
 
 meta_column <- function(meta, col) {
@@ -664,15 +663,15 @@ analysis_lines <- function(state) {
     shift_arg <- if (isTRUE(state$lag_shift)) {
       sprintf(paste0(",\n                     shifts = ",
                      "lag_shifts(%s, assessment(res))"),
-              deparse_value(state$components))
+              chr_text(unname(state$components)))
     } else {
       ""
     }
+    ref <- chr_text(state$reference)
     lines <- c(lines, sprintf(
-      "cli <- cli_composite(cycles(res), %s, spec, cycles(res)[[\"%s\"]]%s)",
-      deparse_value(state$components), state$reference, shift_arg),
-      sprintf("val <- cli_validate(cli, cycles(res)[[\"%s\"]], spec)",
-              state$reference),
+      "cli <- cli_composite(cycles(res), %s, spec, cycles(res)[[%s]]%s)",
+      chr_text(unname(state$components)), ref, shift_arg),
+      sprintf("val <- cli_validate(cli, cycles(res)[[%s]], spec)", ref),
       "pres <- cli_presentation(res, composite = cli)  # three OECD forms",
       "", "# 8. Validation and quality", "cli_quality(val, spec)")
   } else {
@@ -683,7 +682,7 @@ analysis_lines <- function(state) {
   if (!is.null(state$cci_mode)) {
     call <- if (identical(state$cci_mode, "manual")) {
       sprintf("cci <- cci_build(res, components = %s, select = FALSE)",
-              deparse_value(state$cci_components))
+              chr_text(unname(state$cci_components)))
     } else {
       "cci <- cci_build(res)"
     }

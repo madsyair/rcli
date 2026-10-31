@@ -30,7 +30,11 @@ reproduces each of them.
 * Steps 2 and 3 now run the very code they write into the script, so the
   interface and the script cannot differ. Series names from file names and
   column headers are written so that they read back exactly, whatever
-  characters they hold. Whole numbers are written without the `L` suffix.
+  characters they hold; every input is checked (a single finite number, or
+  one of the offered choices) before it becomes code, and the code is
+  refused unless it names only exported functions of the package and a few
+  operators. The reference series and the components are written the same
+  way in the script. Whole numbers are written without the `L` suffix.
 
 ## Presentation
 

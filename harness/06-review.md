@@ -2,7 +2,8 @@
 
 - Increment: rcli 0.5.0 (FR-010)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 1 terhadap 0db13de (basis 986d2ea, 0.4.0 di main)
+- Putaran: 2 (putaran 1 terhadap 0db13de, putaran 2 terhadap b7c4820;
+  basis 986d2ea, 0.4.0 di main)
 - Review 0.4.0 tersimpan di riwayat git berkas ini (komit 3b87683).
 
 ## Yang diperiksa (putaran 1)
@@ -64,3 +65,57 @@ Putusan putaran 1: CHANGES-REQUESTED
 - R8: baris kosong dirapikan.
 - Bukti merah: uji baru gagal 12 kali pada 0db13de (7 di
   `test-app-options.R`, 5 di `test-oecd.R`).
+
+## Review putaran 2 (b7c4820)
+- R1–R8 tertutup, masing-masing diverifikasi dengan kode. `chr_text()`
+  diuji dengan nama berkas, tajuk kolom, `align_indicator`, `align_method`,
+  `reference`, `ref_type`, `week_date`, dan berbagai pengodean di locale C
+  dan C.UTF-8: tidak ada injeksi; kasus yang tidak dapat ditulis aman
+  ditolak.
+- `cli_presentation()`: satuan simpangan seri acuan tanpa log sama dengan
+  amplitudo komposit (rasio MAD 1,16 untuk seri ber-log maupun tanpa log).
+- Uji: `test-app-options` 112, `test-oecd` 83, `test-app-multi` 51,
+  `test-app` 131, `test-app-reference` 33; tanpa kegagalan.
+
+### Temuan baru putaran 2
+- [x] [R9][blocker] R/app-options.R `given()`, `value_text()`, `transform`
+  — pesan websocket buatan dapat mengirim daftar bernama sebagai isian
+  angka atau pilihan; `deparse()` tidak meloloskan nama daftar, sehingga
+  kode R dijalankan di server saat langkah 3 atau 2 (didemonstrasikan lewat
+  `min_lead`, `transform`, `alpha`, `ar_h`, `hp_trend_period`,
+  `align_coverage`).
+- [x] [R10][major] R/app.R — nama seri acuan disisipkan ke skrip ekspor
+  tanpa diloloskan (sudah ada sejak 0.4.0); tajuk kolom buatan menjalankan
+  kode saat skrip dijalankan pengguna.
+- [x] [R11][nit] Isian ambang pencilan tetap tampil di mode OECD.
+- [x] [R12][nit] `chr_text()` menulis nama non-ASCII tanpa kutip; skrip
+  tidak berjalan di sesi non-UTF-8; byte tak sah memberi galat bukan
+  `rcli_error_*`.
+- [x] [R13][nit] Pemeriksaan bolak-balik `chr_text()` mengevaluasi di
+  `baseenv()`.
+
+Putusan putaran 2: CHANGES-REQUESTED
+
+## Tindak lanjut A5 sesudah putaran 2
+Perbaikan dua lapis:
+- Lapis 1, validasi isian: `given()` hanya menerima satu nilai atomik;
+  `value_text()` hanya meloloskan satu angka berhingga dan menulisnya
+  sebagai double; isian pilihan (`filter`, `aggregator`, `transform`,
+  `align_method`) dicocokkan dengan daftar pilihan (`choice_key()`,
+  `choice_text()`); `pair_text()` dan `align_indicator` menolak nilai
+  bukan teks tunggal. Isian yang tidak sah → `rcli_error_argument`, dan
+  langkahnya tidak selesai.
+- Lapis 2, daftar putih di `eval_code()`: sebelum dijalankan, setiap nama
+  dalam kode harus fungsi ekspor rcli, salah satu `code_names` (`<-`, `c`,
+  `[`, `!=`, `names`, `stats::setNames`, …), atau objek yang diberikan;
+  selain itu kode ditolak tanpa dijalankan.
+- R10: seri acuan, komponen, dan komponen indeks sejalan di skrip ditulis
+  dengan `chr_text()`.
+- R11: ambang pencilan hanya tampil untuk metode rcli tanpa TRAMO.
+- R12: nama tanpa kutip hanya untuk nama ASCII; kegagalan pengodean →
+  `rcli_error_argument`.
+- R13: bolak-balik dievaluasi di lingkungan yang hanya berisi `c` dan
+  `::`.
+- Uji "R9" (daftar bernama dan string injeksi untuk delapan isian langkah
+  3 dan tiga isian langkah 2, serta daftar putih) dan "R10/R12" (skrip
+  dengan nama seri acuan injeksi dievaluasi; komposit sama dengan GUI).

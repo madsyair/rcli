@@ -321,3 +321,87 @@ test_that("R7: inputs without effect are hidden", {
     expect_match(html, 'id="week_date"', fixed = TRUE)
   })
 })
+
+test_that("R9: crafted input values cannot run as code", {
+  skip_if_not_installed("shiny")
+  dir <- tempfile("r9")
+  dir.create(dir)
+  flag <- file.path(dir, "PWNED")
+  evil_name <- sprintf('a" = 1, b = {writeLines("x", "%s")}, "c', flag)
+  evil <- stats::setNames(list(1), evil_name)
+  # numeric and choice inputs of step 3
+  for (id in c("min_lead", "alpha", "ar_h", "hp_trend_period", "transform",
+               "filter", "aggregator", "lead_window")) {
+    with_step3(stats::setNames(list(evil), id), function(rv, session) {
+      expect_false(3L %in% rv$done, info = id)
+    })
+    expect_false(file.exists(flag), info = id)
+  }
+  with_step3(list(min_lead = "3); writeLines('x', 'PWNED'); (1"),
+             function(rv, session) expect_false(3L %in% rv$done))
+  with_step3(list(transform = "auto\"); writeLines('x', 'PWNED'); (\""),
+             function(rv, session) expect_false(3L %in% rv$done))
+  # the alignment of step 2
+  files <- multi_files()
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(source = "upload_multi", csv_sep = "auto",
+                      csv_dec = "auto", target_freq = "12", files = files,
+                      run1 = 1)
+    session$setInputs(reference = "pdb")
+    do.call(session$setInputs, stats::setNames(
+      as.list(rep("early_stage", 5)), paste0("rat_", 1:5)))
+    for (bad in list(list(align_coverage = evil),
+                     list(align_method = evil),
+                     list(align_method = "linear\"); writeLines(1); (\""))) {
+      do.call(session$setInputs, c(list(ref_type = "average",
+                                        typ_5 = "flow"), bad))
+      session$setInputs(run2 = 1)
+      expect_false(2L %in% rv$done)
+    }
+    expect_false(file.exists(flag))
+  })
+  # a second line of defence: unexpected names are refused before running
+  expect_error(rcli:::eval_code(
+    sprintf('spec <- cli_spec(12, min_lead = {writeLines("x", "%s"); 3})',
+            flag), "spec"), class = "rcli_error_argument")
+  expect_false(file.exists(flag))
+  expect_s4_class(rcli:::eval_code("spec <- cli_spec(freq = 12)", "spec"),
+                  "CliSpec")
+})
+
+test_that("R10/R12: odd reference names in the script, ASCII names", {
+  skip_if_not_installed("shiny")
+  dir <- tempfile("r10")
+  dir.create(dir)
+  old <- setwd(dir)
+  on.exit(setwd(old), add = TRUE)
+  sim <- simulate_cycles(seed = 1)
+  odd <- 'ref"); writeLines("x", "PWNED"); invisible("'
+  colnames(sim)[1] <- odd
+  shiny::testServer(rcli:::app_server("en"), {
+    rv$data <- sim
+    rv$loaded <- list(source = "example_m", seed = 1, frequency = 12)
+    rv$done <- 1L
+    session$setInputs(reference = odd)
+    do.call(session$setInputs, stats::setNames(
+      as.list(rep("early_stage", 7)), paste0("rat_", 1:7)))
+    session$setInputs(run2 = 1)
+    do.call(session$setInputs, step3_base)
+    session$setInputs(run3 = 1, run4 = 1)
+    session$setInputs(tp_series = odd, as_series = "lead_6", run5 = 1)
+    session$setInputs(run6 = 1)
+    session$setInputs(comp_mode = "manual",
+                      manual_components = c("lead_6", "lead_3"), run7 = 1)
+    expect_true(7L %in% rv$done)
+    script <- sub("data <- simulate_cycles\\(freq = 12, seed = 1\\)",
+                  "data <- sim", script())
+    env <- new.env()
+    env$sim <- sim
+    utils::capture.output(eval(parse(text = script), envir = env))
+    expect_false(file.exists("PWNED"))
+    expect_equal(as.numeric(env$cli@index), as.numeric(rv$composite@index))
+  })
+  # names outside ASCII are quoted, so the script runs in any locale
+  txt <- rcli:::chr_text(stats::setNames("flow", "ekspor_é"))
+  expect_match(txt, "stats::setNames(", fixed = TRUE)
+})
