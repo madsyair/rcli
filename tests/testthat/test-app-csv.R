@@ -226,3 +226,80 @@ test_that("R8: dropped non-numeric columns are reported", {
                  class = "rcli_warning_dropped", regexp = "pdb")
   expect_equal(colnames(x), "kredit")
 })
+
+# Review of 0.3.1, round 2 (harness/06-review.md)
+
+test_that("R1: without a date column decimal commas do not win the split", {
+  f <- write_csv_lines(c("PDB (ADHK, miliar);Kredit (Rp, triliun)",
+                         "100,5;20,1", "101,2;20,9", "102,0;21,5"))
+  expect_equal(rcli:::csv_format(f), list(sep = ";", dec = ","))
+  x <- read_cli_data(f, frequency = 4, start = c(2001, 1), sep = ";",
+                     dec = ",", check.names = FALSE)
+  expect_equal(as.numeric(x[, 1]), c(100.5, 101.2, 102.0))
+  # N2: an irregular split is no candidate, however wide its header
+  g <- write_csv_lines(c("tanggal;PDB (ADHK, riil, miliar);kredit (Rp, triliun)",
+                         "2001Q1;100,5;20", "2001Q2;101;21"))
+  expect_equal(rcli:::csv_format(g)$sep, ";")
+  # N12: with no regular split the widest header wins
+  h <- write_csv_lines(c("a,b,c", "1,2", "3,4,5"))
+  expect_equal(rcli:::csv_format(h)$sep, ",")
+})
+
+test_that("R11: thousands separators are no evidence for the decimal mark", {
+  # semicolons, decimal commas elsewhere: 1.012 is one thousand and twelve
+  f <- write_csv_lines(c("tanggal;pdb;kredit", "2001Q1;987;20,1",
+                         "2001Q2;1.012;20,9", "2001Q3;1.045;21,5"))
+  expect_equal(rcli:::csv_format(f)$dec, ",")
+  expect_warning(x <- read_cli_data(f, sep = ";", dec = ","),
+                 class = "rcli_warning_dropped", regexp = "pdb")
+  expect_equal(colnames(x), "kredit")
+  # only grouped whole numbers: they fail visibly instead of 1.012
+  g <- write_csv_lines(c("tanggal;pdb;kredit", "2001Q1;987;20",
+                         "2001Q2;1.012;21", "2001Q3;1.045;22"))
+  expect_equal(rcli:::csv_format(g)$dec, ",")
+  h <- write_csv_lines(c("tanggal\tpdb\tkredit", "2001Q1\t12,345\t20",
+                         "2001Q2\t12,400\t21", "2001Q3\t12,512\t22"))
+  expect_equal(rcli:::csv_format(h)$dec, ".")
+  expect_warning(read_cli_data(h, sep = "\t", dec = "."),
+                 class = "rcli_warning_dropped", regexp = "pdb")
+  # several groups can only be thousands separators (N5: 1.234,5 too)
+  k <- write_csv_lines(c("tanggal;pdb;kredit", "2001Q1;1.234,5;20",
+                         "2001Q2;1.240,2;21", "2001Q3;1.251.000;22"))
+  expect_equal(rcli:::csv_format(k)$dec, ",")
+  m <- write_csv_lines(c("tanggal\tpdb", "2001Q1\t1,234,000",
+                         "2001Q2\t1,240,000"))
+  expect_equal(rcli:::csv_format(m)$dec, ".")
+})
+
+test_that("R12: a separator at the end of every line adds no column", {
+  f <- write_csv_lines(c("tanggal;pdb;kredit;", "2001Q1;100,5;20,1;",
+                         "2001Q2;101,2;20,9;", "2001Q3;102,0;21,5;"))
+  fmt <- rcli:::csv_format(f)
+  expect_silent(x <- read_cli_data(f, sep = fmt$sep, dec = fmt$dec))
+  expect_equal(colnames(x), c("pdb", "kredit"))
+})
+
+test_that("R13: the remaining mutants", {
+  # M7: a decimal mark is no separator
+  expect_error(rcli:::csv_choice("point", "sep"),
+               class = "rcli_error_argument")
+  expect_error(rcli:::csv_choice("semicolon", "dec"),
+               class = "rcli_error_argument")
+  # N4: a Windows-1252 byte in a data cell, read as bytes
+  f <- tempfile(fileext = ".csv")
+  writeBin(c(charToRaw("tanggal;wilayah;pdb\n2001Q1;Bal"), as.raw(0xe9),
+             charToRaw(";100,5\n2001Q2;Bal"), as.raw(0xe9),
+             charToRaw(";101,2\n")), f)
+  old <- Sys.getlocale("LC_CTYPE")
+  on.exit(Sys.setlocale("LC_CTYPE", old), add = TRUE)
+  if (nzchar(suppressWarnings(Sys.setlocale("LC_CTYPE", "C.UTF-8")))) {
+    expect_equal(rcli:::csv_format(f), list(sep = ";", dec = ","))
+  }
+  # N11: a file encoding given by the user wins over the BOM handling
+  g <- tempfile(fileext = ".csv")
+  writeBin(c(as.raw(c(0xef, 0xbb, 0xbf)),
+             charToRaw("tanggal,pdb,kredit\n2001Q1,100,20\n2001Q2,101,21\n")),
+           g)
+  expect_equal(colnames(read_cli_data(g, fileEncoding = "UTF-8-BOM")),
+               c("pdb", "kredit"))
+})

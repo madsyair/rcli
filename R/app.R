@@ -37,6 +37,11 @@ read_cli_data <- function(file, frequency = NULL, start = NULL, ...) {
     start <- tm$start
     df <- df[-1]
   }
+  # a separator at the end of every line adds an empty column without name
+  blank <- vapply(seq_along(df), function(j) {
+    grepl("^(X(\\.[0-9]+)?)?$", names(df)[j]) && all(is.na(df[[j]]))
+  }, logical(1))
+  df <- df[!blank]
   num <- vapply(df, is.numeric, logical(1))
   if (!any(num)) {
     rcli_abort("No numeric column found.", "rcli_error_argument")
@@ -92,11 +97,13 @@ parse_dates <- function(x, frequency = NULL) {
 
 # Column separator and decimal mark of a CSV file (FR-008). "auto" takes
 # the separator that splits every line into the same number of fields
-# (quotes respected; the widest such split, and on a tie tab, then
-# semicolon, then comma), and the decimal mark that more cells use: "1,5"
-# and "1.234,5" count for a comma, "1.5" and "1,234.5" for a point. Text is
-# handled as bytes, so files in other encodings than the session's
-# (Windows-1252 from Excel) do not stop the detection.
+# (quotes respected), preferring tab, then semicolon, then comma: decimal
+# commas make a comma split wider, so width cannot decide. The decimal mark
+# is the one more cells use: "1,5", "1.234,5" and "1.234.567" count for a
+# comma, "1.5", "1,234.5" and "1,234,567" for a point; "1.012" or "12,345"
+# may be either and count for neither. Text is handled as bytes, so files
+# in other encodings than the session's (Windows-1252 from Excel) do not
+# stop the detection.
 csv_format <- function(path, sep = "auto", dec = "auto") {
   seps <- c(",", ";", "\t")
   if (!sep %in% c("auto", seps) || !dec %in% c("auto", ".", ",")) {
@@ -124,11 +131,12 @@ detect_separator <- function(path, seps) {
   regular <- vapply(fields, function(n) {
     length(n) > 0L && n[1] > 1L && all(n == n[1])
   }, logical(1))
-  pool <- if (any(regular)) which(regular) else which(width == max(width))
-  if (max(width[pool]) <= 1) return(",")
-  pool <- pool[width[pool] == max(width[pool])]
   preference <- match(c("\t", ";", ","), seps)
-  seps[preference[preference %in% pool][1]]
+  if (any(regular)) {
+    return(seps[preference[preference %in% which(regular)][1]])
+  }
+  # no regular split: the widest header line, or a comma
+  if (max(width) <= 1) "," else seps[which.max(width)]
 }
 
 detect_decimal <- function(path, sep) {
@@ -138,11 +146,22 @@ detect_decimal <- function(path, sep) {
     na.strings = character(0), nrows = 500L
   ), use.names = FALSE), error = function(e) character(0))
   cells <- gsub("^\\s+|\\s+$", "", cells, useBytes = TRUE)
-  comma <- grepl("^-?([0-9]{1,3}(\\.[0-9]{3})+|[0-9]+),[0-9]+$", cells,
-                 useBytes = TRUE)
-  point <- grepl("^-?([0-9]{1,3}(,[0-9]{3})+|[0-9]+)\\.[0-9]+$", cells,
-                 useBytes = TRUE)
-  if (sum(comma) > sum(point)) "," else "."
+  has <- function(pattern) grepl(pattern, cells, useBytes = TRUE)
+  # one mark and one group of three digits: thousands or decimals
+  either <- has("^-?[0-9]{1,3}[.,][0-9]{3}$")
+  comma <- (has("^-?([0-9]{1,3}(\\.[0-9]{3})+|[0-9]+),[0-9]+$") & !either) |
+    has("^-?[0-9]{1,3}(\\.[0-9]{3}){2,}$")
+  point <- (has("^-?([0-9]{1,3}(,[0-9]{3})+|[0-9]+)\\.[0-9]+$") & !either) |
+    has("^-?[0-9]{1,3}(,[0-9]{3}){2,}$")
+  if (sum(comma) > sum(point)) return(",")
+  if (sum(point) > sum(comma)) return(".")
+  # no evidence: take grouped whole numbers as thousands, so that such a
+  # column is dropped with a warning instead of being misread as 1.012
+  grouped <- cells[either]
+  if (length(grouped) > 0L && all(grepl(".", grouped, fixed = TRUE))) {
+    return(",")
+  }
+  "."
 }
 
 # Value of a separator or decimal-mark choice of the interface.

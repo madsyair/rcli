@@ -49,6 +49,10 @@
 | 2026-10-24 12:40 | INC-06/07 | A0 | G5, G7, G8 | LOLOS (cakupan 96,9%; check 0/0); versi 0.3.0 | 2/3 | A6 putaran 2 |
 | 2026-10-24 13:10 | INC-06/07 | A6 | G6 | APPROVE putaran 2 (R1–R14 tertutup; nit R15–R17) | 2/3 | R15–R17 diperbaiki, PR ke main |
 | 2026-10-31 16:40 | INC-08 | A1, A4, A5 | G1, G4, G5 | merah 10 kegagalan → hijau; uji peramban dengan `write.csv2()` | 1/3 | A6 |
+| 2026-10-31 17:10 | INC-08 | A6 | G6 | CHANGES-REQUESTED (R1–R4 major) | 1/3 | A5 perbaiki |
+| 2026-10-31 17:40 | INC-08 | A5 | G4–G8 | R1–R10 ditindaklanjuti; gerbang perintah lolos (cakupan 96,9%) | 2/3 | A6 putaran 2 |
+| 2026-10-31 18:10 | INC-08 | A6 | G6 | CHANGES-REQUESTED (R1 sebagian, R11 major, R12–R13 nit) | 2/3 | A5 perbaiki |
+| 2026-10-31 18:30 | INC-08 | A5 | G4–G5 | R1, R11–R13 ditindaklanjuti | 3/3 | A6 putaran 3 (anggaran terakhir) |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
