@@ -13,7 +13,8 @@ read_cli_data(file, frequency = NULL, start = NULL, ...)
 
 \item{start}{Start as `c(year, period)` when there is no date column.}
 
-\item{...}{Passed to [utils::read.csv()].}
+\item{...}{Passed to [utils::read.csv()], e.g. `sep = ";", dec = ","` for
+a file saved by Excel with Indonesian settings.}
 }
 \value{
 A multivariate `ts`.

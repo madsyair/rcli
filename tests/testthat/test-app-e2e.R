@@ -164,7 +164,9 @@ test_that("an uploaded quarterly CSV runs through the Indonesian interface", {
   tm <- stats::time(sim)
   path <- tempfile(fileext = ".csv")
   on.exit(unlink(path), add = TRUE)
-  utils::write.csv(data.frame(
+  # FR-008: saved as Excel does with Indonesian settings (semicolons and
+  # decimal commas); step 1 recognises the format by itself
+  utils::write.csv2(data.frame(
     tanggal = sprintf("%dQ%d", floor(tm + 1e-8), round((tm %% 1) * 4) + 1),
     as.data.frame(sim)), path, row.names = FALSE)
 
@@ -221,6 +223,7 @@ test_that("an uploaded quarterly CSV runs through the Indonesian interface", {
   script <- readLines(app$get_download("dl_script"))
   expect_true(any(grepl("cci_build(res)", script, fixed = TRUE)))
   expect_true(any(grepl("read_cli_data", script)))
+  expect_true(any(grepl('sep = ";", dec = ","', script, fixed = TRUE)))
   expect_true(any(grepl("dynamic_factor()", script, fixed = TRUE)))
   expect_true(any(grepl("cli_composite(cycles(res)", script, fixed = TRUE)))
   expect_no_browser_errors(app)

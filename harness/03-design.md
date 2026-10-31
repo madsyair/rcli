@@ -34,3 +34,10 @@ Keputusan: skrip ekspor menyimpan analisis pertama secara utuh (prelude) agar `c
 | FR-007 | `series_frequencies`; `cli_align(frequency = )` dengan `check_frequencies()`; deteksi semesteran/tahunan di `as_dated()`; `convert_one()` menolak kandidat semesteran/tahunan (`abort_low_frequency()`); `denton_cholette(q, tp, to)`, `constraint_matrix(m, tp, k)`, `target_frame()`, `interpolate_reference()`, `chow_lin(..., to)`; kolom `frequency` di `complete_meta()`; GUI isian `frq_i` | `R/align.R`, `R/candidates.R`, `R/app.R`, `R/app-text.R` |
 
 Keputusan FR-007: frekuensi semesteran dan tahunan hanya untuk seri acuan (keputusan pengguna menerima usulan); kandidat ditolak dengan galat, bukan peringatan, agar komposit tidak memuat komponen yang tak mungkin menunjukkan *lead* beberapa bulan. Frekuensi asal dideteksi dari tanggal dan hanya diperiksa bila dinyatakan.
+
+## Increment 0.3.1
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-008 | Isian GUI `csv_sep`, `csv_dec`; fungsi internal `csv_format(path, sep, dec)` (pengenalan otomatis) dan `csv_choice()`; `data_lines()` (langkah 1 skrip ekspor, dengan `sep` dan `dec` bila bukan bawaan); `rv$loaded$sep`, `rv$loaded$dec` | `R/app.R`, `R/app-text.R` |
+
+Keputusan: `read_cli_data()` tidak diubah (argumen `...` sudah diteruskan ke `read.csv()`); pengenalan otomatis hanya di GUI agar perilaku fungsi untuk pengguna R tetap eksplisit.

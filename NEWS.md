@@ -1,3 +1,17 @@
+# rcli 0.3.1
+
+## Graphical interface
+
+* Step 1 gains *Column separator* (automatic, comma, semicolon, tab) and
+  *Decimal mark* (automatic, point, comma) for an uploaded file, so CSV
+  files saved by Excel with Indonesian settings (semicolons and decimal
+  commas) can be read. The automatic choice takes the separator from the
+  header line and a decimal comma when the separator is not a comma and
+  the first data line holds a number such as `1,5`. A separator equal to
+  the decimal mark is an error. The exported script passes the format
+  actually used to `read_cli_data()` (`sep`, `dec`) when it differs from
+  the `read.csv()` defaults.
+
 # rcli 0.3.0
 
 New exported functions and arguments (the source frequency of every series)

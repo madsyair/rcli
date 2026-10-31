@@ -8,6 +8,7 @@
 
 ## Tafsiran dan keputusan pengguna
 - 2026-10-23: pengguna meminta "Lanjutkan ke versi 0.2.0 sesuai kajian" (kajian: agregasi hibrida dan perpanjangan AR menjadi bawaan).
+- 2026-10-31 16:15: pengguna meminta pilihan pemisah CSV di GUI ("Iya. Beri opsi untuk pemisah csv"); versi 0.3.1.
 - 2026-10-24 07:20: pengguna menyetujui saran reviewer: versi menjadi 0.3.0 (ekspor dan argumen baru), bukan 0.2.2 ("Iya. Ganti ke 0.3.0").
 - 2026-10-24 06:15: pengguna menyetujui usulan frekuensi asal ("Iya. Kerjakan usulan frekuensi"): metadata `frequency`, GUI, acuan semesteran/tahunan, kandidat semesteran/tahunan ditolak; dikerjakan bersama FR-006 di 0.2.2.
 - 2026-10-24 06:03: pengguna meminta judul GUI berversi dan tombol indeks sejalan sebagai seri acuan ("Iya. Kerjakan"); versi 0.2.2.
@@ -24,6 +25,7 @@
 | INC-05 | Indeks koinsiden (PR #1) ke 0.2.1 | FR-005 | — | selesai |
 | INC-06 | GUI: judul berversi, indeks sejalan sebagai acuan (0.3.0) | FR-006 | — | selesai (G1–G8) |
 | INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
+| INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | G4–G5 lolos |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -46,6 +48,7 @@
 | 2026-10-24 08:20 | INC-06/07 | A5 | G4–G5 | R1–R14 ditindaklanjuti; uji merah dibuktikan pada kode 31c2d41 | 2/3 | A6 putaran 2 |
 | 2026-10-24 12:40 | INC-06/07 | A0 | G5, G7, G8 | LOLOS (cakupan 96,9%; check 0/0); versi 0.3.0 | 2/3 | A6 putaran 2 |
 | 2026-10-24 13:10 | INC-06/07 | A6 | G6 | APPROVE putaran 2 (R1–R14 tertutup; nit R15–R17) | 2/3 | R15–R17 diperbaiki, PR ke main |
+| 2026-10-31 16:40 | INC-08 | A1, A4, A5 | G1, G4, G5 | merah 10 kegagalan → hijau; uji peramban dengan `write.csv2()` | 1/3 | A6 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

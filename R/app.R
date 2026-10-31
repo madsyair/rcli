@@ -8,7 +8,8 @@
 #' @param file Path to a CSV file, or a data frame already read.
 #' @param frequency `NULL` (detect from dates), 12 or 4.
 #' @param start Start as `c(year, period)` when there is no date column.
-#' @param ... Passed to [utils::read.csv()].
+#' @param ... Passed to [utils::read.csv()], e.g. `sep = ";", dec = ","` for
+#'   a file saved by Excel with Indonesian settings.
 #' @return A multivariate `ts`.
 #' @examples
 #' df <- data.frame(date = c("2001Q1", "2001Q2", "2001Q3"),
@@ -66,6 +67,52 @@ parse_dates <- function(x, frequency = NULL) {
                "rcli_error_dates")
   }
   list(frequency = freq, start = c(year[1], per[1]))
+}
+
+# Column separator and decimal mark of a CSV file. "auto" takes the most
+# frequent of tab, semicolon and comma in the header line, and a decimal
+# comma when the separator is not a comma and the first data line holds a
+# number such as 1,5 (Excel files saved with Indonesian settings).
+csv_format <- function(path, sep = "auto", dec = "auto") {
+  seps <- c(",", ";", "\t")
+  if (!sep %in% c("auto", seps) || !dec %in% c("auto", ".", ",")) {
+    rcli_abort("Unknown column separator or decimal mark.",
+               "rcli_error_argument")
+  }
+  lines <- readLines(path, n = 5L, warn = FALSE)
+  lines <- lines[nzchar(trimws(lines))]
+  if (sep == "auto") {
+    head <- if (length(lines) > 0L) lines[1] else ""
+    n <- vapply(seps, function(x) {
+      length(gregexpr(x, head, fixed = TRUE)[[1]]) *
+        (regexpr(x, head, fixed = TRUE) > 0)
+    }, numeric(1))
+    sep <- if (max(n) == 0) "," else seps[which.max(n)]
+  }
+  if (dec == "auto") {
+    dec <- if (sep != "," && length(lines) >= 2L &&
+               grepl("[0-9],[0-9]", lines[2])) "," else "."
+  }
+  if (sep == dec) {
+    rcli_abort("The column separator and the decimal mark must differ.",
+               "rcli_error_argument")
+  }
+  list(sep = sep, dec = dec)
+}
+
+# Value of a separator or decimal-mark choice of the interface.
+csv_choice <- function(value, kind) {
+  if (is.null(value) || identical(value, "auto")) return("auto")
+  map <- if (kind == "sep") {
+    c(comma = ",", semicolon = ";", tab = "\t")
+  } else {
+    c(point = ".", comma = ",")
+  }
+  if (!value %in% names(map)) {
+    rcli_abort("Unknown column separator or decimal mark.",
+               "rcli_error_argument")
+  }
+  map[[value]]
 }
 
 #' Run the step-by-step graphical interface
@@ -155,7 +202,18 @@ app_ui <- function(language = "id") {
               c("example_m", "example_q", "upload"),
               c(t("src_example_m"), t("src_example_q"), t("src_upload")))),
             shiny::numericInput("seed", t("seed"), 2026, min = 1),
-            shiny::fileInput("file", t("file"), accept = ".csv"),
+            shiny::fileInput("file", t("file"), accept = c(".csv", ".txt")),
+            shiny::fluidRow(
+              shiny::column(6, shiny::selectInput(
+                "csv_sep", t("csv_sep"), stats::setNames(
+                  c("auto", "comma", "semicolon", "tab"),
+                  c(t("sep_auto"), t("sep_comma"), t("sep_semicolon"),
+                    t("sep_tab"))))),
+              shiny::column(6, shiny::selectInput(
+                "csv_dec", t("csv_dec"), stats::setNames(
+                  c("auto", "point", "comma"),
+                  c(t("sep_auto"), t("dec_point"), t("dec_comma")))))
+            ),
             shiny::selectInput("freq", t("freq"), stats::setNames(
               c("auto", "12", "4"),
               c(t("freq_auto"), t("monthly"), t("quarterly")))),
@@ -420,18 +478,30 @@ app_script <- function(state) {
     }
     return(paste(c(lines, analysis_lines(state)), collapse = "\n"))
   }
-  lines <- c("library(rcli)", "", "# 1. Data")
-  if (state$source == "upload") {
-    lines <- c(lines, sprintf(
-      "data <- read_cli_data(\"%s\", frequency = %s, start = %s)",
-      state$file_name, deparse_value(state$frequency),
-      deparse_value(state$start)))
-  } else {
-    lines <- c(lines, sprintf("data <- simulate_cycles(freq = %s, seed = %s)",
-                              state$frequency, state$seed))
-  }
+  lines <- c("library(rcli)", "", data_lines(state))
   lines <- c(lines, "", candidate_lines(state, "data"))
   paste(c(lines, analysis_lines(state)), collapse = "\n")
+}
+
+# Step 1 of the script: the data as loaded, with the column separator and
+# decimal mark of an uploaded file when they differ from read.csv()'s.
+data_lines <- function(state) {
+  if (!identical(state$source, "upload")) {
+    return(c("# 1. Data",
+             sprintf("data <- simulate_cycles(freq = %s, seed = %s)",
+                     state$frequency, state$seed)))
+  }
+  fmt <- ""
+  sep <- if (is.null(state$sep)) "," else state$sep
+  dec <- if (is.null(state$dec)) "." else state$dec
+  if (sep != "," || dec != ".") {
+    fmt <- sprintf(",\n                      sep = %s, dec = %s",
+                   deparse_value(sep), deparse_value(dec))
+  }
+  c("# 1. Data",
+    sprintf("data <- read_cli_data(\"%s\", frequency = %s, start = %s%s)",
+            state$file_name, deparse_value(state$frequency),
+            deparse_value(state$start), fmt))
 }
 
 # Step 2 of the script: the metadata and the candidate set built from `data`.
@@ -618,14 +688,23 @@ app_server <- function(language = "id") {
         if (input$source == "upload") {
           shiny::req(input$file)
           freq <- if (input$freq == "auto") NULL else as.numeric(input$freq)
-          read_cli_data(input$file$datapath, frequency = freq,
-                        start = parse_start(input$start), check.names = FALSE)
+          fmt <- csv_format(input$file$datapath,
+                            sep = csv_choice(input$csv_sep, "sep"),
+                            dec = csv_choice(input$csv_dec, "dec"))
+          out <- read_cli_data(input$file$datapath, frequency = freq,
+                               start = parse_start(input$start),
+                               check.names = FALSE, sep = fmt$sep,
+                               dec = fmt$dec)
+          attr(out, "csv_format") <- fmt
+          out
         } else {
           freq <- if (input$source == "example_m") 12 else 4
           simulate_cycles(freq = freq, seed = input$seed)
         }
       })
       if (is.null(data)) return()
+      fmt <- attr(data, "csv_format")
+      attr(data, "csv_format") <- NULL
       rv$data <- data
       # the script reproduces the data as loaded, not later edits of step 1
       rv$loaded <- list(
@@ -633,7 +712,8 @@ app_server <- function(language = "id") {
         file_name = if (is.null(input$file)) "data.csv" else input$file$name,
         start = if (input$source == "upload") parse_start(input$start) else
           NULL,
-        seed = input$seed
+        seed = input$seed,
+        sep = fmt$sep, dec = fmt$dec
       )
       rv$meta_known <- NULL
       rv$prelude <- NULL
@@ -1186,9 +1266,12 @@ app_server <- function(language = "id") {
         file_name = rv$loaded$file_name,
         frequency = stats::frequency(rv$data),
         start = rv$loaded$start,
-        seed = rv$loaded$seed, meta = rv$meta, reference = reference(),
+        seed = rv$loaded$seed, sep = rv$loaded$sep, dec = rv$loaded$dec,
+        meta = rv$meta,
+        reference = if (is.null(rv$cand)) NULL else reference(),
         spec_call = rv$spec_call, mode = rv$mode,
-        components = rv$components, lag_shift = isTRUE(rv$spec@lag_shift),
+        components = rv$components,
+        lag_shift = !is.null(rv$spec) && isTRUE(rv$spec@lag_shift),
         cci_mode = rv$cci_mode,
         cci_components = if (is.null(rv$cci)) NULL else
           rv$cci@composite@components,

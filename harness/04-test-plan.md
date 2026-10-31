@@ -10,6 +10,7 @@
 | Judul berversi, tombol indeks sejalan sebagai acuan, metadata menurut nama, skrip ekspor berantai | FR-006 | `tests/testthat/test-app-reference.R`, `test-app-e2e.R` ("the coincident index becomes the reference in the browser") |
 | Frekuensi asal: deteksi semesteran/tahunan, Denton–Cholette k umum (pembanding tempdisagg, k = 3 sama dengan 0.2.1), interpolasi linear, Chow–Lin, penolakan kandidat semesteran/tahunan, frekuensi yang dinyatakan, metadata | FR-007, F-04 | `tests/testthat/test-frequency.R`; uji lama `test-align.R` |
 | GUI langkah 2: isian frekuensi asal, penolakan, skrip, simpan menurut nama | FR-007 AC-7 | `tests/testthat/test-app-frequency.R` |
+| Pemisah kolom dan tanda desimal CSV: pengenalan otomatis, pilihan eksplisit, galat bila sama, skrip ekspor, teks dua bahasa; unggahan `write.csv2()` di peramban | FR-008 | `tests/testthat/test-app-csv.R`, `test-app-e2e.R` |
 | Imports tidak bertambah; biaya perpanjangan; kalibrasi dan evaluasi waktu nyata | NFR-001, NFR-002, NFR-003 | `test-end-extension.R`; data dari `data-raw/calibrate_*.R`, `data-raw/realtime_defaults.R` |
 
 ## Bukti merah (G4)
@@ -25,3 +26,6 @@ Bukti merah: sebelum implementasi FR-004 (2026-10-23), `devtools::test(filter = 
 Bukti merah: sebelum implementasi FR-006 (2026-10-24), `devtools::test(filter = "app-reference")` gagal: judul tanpa versi (2 kegagalan), kunci teks `cci_ref` belum ada (galat), dan tombol `cci_ref` tidak berbuat apa-apa (6 kegagalan pada `rv$cand@reference`, `rv$done`, `rv$data`).
 
 Bukti merah FR-007 (2026-10-24): `devtools::test(filter = "frequency")` gagal 10 kali sebelum implementasi (`series_frequencies` tidak ada, `cli_align()` menolak `ts` tahunan, `denton_cholette()` tanpa argumen `to`, metadata tanpa kolom `frequency`); `test-app-frequency.R` gagal 3 kali (kunci teks `var_freq` dan isian `frq_i` belum ada).
+
+### Bukti merah 0.3.1 (G4)
+Bukti merah: sebelum implementasi FR-008 (2026-10-31), `devtools::test(filter = "app-csv")` gagal 10 kali (`csv_format()` dan `data_lines()` belum ada; berkas bertitik koma terbaca sebagai satu kolom; isian `csv_sep` dan `csv_dec` belum ada di UI).
