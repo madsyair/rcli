@@ -28,8 +28,9 @@ A named list of data frames with columns \code{date} (\code{Date}) and
 \code{value}, ready for \code{\link[=cli_align]{cli_align()}}. Each carries the attributes
 \code{frequency} (the recognised source frequency) and \code{file}. Errors have
 the classes \code{rcli_error_argument} (missing file, no value column, a
-series name twice, a value column without a name, too few
-observations) and \code{rcli_error_dates} (a date that is not understood).
+series name twice, a value column without a name, no series with two
+observations) and \code{rcli_error_dates} (a date that is not understood,
+or day-month-year dates that look like month-day-year).
 }
 \description{
 Reads files that each hold a date column followed by one or more value
@@ -59,8 +60,8 @@ as Excel writes dates) is ignored.
 The source frequency (daily, weekly, monthly, quarterly, semiannual or
 annual) is then recognised from the spacing of the dates. Empty cells,
 and the cells in \code{na}, are dropped from that series only, so the series
-of one file may cover different periods. Each series needs at least two
-observations.
+of one file may cover different periods. A series with fewer than two
+observations is dropped with a warning.
 }
 \examples{
 dir <- tempfile()

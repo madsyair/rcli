@@ -197,7 +197,8 @@ test_that("R6-R9: missing marks, order, short series and date forms", {
   expect_false(is.unsorted(s$date))
   # one observation, or no dates at all, names the file
   f <- write_lines_as(c("date,value", "2001Q1,1"), "satu.csv")
-  err <- expect_error(read_cli_series(f), class = "rcli_error_argument")
+  err <- expect_error(suppressWarnings(read_cli_series(f)),
+                      class = "rcli_error_argument")
   expect_match(conditionMessage(err), "satu.csv", fixed = TRUE)
   f <- write_lines_as(c("date,value", ",1", ",2"), "tanpa.csv")
   err <- expect_error(read_cli_series(f), class = "rcli_error_dates")
@@ -214,4 +215,28 @@ test_that("R6-R9: missing marks, order, short series and date forms", {
   f <- write_lines_as(c("date,value", "2001-01-15 08:30,1",
                         "2001-01-16 08:30,2"), "jam.csv")
   expect_error(read_cli_series(f), class = "rcli_error_dates")
+})
+
+test_that("R11/R13/R14: US dates, one-value series and the na argument", {
+  us <- format(seq(as.Date("2001-01-01"), by = "month", length.out = 24),
+               "%m/%d/%Y")
+  us <- sub("^0", "", sub("/0", "/", us))
+  f <- write_lines_as(c("date,value", paste0(us, ",", 1:24)), "us.csv")
+  err <- expect_error(read_cli_series(f), class = "rcli_error_dates")
+  expect_match(conditionMessage(err), "us.csv", fixed = TRUE)
+  # genuine daily dates written day first are accepted
+  d <- format(as.Date("2001-01-01") + 0:59, "%d/%m/%Y")
+  f <- write_lines_as(c("date,value", paste0(d, ",", 1:60)), "harian.csv")
+  expect_equal(attr(read_cli_series(f)[[1]], "frequency"), "daily")
+  f <- write_lines_as(c("date,value", "15/01/2001 0:00,1",
+                        "22/01/2001 0:00,2"), "jam.csv")
+  expect_equal(read_cli_series(f)[[1]]$value, 1:2)
+  # a series of one value is dropped like a column without numbers
+  f <- write_lines_as(c("date,a,b", "2001Q1,1,", "2001Q2,2,5"), "satu.csv")
+  expect_warning(out <- read_cli_series(f), class = "rcli_warning_dropped")
+  expect_named(out, "a")
+  f <- write_lines_as(c("date,a", "2001Q1,1", "2001Q2,"), "hanya.csv")
+  expect_error(suppressWarnings(read_cli_series(f)),
+               class = "rcli_error_argument")
+  expect_error(read_cli_series(f, na = 1), class = "rcli_error_argument")
 })

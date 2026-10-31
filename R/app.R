@@ -828,6 +828,8 @@ app_server <- function(language = "id") {
       if (is.null(rv$series)) colnames(rv$data) else names(rv$series)
     }
     multi <- function() !is.null(rv$series)
+    # the reference series whose type the step-2 entry holds
+    ref_type_for <- NULL
     shiny::observeEvent(input$run1, {
       sep <- csv_choice(input$csv_sep, "sep")
       dec <- csv_choice(input$csv_dec, "dec")
@@ -880,6 +882,7 @@ app_server <- function(language = "id") {
       rv$meta_known <- NULL
       rv$prelude <- NULL
       rv$cand_rebuilt <- FALSE
+      ref_type_for <<- NULL
       finish(1L)
       nms <- series_names()
       sel <- if ("reference" %in% nms) "reference" else nms[1]
@@ -895,7 +898,16 @@ app_server <- function(language = "id") {
     # a new analysis frequency for files already read clears step 2 onwards
     shiny::observeEvent(input$target_freq, {
       f <- as.numeric(input$target_freq)
-      if (!multi() || identical(f, rv$loaded$frequency)) return()
+      if (!multi()) {
+        # the files gave way to the coincident index: keep the frequency
+        if (identical(rv$loaded$source, "upload_multi")) {
+          shiny::updateSelectInput(session, "target_freq",
+                                   selected = as.character(
+                                     rv$loaded$frequency))
+        }
+        return()
+      }
+      if (identical(f, rv$loaded$frequency)) return()
       loaded <- rv$loaded
       loaded$frequency <- f
       rv$loaded <- loaded
@@ -932,7 +944,6 @@ app_server <- function(language = "id") {
       setdiff(series_names(), input$reference)
     })
     shown_cands <- character(0)
-    ref_type_for <- NULL
     output$meta_ui <- shiny::renderUI({
       # depends only on the data and the reference, so that the choices the
       # user made are not reset when later steps run

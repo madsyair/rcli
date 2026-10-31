@@ -12,8 +12,9 @@
   with `date` and `value`, carries its recognised source frequency, and
   goes straight into `cli_align()`. A date that does not fit is reported
   with its file name and value (`rcli_error_dates`); two series with the
-  same name, a value column without a name and a series with fewer than
-  two observations are refused, naming the file. Cells such as `-`, `..`
+  same name and a value column without a name are refused, naming the
+  file, and so are day-first dates that look like month/day/year; a series
+  with fewer than two observations is dropped with a warning. Cells such as `-`, `..`
   or `#N/A` (argument `na`) count as missing values, and Excel date-times
   at midnight are read as dates.
 * `cli_candidates()`: an empty `type` or `frequency` in `meta` no longer

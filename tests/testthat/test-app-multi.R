@@ -88,6 +88,17 @@ test_that("AC-FR-009.5/6/7: several files run through the ten steps", {
     utils::capture.output(eval(parse(text = script()), envir = env))
     expect_equal(as.numeric(composite(env$res)@index),
                  as.numeric(rv$composite@index))
+    # R12: the analysis frequency no longer applies after the switch
+    session$setInputs(target_freq = "4")
+    expect_equal(rv$loaded$frequency, 12)
+    expect_true(all(1:7 %in% rv$done))
+    # R15: a new load forgets the reference type
+    session$setInputs(ref_type = "average")
+    session$setInputs(source = "upload_multi", files = files, run1 = 3)
+    session$setInputs(reference = "pdb")
+    html <- as.character(output$meta_ui$html)
+    sel <- regmatches(html, regexpr('id="ref_type".*?</select>', html))
+    expect_match(sel, 'value="" selected', fixed = TRUE)
     # another source clears the files
     session$setInputs(source = "example_m", seed = 1, run1 = 2)
     expect_null(rv$series)

@@ -2,7 +2,8 @@
 
 - Increment: rcli 0.4.0 (FR-009)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 1 terhadap 0fd867f (basis 1b66e30, 0.3.1 di main)
+- Putaran: 2 (putaran 1 terhadap 0fd867f, putaran 2 terhadap 38984f2;
+  basis 1b66e30, 0.3.1 di main)
 - Review 0.3.1 tersimpan di riwayat git berkas ini (komit a1a433b).
 
 ## Yang diperiksa (putaran 1)
@@ -72,3 +73,43 @@ Putusan putaran 1: CHANGES-REQUESTED
 - Bukti merah: uji baru dijalankan pada kode 0fd867f: 9 kegagalan (3 di
   `test-read-series.R`, 6 di `test-app-multi.R`); semuanya lolos sesudah
   perbaikan.
+
+## Review putaran 2 (38984f2)
+- Uji: `test-read-series` 77/77, `test-app-multi` 48/48,
+  `test-app-frequency` 13/13, `test-app-reference` 33/33, `test-app-csv`
+  78/78; lintr bersih.
+- R1–R10 tertutup, masing-masing diverifikasi dengan kode: nama ganda dan
+  kolom tanpa tajuk ditolak; tipe seri acuan dikosongkan saat acuan
+  diganti; mengganti frekuensi analisis mengosongkan langkah 2 dan skrip
+  tetap mereproduksi GUI; frekuensi asal tampil sebagai teks; tanda nilai
+  hilang tidak mengganggu deteksi desimal; urutan tanggal; pesan galat
+  menyebut berkas; tanggal-waktu tengah malam.
+- Jalur indeks sejalan sebagai acuan dengan beberapa berkas: skrip ekspor
+  dievaluasi tanpa galat, indeks komposit dan `meta` sama dengan GUI.
+
+### Temuan baru putaran 2
+- [x] [R11][minor] read-series.R `series_dates` — tanggal bulan/hari/tahun
+  (ekspor Excel en-US) terbaca sebagai hari 1–12 Januari dan dikenali
+  harian tanpa galat; `cli_align()` lalu menghasilkan hampir semua NA.
+- [x] [R12][nit] app.R — sesudah indeks sejalan menjadi acuan, mengubah
+  frekuensi analisis tidak berpengaruh, tetapi pilihannya berubah.
+- [x] [R13][nit] read-series.R — seri satu observasi menggagalkan seluruh
+  berkas, sedangkan kolom kosong hanya dibuang dengan peringatan.
+- [x] [R14][nit] read-series.R — jam tengah malam satu digit (`0:00`)
+  tidak dibuang; `na` tidak divalidasi.
+- [x] [R15][nit] app.R — tipe seri acuan terbawa ke berkas baru dengan
+  nama seri acuan yang sama.
+
+Putusan: APPROVE
+
+## Tindak lanjut A5 sesudah putaran 2
+- R11: tanggal hari-bulan-tahun yang menghasilkan deret hari berjarak
+  lebih dari sebulan ditolak (`rcli_error_dates`) dengan saran format
+  ISO; data harian sungguhan tetap diterima.
+- R12: pilihan frekuensi analisis dikembalikan ke nilai yang dipakai.
+- R13: seri dengan kurang dari dua observasi dibuang dengan
+  `rcli_warning_dropped`; galat hanya bila tidak ada seri yang tersisa.
+- R14: pola `[ T]0?0:00(:00)?$`; `na` harus character.
+- R15: `ref_type_for` dikosongkan di langkah 1.
+- Uji "R11/R13/R14" dan tambahan di `test-app-multi.R`; pada 38984f2
+  uji-uji itu gagal 3 kali.

@@ -59,6 +59,8 @@
 | 2026-11-01 05:40 | INC-09 | A1, A4, A5 | G1, G4, G5 | merah 6 kegagalan → hijau; uji peramban tiga berkas | 1/3 | A6 |
 | 2026-11-01 06:30 | INC-09 | A6 | G6 | CHANGES-REQUESTED (R1 major, R2–R6 dan R10 minor, R7–R9 nit) | 1/3 | A5 perbaiki |
 | 2026-11-01 07:00 | INC-09 | A5 | G4–G5 | R1–R10 ditindaklanjuti; merah 9 kegagalan pada 0fd867f | 2/3 | A6 putaran 2 |
+| 2026-11-01 07:40 | INC-09 | A6 | G6 | APPROVE putaran 2 (R1–R10 tertutup; R11 minor, R12–R15 nit) | 2/3 | A5 R11–R15, gerbang penuh |
+| 2026-11-01 08:00 | INC-09 | A5 | G4–G5 | R11–R15 ditindaklanjuti; merah 3 kegagalan pada 38984f2 | 2/3 | gerbang penuh, PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

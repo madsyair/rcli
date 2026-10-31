@@ -26,8 +26,8 @@
 #' The source frequency (daily, weekly, monthly, quarterly, semiannual or
 #' annual) is then recognised from the spacing of the dates. Empty cells,
 #' and the cells in `na`, are dropped from that series only, so the series
-#' of one file may cover different periods. Each series needs at least two
-#' observations.
+#' of one file may cover different periods. A series with fewer than two
+#' observations is dropped with a warning.
 #'
 #' @param files Paths of the CSV files. Names, if given, replace the file
 #'   names in the series names and messages (for instance the original
@@ -40,8 +40,9 @@
 #'   `value`, ready for [cli_align()]. Each carries the attributes
 #'   `frequency` (the recognised source frequency) and `file`. Errors have
 #'   the classes `rcli_error_argument` (missing file, no value column, a
-#'   series name twice, a value column without a name, too few
-#'   observations) and `rcli_error_dates` (a date that is not understood).
+#'   series name twice, a value column without a name, no series with two
+#'   observations) and `rcli_error_dates` (a date that is not understood,
+#'   or day-month-year dates that look like month-day-year).
 #' @seealso [cli_align()] to bring the series to one frequency,
 #'   [read_cli_data()] for one file with one column per series.
 #' @examples
@@ -59,6 +60,9 @@ read_cli_series <- function(files, sep = "auto", dec = "auto",
                             na = c("NA", "-", "..", "...", "#N/A")) {
   if (!is.character(files) || length(files) == 0L) {
     rcli_abort("`files` must name at least one file.", "rcli_error_argument")
+  }
+  if (!is.character(na)) {
+    rcli_abort("`na` must be a character vector.", "rcli_error_argument")
   }
   shown <- names(files)
   if (is.null(shown)) shown <- rep("", length(files))
@@ -133,14 +137,23 @@ read_series_file <- function(path, shown, sep, dec, na) {
                              "file name); rename a column."),
                        shown, twice[1]), "rcli_error_argument")
   }
+  # like a column without numbers, a series of one value is dropped
+  short <- num & vapply(values, function(v) sum(!is.na(v)) < 2L, logical(1))
+  if (any(short)) {
+    rcli_warn(sprintf(paste("File '%s': series with fewer than two",
+                            "observations were dropped: %s."),
+                      shown, paste(nms[short], collapse = ", ")),
+              "rcli_warning_dropped")
+    num <- num & !short
+    if (!any(num)) {
+      rcli_abort(sprintf(paste("File '%s' has no series with at least two",
+                               "observations."), shown),
+                 "rcli_error_argument")
+    }
+  }
   out <- list()
   for (j in which(num)) {
     ok <- !is.na(values[[j]])
-    if (sum(ok) < 2L) {
-      rcli_abort(sprintf(paste("File '%s': series '%s' needs at least two",
-                               "observations."), shown, nms[j]),
-                 "rcli_error_argument")
-    }
     s <- data.frame(date = dates[ok], value = as.numeric(values[[j]][ok]))
     s <- s[order(s$date), , drop = FALSE]
     rownames(s) <- NULL
@@ -155,7 +168,7 @@ read_series_file <- function(path, shown, sep, dec, na) {
 series_dates <- function(x, shown) {
   x <- trimws(x)
   # Excel writes dates as date-times at midnight
-  x <- sub("[ T]00:00(:00)?$", "", x)
+  x <- sub("[ T]0?0:00(:00)?$", "", x)
   forms <- list(
     ymd = "^([0-9]{4})[-/]([0-9]{1,2})[-/]([0-9]{1,2})$",
     dmy = "^([0-9]{1,2})[-/.]([0-9]{1,2})[-/.]([0-9]{4})$",
@@ -188,5 +201,15 @@ series_dates <- function(x, shown) {
   d <- as.Date(sprintf("%04d-%02d-%02d", ymd[, 1], ymd[, 2], ymd[, 3]),
                format = "%Y-%m-%d")
   if (anyNA(d)) bad_value(which(is.na(d))[1])
+  # month/day/year read day first: days of the first weeks of each month
+  gaps <- diff(sort(unique(d)))
+  if (form == "dmy" && length(gaps) > 1L && stats::median(gaps) <= 4 &&
+      max(gaps) > 31) {
+    rcli_abort(sprintf(paste("File '%s': the dates read as day/month/year",
+                             "leave gaps of over a month between runs of",
+                             "days, as month/day/year dates would; write",
+                             "them as 2001-01-15."), shown),
+               "rcli_error_dates")
+  }
   d
 }
