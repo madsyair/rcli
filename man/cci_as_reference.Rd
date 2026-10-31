@@ -7,10 +7,10 @@
 cci_as_reference(cci, candidates = NULL, name = "cci", drop_components = TRUE)
 }
 \arguments{
-\item{cci}{A [CciResult-class] with an index.}
+\item{cci}{A \linkS4class{CciResult} with an index.}
 
-\item{candidates}{The [CandidateSet-class] to take the candidates from;
-by default that of `cci`.}
+\item{candidates}{The \linkS4class{CandidateSet} to take the candidates from;
+by default that of \code{cci}.}
 
 \item{name}{Name of the new reference column.}
 
@@ -18,24 +18,24 @@ by default that of `cci`.}
 the candidates?}
 }
 \value{
-A [CandidateSet-class].
+A \linkS4class{CandidateSet}.
 }
 \description{
 The reference cycle of a composite leading indicator is often a
 quarterly series (GDP) that has to be disaggregated to months (see
-[cli_align()]), which blurs its turning-point dates. A monthly coincident
-index is the reference the Conference Board uses. `cci_as_reference()`
-returns a [CandidateSet-class] whose reference is the index of a
-[CciResult-class]; the former reference and, by default, the components
+\code{\link[=cli_align]{cli_align()}}), which blurs its turning-point dates. A monthly coincident
+index is the reference the Conference Board uses. \code{cci_as_reference()}
+returns a \linkS4class{CandidateSet} whose reference is the index of a
+\linkS4class{CciResult}; the former reference and, by default, the components
 of the index leave the candidates, so that no candidate is assessed
 against an index it is part of.
 }
 \details{
 The new reference goes through the same cycle extraction as any series.
 For an amplitude-adjusted index (every aggregator except
-[conference_board()]) that series is already a cycle, which the
+\code{\link[=conference_board]{conference_board()}}) that series is already a cycle, which the
 band-pass filters of the package leave almost unchanged; the level index
-of [conference_board()] is the closer analogue of a level reference such
+of \code{\link[=conference_board]{conference_board()}} is the closer analogue of a level reference such
 as GDP. Data vintages are dropped because the index has none.
 }
 \examples{
@@ -47,5 +47,5 @@ cand <- cci_as_reference(cci)
 cand
 }
 \seealso{
-[cci_build()], [cli_candidates()]
+\code{\link[=cci_build]{cci_build()}}, \code{\link[=cli_candidates]{cli_candidates()}}
 }

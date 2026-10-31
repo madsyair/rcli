@@ -18,81 +18,83 @@ cli_align(
 )
 }
 \arguments{
-\item{series}{A list of series. Each element is a univariate `ts`
-(monthly, quarterly, semiannual or annual), a multivariate `ts` (its
+\item{series}{A list of series. Each element is a univariate \code{ts}
+(monthly, quarterly, semiannual or annual), a multivariate \code{ts} (its
 columns are taken as series of their own) or a data frame with columns
-`date` and `value` (daily, weekly, monthly, quarterly, semiannual or
+\code{date} and \code{value} (daily, weekly, monthly, quarterly, semiannual or
 annual observations). Elements other than
-multivariate `ts` must be named.}
+multivariate \code{ts} must be named.}
 
 \item{freq}{Target frequency: 12 (monthly) or 4 (quarterly).}
 
-\item{type}{Named character vector of series types (`"flow"`, `"stock"`
-or `"average"`); required for every series whose frequency changes.}
+\item{type}{Named character vector of series types (\code{"flow"}, \code{"stock"}
+or \code{"average"}); required for every series whose frequency changes.}
 
 \item{reference}{Name of the reference series, which is disaggregated
-with `method` instead of interpolated.}
+with \code{method} instead of interpolated.}
 
 \item{method}{Disaggregation method for a quarterly, semiannual or annual
 reference series.}
 
-\item{indicator}{`ts` at the target frequency used by
-`method = "chow-lin"`.}
+\item{indicator}{\code{ts} at the target frequency used by
+\code{method = "chow-lin"}.}
 
 \item{position}{Named integers: subperiod at which a value is placed
 before linear interpolation, 1 to 3 (month of the quarter) for a
 quarterly candidate, 1 to k for a semiannual or annual reference with
-`method = "linear"` (k = 6 or 12 months, 2 or 4 quarters).}
+\code{method = "linear"} (k = 6 or 12 months, 2 or 4 quarters).}
 
 \item{week_date}{Whether the dates of weekly data mark the first
-(`"start"`) or the last (`"end"`) day of each week.}
+(\code{"start"}) or the last (\code{"end"}) day of each week.}
 
 \item{min_coverage}{Smallest share of an edge period that daily or weekly
 data must cover.}
 
 \item{frequency}{Optional named character vector of declared source
-frequencies (`names(series_frequencies)`); a series whose dates show
+frequencies (\code{names(series_frequencies)}); a series whose dates show
 another frequency is an error.}
 }
 \value{
-A multivariate `ts` at frequency `freq`. Its attribute
-  `"alignment"` is a data frame (`name`, `from`, `type`, `method`) that
-  [cli_candidates()] stores with the candidate set.
+A multivariate \code{ts} at frequency \code{freq}. Its attribute
+\code{"alignment"} is a data frame (\code{name}, \code{from}, \code{type}, \code{method}) that
+\code{\link[=cli_candidates]{cli_candidates()}} stores with the candidate set.
 }
 \description{
 Converts daily, weekly, monthly and quarterly series, and a semiannual or
 annual reference series, to one target frequency, with the aggregation
 rule set by the type of each series
-([series_types]), so that they can enter [cli_candidates()]. The rules
+(\link{series_types}), so that they can enter \code{\link[=cli_candidates]{cli_candidates()}}. The rules
 follow the temporal-aggregation constraints of national accounts (IMF
 2017) and the OECD practice for composite leading indicators (Gyomai and
 Guidetti 2012):
 }
 \details{
-* **Daily and weekly data** are spread over calendar days (a weekly flow
-  is divided by seven; a weekly average is repeated on its seven days) and
-  then summed (flow), averaged (average) or taken at the last observation
-  (stock) within each month or quarter. Weeks are never summed by the
-  month their last day falls in, which would make months of five weeks
-  look 25 percent higher than months of four.
-* **Monthly to quarterly**: sum, mean or last month; incomplete quarters
-  are missing.
-* **Semiannual or annual reference series**: disaggregated like a
-  quarterly one (below), to months or quarters. Semiannual and annual
-  candidates are an error ([series_frequencies]).
-* **Quarterly to monthly, reference series**: temporal disaggregation that
-  keeps the quarterly constraint: `"denton-cholette"` (the smoothest
-  monthly path, Denton 1971 with the Cholette modification, computed
-  here), `"chow-lin"` (regression on a monthly `indicator`, Chow and Lin
-  1971, via the 'tempdisagg' package; the indicator must not also be a
-  candidate) or `"linear"`.
-* **Quarterly to monthly, candidates**: linear interpolation with the
-  quarterly value placed in the central month (flows, averages) or the
-  last month (stocks), as the OECD does; `position` overrides it, e.g. for
-  a survey run in the first month of each quarter.
+\itemize{
+\item \strong{Daily and weekly data} are spread over calendar days (a weekly flow
+is divided by seven; a weekly average is repeated on its seven days) and
+then summed (flow), averaged (average) or taken at the last observation
+(stock) within each month or quarter. Weeks are never summed by the
+month their last day falls in, which would make months of five weeks
+look 25 percent higher than months of four.
+\item \strong{Monthly to quarterly}: sum, mean or last month; incomplete quarters
+are missing.
+\item \strong{Semiannual or annual reference series}: disaggregated like a
+quarterly one (below), to months or quarters. Semiannual and annual
+candidates are an error (\link{series_frequencies}).
+\item \strong{Quarterly to monthly, reference series}: temporal disaggregation that
+keeps the quarterly constraint: \code{"denton-cholette"} (the smoothest
+monthly path, Denton 1971 with the Cholette modification, computed
+here), \code{"chow-lin"} (regression on a monthly \code{indicator}, Chow and Lin
+1971, via the 'tempdisagg' package; the indicator must not also be a
+candidate) or \code{"linear"}.
+\item \strong{Quarterly to monthly, candidates}: linear interpolation with the
+quarterly value placed in the central month (flows, averages) or the
+last month (stocks), as the OECD does; \code{position} overrides it, e.g. for
+a survey run in the first month of each quarter.
+}
 
 The first and last periods of a daily or weekly series are kept only if
-the data span at least `min_coverage` of their calendar days; a partial
+the data span at least \code{min_coverage} of their calendar days; a partial
 flow is scaled up to the full period.
 }
 \examples{
@@ -112,21 +114,21 @@ cand <- cli_candidates(x, reference = "gdp", meta = meta)
 \references{
 Chow, G. C. and Lin, A. (1971). Best linear unbiased interpolation,
 distribution, and extrapolation of time series by related series.
-*Review of Economics and Statistics*, 53(4), 372--375.
+\emph{Review of Economics and Statistics}, 53(4), 372--375.
 
 Denton, F. T. (1971). Adjustment of monthly or quarterly series to annual
-totals: an approach based on quadratic minimization. *Journal of the
-American Statistical Association*, 66(333), 99--102.
+totals: an approach based on quadratic minimization. \emph{Journal of the
+American Statistical Association}, 66(333), 99--102.
 
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD, Paris.
 
-International Monetary Fund (2017). *Quarterly National Accounts Manual*,
+International Monetary Fund (2017). \emph{Quarterly National Accounts Manual},
 chapter 6: Benchmarking and reconciliation. IMF, Washington.
 
 Sax, C. and Steiner, P. (2013). Temporal disaggregation of time series.
-*The R Journal*, 5(2), 80--87.
+\emph{The R Journal}, 5(2), 80--87.
 }
 \seealso{
-[series_types], [cli_candidates()]
+\link{series_types}, \code{\link[=cli_candidates]{cli_candidates()}}
 }

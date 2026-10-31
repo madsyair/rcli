@@ -5,22 +5,22 @@
 \alias{TurningPoints-class}
 \title{Turning points of a series}
 \description{
-Objects of class `TurningPoints` store the peaks and troughs of one series.
+Objects of class \code{TurningPoints} store the peaks and troughs of one series.
 }
 \section{Slots}{
 
 \describe{
 \item{\code{name}}{Series name.}
 
-\item{\code{series}}{The dated series (`ts`).}
+\item{\code{series}}{The dated series (\code{ts}).}
 
-\item{\code{index}}{Positions of the turning points in `series`.}
+\item{\code{index}}{Positions of the turning points in \code{series}.}
 
-\item{\code{type}}{`"peak"` or `"trough"` for each turning point.}
+\item{\code{type}}{\code{"peak"} or \code{"trough"} for each turning point.}
 
 \item{\code{params}}{Censoring rules actually applied.}
 }}
 
 \seealso{
-[date_turning_points()], [as.data.frame,TurningPoints-method]
+\code{\link[=date_turning_points]{date_turning_points()}}, \link{as.data.frame,TurningPoints-method}
 }

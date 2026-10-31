@@ -27,29 +27,29 @@ extend_series(extension, x, ...)
 \S4method{show}{Extension}(object)
 }
 \arguments{
-\item{h}{Number of periods appended; `NULL` means one year (12 months
+\item{h}{Number of periods appended; \code{NULL} means one year (12 months
 or 4 quarters).}
 
-\item{order_max}{Largest autoregressive order considered; `NULL` means
+\item{order_max}{Largest autoregressive order considered; \code{NULL} means
 the frequency of the data. Any value is further bounded by
-`10 log10(m)` (the default bound of [stats::ar()]) and by `m - 2`,
-where `m = n - 1` is the number of changes.}
+\verb{10 log10(m)} (the default bound of \code{\link[stats:ar]{stats::ar()}}) and by \code{m - 2},
+where \code{m = n - 1} is the number of changes.}
 
-\item{extension}{An `Extension`.}
+\item{extension}{An \code{Extension}.}
 
-\item{x}{A `ts` with at least three observations and no missing values.}
+\item{x}{A \code{ts} with at least three observations and no missing values.}
 
 \item{...}{Unused.}
 
 \item{object}{An object to print.}
 }
 \value{
-An `Extension` object.
+An \code{Extension} object.
 }
 \description{
 Two-sided filters such as the Hodrick-Prescott filter are least reliable
 at the end of a series, which is where a leading indicator is read. An
-`Extension` appends forecasts to the (transformed, outlier-treated)
+\code{Extension} appends forecasts to the (transformed, outlier-treated)
 series before the cycle is extracted; the forecasts are dropped again
 afterwards, so the cycle keeps the length of the data. This is what the
 OECD does with TRAMO forecasts (Gyomai and Guidetti 2012, p. 7) and
@@ -57,24 +57,26 @@ reduces end-point revisions of the Hodrick-Prescott filter (Kaiser and
 Maravall 2001).
 }
 \details{
-* `ar_extension()`: the default since rcli 0.2.0. An autoregressive model
-  for the period-to-period changes, with the order chosen by AIC up to
-  `order_max` and estimated by the Yule-Walker equations
-  ([stats::ar()]); the forecasts of the changes are cumulated from the
-  last observation. A series whose changes are constant (up to rounding)
-  is extended as a straight line with the mean change, and so is a series
-  for which the autoregression cannot be fitted. In the real-time
-  simulations behind this default (`data-raw/realtime_defaults.R`,
-  vignette section 8) it cut the revision of the last value of the
-  composite by 18 to 23 percent. With the O(n) HP solver of 0.2.1 it
-  costs about 1 ms per series of 30 years.
-* `no_extension()`: no forecasts (the behaviour of rcli 0.1.x).
+\itemize{
+\item \code{ar_extension()}: the default since rcli 0.2.0. An autoregressive model
+for the period-to-period changes, with the order chosen by AIC up to
+\code{order_max} and estimated by the Yule-Walker equations
+(\code{\link[stats:ar]{stats::ar()}}); the forecasts of the changes are cumulated from the
+last observation. A series whose changes are constant (up to rounding)
+is extended as a straight line with the mean change, and so is a series
+for which the autoregression cannot be fitted. In the real-time
+simulations behind this default (\code{data-raw/realtime_defaults.R},
+vignette section 8) it cut the revision of the last value of the
+composite by 18 to 23 percent. With the O(n) HP solver of 0.2.1 it
+costs about 1 ms per series of 30 years.
+\item \code{no_extension()}: no forecasts (the behaviour of rcli 0.1.x).
+}
 
-When the outlier treatment already gives forecasts ([tramo_outliers()]),
+When the outlier treatment already gives forecasts (\code{\link[=tramo_outliers]{tramo_outliers()}}),
 those are used and the extension is ignored.
 
-New strategies are added with a subclass of `Extension` and a method for
-the generic `extend_series()`, which returns the numeric vector of
+New strategies are added with a subclass of \code{Extension} and a method for
+the generic \code{extend_series()}, which returns the numeric vector of
 forecasts (possibly empty).
 }
 \examples{
@@ -84,18 +86,18 @@ extend_series(no_extension(), x)
 }
 \references{
 Akaike, H. (1974). A new look at the statistical model identification.
-*IEEE Transactions on Automatic Control*, 19(6), 716--723.
+\emph{IEEE Transactions on Automatic Control}, 19(6), 716--723.
 
-Brockwell, P. J. and Davis, R. A. (1991). *Time Series: Theory and
-Methods*, 2nd edition. Springer, New York.
+Brockwell, P. J. and Davis, R. A. (1991). \emph{Time Series: Theory and
+Methods}, 2nd edition. Springer, New York.
 
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 
-Kaiser, R. and Maravall, A. (2001). *Measuring Business Cycles in
-Economic Time Series*. Lecture Notes in Statistics 154. Springer, New
+Kaiser, R. and Maravall, A. (2001). \emph{Measuring Business Cycles in
+Economic Time Series}. Lecture Notes in Statistics 154. Springer, New
 York.
 }
 \seealso{
-[cli_spec()], [tramo_outliers()]
+\code{\link[=cli_spec]{cli_spec()}}, \code{\link[=tramo_outliers]{tramo_outliers()}}
 }

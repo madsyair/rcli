@@ -7,12 +7,12 @@
 cli_turning_points(cycles, spec)
 }
 \arguments{
-\item{cycles}{Named list of [CycleSeries-class] from [cli_cycles()].}
+\item{cycles}{Named list of \linkS4class{CycleSeries} from \code{\link[=cli_cycles]{cli_cycles()}}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 }
 \value{
-A named list of [TurningPoints-class].
+A named list of \linkS4class{TurningPoints}.
 }
 \description{
 Date the turning points of all cycles

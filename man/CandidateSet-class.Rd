@@ -10,22 +10,22 @@ Reference and candidate series
 \section{Slots}{
 
 \describe{
-\item{\code{data}}{A multivariate `ts`; one column is the reference series.}
+\item{\code{data}}{A multivariate \code{ts}; one column is the reference series.}
 
 \item{\code{reference}}{Name of the reference column.}
 
 \item{\code{meta}}{Data frame of pre-selection metadata, one row per candidate:
-`name`, `rationale` (OECD economic rationale), `source`, `release_lag`,
-`type` (`"flow"`, `"stock"` or `"average"`, see [series_types]).}
+\code{name}, \code{rationale} (OECD economic rationale), \code{source}, \code{release_lag},
+\code{type} (\code{"flow"}, \code{"stock"} or \code{"average"}, see \link{series_types}).}
 
-\item{\code{vintages}}{Named list of earlier data releases (each a `ts` matrix
-like `data`), kept for real-time evaluation.}
+\item{\code{vintages}}{Named list of earlier data releases (each a \code{ts} matrix
+like \code{data}), kept for real-time evaluation.}
 
 \item{\code{alignment}}{Data frame describing how each series was brought to the
-common frequency by [cli_align()] (`name`, `from`, `type`, `method`);
+common frequency by \code{\link[=cli_align]{cli_align()}} (\code{name}, \code{from}, \code{type}, \code{method});
 empty when the data came in at one frequency.}
 }}
 
 \seealso{
-[cli_candidates()]
+\code{\link[=cli_candidates]{cli_candidates()}}
 }

@@ -16,19 +16,19 @@ Validation of a composite index
 probability score, area under the ROC curve and the Pesaran-Timmermann
 directional test.}
 
-\item{\code{out_of_sample}}{Results of [cli_selection_bias()] (may be empty).}
+\item{\code{out_of_sample}}{Results of \code{\link[=cli_selection_bias]{cli_selection_bias()}} (may be empty).}
 
 \item{\code{passed}}{Logical; did the composite meet the leading criteria?}
 
 \item{\code{failed}}{Criteria that were not met.}
 
-\item{\code{quality}}{The [CliQuality-class] scorecard.}
+\item{\code{quality}}{The \linkS4class{CliQuality} scorecard.}
 
-\item{\code{role}}{`"leading"` for a composite leading indicator ([cli_validate()])
-or `"coincident"` for a coincident index ([cci_validate()]); it decides
+\item{\code{role}}{\code{"leading"} for a composite leading indicator (\code{\link[=cli_validate]{cli_validate()}})
+or \code{"coincident"} for a coincident index (\code{\link[=cci_validate]{cci_validate()}}); it decides
 which criteria the scorecard applies.}
 }}
 
 \seealso{
-[cli_validate()], [cci_validate()], [cli_quality()]
+\code{\link[=cli_validate]{cli_validate()}}, \code{\link[=cci_validate]{cci_validate()}}, \code{\link[=cli_quality]{cli_quality()}}
 }

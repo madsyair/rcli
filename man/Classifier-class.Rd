@@ -59,45 +59,47 @@ leading" (OECD: 8).}
 
 \item{min_matched}{Minimum number of matched turning points.}
 
-\item{classifier}{A `Classifier`.}
+\item{classifier}{A \code{Classifier}.}
 
-\item{row}{One-row data frame of statistics from [cli_assess()].}
+\item{row}{One-row data frame of statistics from \code{\link[=cli_assess]{cli_assess()}}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 
 \item{object}{An object to print.}
 }
 \value{
-A `Classifier` object.
+A \code{Classifier} object.
 }
 \description{
-A `Classifier` decides, from the statistics computed by [cli_assess()],
-whether a candidate (or the composite, in [cli_validate()]) is leading,
+A \code{Classifier} decides, from the statistics computed by \code{\link[=cli_assess]{cli_assess()}},
+whether a candidate (or the composite, in \code{\link[=cli_validate]{cli_validate()}}) is leading,
 coincident, lagging or rejected.
 }
 \details{
-* `rcli_classifier()`: the default of the package. A series is leading
-  when it meets every criterion listed in [cli_assess()]: at least three
-  matched turning points, a positive cross-correlation peak at a lead of
-  at least `min_lead`, a median lead of at least `min_median_lead`,
-  consistency, few missed and extra turning points, significant
-  concordance and Granger causality. The thresholds are the fields of the
-  [CliSpec-class] and were calibrated by Monte Carlo simulation.
-* `oecd_classifier()`: the OECD rule (Gyomai and Guidetti 2012, p. 9),
-  which uses only the median lead at turning points: coincident within
-  +/- `coincident` months, leading from `coincident` months on ("shorter
-  or medium" up to `long` months, "longer" beyond) and lagging at
-  `-coincident` months or less. Thresholds are given in months and
-  converted to quarters for quarterly data. The OECD sets no minimum
-  number of turning points; `min_matched` (default 3) is the smallest
-  number of matched turning points from which a median lead is computed,
-  set it to 1 to follow the OECD table literally. The other statistics
-  (mean lead and its standard deviation, cross-correlation peak, missed
-  and extra turning points) are reported for judgement, as in the OECD
-  evaluation step, but do not enter the class.
+\itemize{
+\item \code{rcli_classifier()}: the default of the package. A series is leading
+when it meets every criterion listed in \code{\link[=cli_assess]{cli_assess()}}: at least three
+matched turning points, a positive cross-correlation peak at a lead of
+at least \code{min_lead}, a median lead of at least \code{min_median_lead},
+consistency, few missed and extra turning points, significant
+concordance and Granger causality. The thresholds are the fields of the
+\linkS4class{CliSpec} and were calibrated by Monte Carlo simulation.
+\item \code{oecd_classifier()}: the OECD rule (Gyomai and Guidetti 2012, p. 9),
+which uses only the median lead at turning points: coincident within
++/- \code{coincident} months, leading from \code{coincident} months on ("shorter
+or medium" up to \code{long} months, "longer" beyond) and lagging at
+\code{-coincident} months or less. Thresholds are given in months and
+converted to quarters for quarterly data. The OECD sets no minimum
+number of turning points; \code{min_matched} (default 3) is the smallest
+number of matched turning points from which a median lead is computed,
+set it to 1 to follow the OECD table literally. The other statistics
+(mean lead and its standard deviation, cross-correlation peak, missed
+and extra turning points) are reported for judgement, as in the OECD
+evaluation step, but do not enter the class.
+}
 
-New rules are added by defining a subclass of `Classifier` and methods
-for the generics `classify_candidate()` and `leading_criteria()`.
+New rules are added by defining a subclass of \code{Classifier} and methods
+for the generics \code{classify_candidate()} and \code{leading_criteria()}.
 }
 \examples{
 rcli_classifier()
@@ -105,9 +107,9 @@ oecd_classifier()
 cli_spec(classifier = oecd_classifier())
 }
 \references{
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 }
 \seealso{
-[cli_spec()], [oecd_spec()], [cli_assess()]
+\code{\link[=cli_spec]{cli_spec()}}, \code{\link[=oecd_spec]{oecd_spec()}}, \code{\link[=cli_assess]{cli_assess()}}
 }

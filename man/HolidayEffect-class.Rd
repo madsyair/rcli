@@ -20,5 +20,5 @@ Moving-holiday effect
 }}
 
 \seealso{
-[holiday_effect()]
+\code{\link[=holiday_effect]{holiday_effect()}}
 }

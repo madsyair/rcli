@@ -3,7 +3,9 @@
 #' Reads a CSV file with one column per series. If the first column holds
 #' dates (`2001-01`, `2001-01-15` or `2001Q1`), the frequency and start are
 #' taken from it; otherwise give `frequency` and `start`. Non-numeric
-#' columns other than the date column are dropped.
+#' columns other than the date column are dropped with a warning (often a
+#' wrong decimal mark or thousands separators). A UTF-8 byte-order mark at
+#' the start of the file is ignored.
 #'
 #' @param file Path to a CSV file, or a data frame already read.
 #' @param frequency `NULL` (detect from dates), 12 or 4.
@@ -17,7 +19,14 @@
 #' read_cli_data(df)
 #' @export
 read_cli_data <- function(file, frequency = NULL, start = NULL, ...) {
-  df <- if (is.data.frame(file)) file else utils::read.csv(file, ...)
+  df <- if (is.data.frame(file)) {
+    file
+  } else if (has_bom(file) && !"fileEncoding" %in% names(list(...))) {
+    # a UTF-8 byte-order mark would otherwise stick to the first name
+    utils::read.csv(file, fileEncoding = "UTF-8-BOM", ...)
+  } else {
+    utils::read.csv(file, ...)
+  }
   if (ncol(df) < 2L) {
     rcli_abort("The data need at least two columns.", "rcli_error_argument")
   }
@@ -32,12 +41,24 @@ read_cli_data <- function(file, frequency = NULL, start = NULL, ...) {
   if (!any(num)) {
     rcli_abort("No numeric column found.", "rcli_error_argument")
   }
+  if (!all(num)) {
+    rcli_warn(sprintf(paste("Columns without numbers were dropped: %s.",
+                            "Check the decimal mark and remove thousands",
+                            "separators and text."),
+                      paste(names(df)[!num], collapse = ", ")),
+              "rcli_warning_dropped")
+  }
   if (is.null(frequency) || is.null(start)) {
     rcli_abort("Give `frequency` and `start` when there is no date column.",
                "rcli_error_argument")
   }
   check_frequency(frequency)
   stats::ts(as.matrix(df[num]), start = start, frequency = frequency)
+}
+
+has_bom <- function(file) {
+  is.character(file) && length(file) == 1L && file.exists(file) &&
+    identical(readBin(file, "raw", 3L), as.raw(c(0xef, 0xbb, 0xbf)))
 }
 
 parse_dates <- function(x, frequency = NULL) {
@@ -69,35 +90,59 @@ parse_dates <- function(x, frequency = NULL) {
   list(frequency = freq, start = c(year[1], per[1]))
 }
 
-# Column separator and decimal mark of a CSV file. "auto" takes the most
-# frequent of tab, semicolon and comma in the header line, and a decimal
-# comma when the separator is not a comma and the first data line holds a
-# number such as 1,5 (Excel files saved with Indonesian settings).
+# Column separator and decimal mark of a CSV file (FR-008). "auto" takes
+# the separator that splits every line into the same number of fields
+# (quotes respected; the widest such split, and on a tie tab, then
+# semicolon, then comma), and the decimal mark that more cells use: "1,5"
+# and "1.234,5" count for a comma, "1.5" and "1,234.5" for a point. Text is
+# handled as bytes, so files in other encodings than the session's
+# (Windows-1252 from Excel) do not stop the detection.
 csv_format <- function(path, sep = "auto", dec = "auto") {
   seps <- c(",", ";", "\t")
   if (!sep %in% c("auto", seps) || !dec %in% c("auto", ".", ",")) {
     rcli_abort("Unknown column separator or decimal mark.",
                "rcli_error_argument")
   }
-  lines <- readLines(path, n = 5L, warn = FALSE)
-  lines <- lines[nzchar(trimws(lines))]
-  if (sep == "auto") {
-    head <- if (length(lines) > 0L) lines[1] else ""
-    n <- vapply(seps, function(x) {
-      length(gregexpr(x, head, fixed = TRUE)[[1]]) *
-        (regexpr(x, head, fixed = TRUE) > 0)
-    }, numeric(1))
-    sep <- if (max(n) == 0) "," else seps[which.max(n)]
-  }
-  if (dec == "auto") {
-    dec <- if (sep != "," && length(lines) >= 2L &&
-               grepl("[0-9],[0-9]", lines[2])) "," else "."
-  }
+  if (sep == "auto") sep <- detect_separator(path, seps)
+  if (dec == "auto") dec <- if (sep == ",") "." else detect_decimal(path, sep)
   if (sep == dec) {
     rcli_abort("The column separator and the decimal mark must differ.",
                "rcli_error_argument")
   }
   list(sep = sep, dec = dec)
+}
+
+detect_separator <- function(path, seps) {
+  fields <- lapply(seps, function(x) {
+    n <- tryCatch(suppressWarnings(utils::count.fields(
+      path, sep = x, quote = "\"", comment.char = "",
+      blank.lines.skip = TRUE)), error = function(e) integer(0))
+    n[!is.na(n)]
+  })
+  width <- vapply(fields, function(n) if (length(n) > 0L) n[1] else 0L,
+                  numeric(1))
+  regular <- vapply(fields, function(n) {
+    length(n) > 0L && n[1] > 1L && all(n == n[1])
+  }, logical(1))
+  pool <- if (any(regular)) which(regular) else which(width == max(width))
+  if (max(width[pool]) <= 1) return(",")
+  pool <- pool[width[pool] == max(width[pool])]
+  preference <- match(c("\t", ";", ","), seps)
+  seps[preference[preference %in% pool][1]]
+}
+
+detect_decimal <- function(path, sep) {
+  cells <- tryCatch(unlist(utils::read.table(
+    path, sep = sep, quote = "\"", header = FALSE, skip = 1L,
+    colClasses = "character", fill = TRUE, comment.char = "",
+    na.strings = character(0), nrows = 500L
+  ), use.names = FALSE), error = function(e) character(0))
+  cells <- gsub("^\\s+|\\s+$", "", cells, useBytes = TRUE)
+  comma <- grepl("^-?([0-9]{1,3}(\\.[0-9]{3})+|[0-9]+),[0-9]+$", cells,
+                 useBytes = TRUE)
+  point <- grepl("^-?([0-9]{1,3}(,[0-9]{3})+|[0-9]+)\\.[0-9]+$", cells,
+                 useBytes = TRUE)
+  if (sum(comma) > sum(point)) "," else "."
 }
 
 # Value of a separator or decimal-mark choice of the interface.
@@ -202,7 +247,8 @@ app_ui <- function(language = "id") {
               c("example_m", "example_q", "upload"),
               c(t("src_example_m"), t("src_example_q"), t("src_upload")))),
             shiny::numericInput("seed", t("seed"), 2026, min = 1),
-            shiny::fileInput("file", t("file"), accept = c(".csv", ".txt")),
+            shiny::fileInput("file", t("file"),
+                             accept = c(".csv", ".txt", ".tsv")),
             shiny::fluidRow(
               shiny::column(6, shiny::selectInput(
                 "csv_sep", t("csv_sep"), stats::setNames(
@@ -499,8 +545,9 @@ data_lines <- function(state) {
                    deparse_value(sep), deparse_value(dec))
   }
   c("# 1. Data",
-    sprintf("data <- read_cli_data(\"%s\", frequency = %s, start = %s%s)",
-            state$file_name, deparse_value(state$frequency),
+    sprintf(paste0("data <- read_cli_data(%s, frequency = %s, start = %s,",
+                   "\n                      check.names = FALSE%s)"),
+            deparse_value(state$file_name), deparse_value(state$frequency),
             deparse_value(state$start), fmt))
 }
 

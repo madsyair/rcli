@@ -6,33 +6,35 @@
 \alias{rcli-package}
 \title{rcli: composite leading indicators from component selection to validation}
 \description{
-`rcli` implements the full workflow for building a composite leading
+\code{rcli} implements the full workflow for building a composite leading
 indicator (CLI):
 }
 \details{
-1. collect a reference series and candidate series ([cli_candidates()]),
-   after bringing series of mixed frequencies and types to one frequency
-   ([cli_align()]);
-2. configure every step in one specification object ([cli_spec()]);
-3. extract cycles ([cli_cycles()]) with a [CycleFilter-class];
-4. date turning points ([cli_turning_points()]) with a [Dater-class];
-5. classify candidates as leading, coincident, lagging or rejected
-   ([cli_assess()]);
-6. aggregate the leading components ([cli_composite()]) with an
-   [Aggregator-class];
-7. test the composite ([cli_validate()], [cli_selection_bias()]);
-8. re-select components until the composite passes ([cli_build()]).
+\enumerate{
+\item collect a reference series and candidate series (\code{\link[=cli_candidates]{cli_candidates()}}),
+after bringing series of mixed frequencies and types to one frequency
+(\code{\link[=cli_align]{cli_align()}});
+\item configure every step in one specification object (\code{\link[=cli_spec]{cli_spec()}});
+\item extract cycles (\code{\link[=cli_cycles]{cli_cycles()}}) with a \linkS4class{CycleFilter};
+\item date turning points (\code{\link[=cli_turning_points]{cli_turning_points()}}) with a \linkS4class{Dater};
+\item classify candidates as leading, coincident, lagging or rejected
+(\code{\link[=cli_assess]{cli_assess()}});
+\item aggregate the leading components (\code{\link[=cli_composite]{cli_composite()}}) with an
+\linkS4class{Aggregator};
+\item test the composite (\code{\link[=cli_validate]{cli_validate()}}, \code{\link[=cli_selection_bias]{cli_selection_bias()}});
+\item re-select components until the composite passes (\code{\link[=cli_build]{cli_build()}}).
+}
 
-[cli_build()] runs steps 3 to 8 and returns a [CliResult-class] that keeps
+\code{\link[=cli_build]{cli_build()}} runs steps 3 to 8 and returns a \linkS4class{CliResult} that keeps
 every intermediate object and an audit trail of selection decisions
-([audit_log()]).
+(\code{\link[=audit_log]{audit_log()}}).
 }
 \references{
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 
 Marcellino, M. (2006). Leading indicators. In G. Elliott, C. W. J. Granger
-and A. Timmermann (eds.), *Handbook of Economic Forecasting*, Vol. 1,
+and A. Timmermann (eds.), \emph{Handbook of Economic Forecasting}, Vol. 1,
 879--960. \doi{10.1016/S1574-0706(05)01016-5}
 }
 \seealso{

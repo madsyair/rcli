@@ -5,12 +5,28 @@
 * Step 1 gains *Column separator* (automatic, comma, semicolon, tab) and
   *Decimal mark* (automatic, point, comma) for an uploaded file, so CSV
   files saved by Excel with Indonesian settings (semicolons and decimal
-  commas) can be read. The automatic choice takes the separator from the
-  header line and a decimal comma when the separator is not a comma and
-  the first data line holds a number such as `1,5`. A separator equal to
-  the decimal mark is an error. The exported script passes the format
-  actually used to `read_cli_data()` (`sep`, `dec`) when it differs from
-  the `read.csv()` defaults.
+  commas) can be read. The automatic choice takes the separator that
+  splits every line into the same number of fields (quotes respected, so
+  commas inside column names do not mislead it) and the decimal mark that
+  most fractional cells use; files in Windows-1252 encoding are read in
+  UTF-8 sessions as well. A separator equal to the decimal mark is an
+  error. The upload also accepts `.txt` and `.tsv` files.
+* The exported script passes the format actually used to
+  `read_cli_data()` (`sep`, `dec`) when it differs from the `read.csv()`
+  defaults, and `check.names = FALSE` as the interface does, so column
+  names with spaces survive; file names are quoted safely.
+
+## Data input
+
+* `read_cli_data()` ignores a UTF-8 byte-order mark at the start of the
+  file and warns (`rcli_warning_dropped`) when it drops columns without
+  numbers, which usually means a wrong decimal mark or thousands
+  separators.
+
+## Documentation
+
+* The help pages are now written from Markdown (`Roxygen: list(markdown =
+  TRUE)`): code shows as code and `[function()]` references are links.
 
 # rcli 0.3.0
 

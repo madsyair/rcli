@@ -7,58 +7,60 @@
 cli_quality(x, spec = NULL)
 }
 \arguments{
-\item{x}{A [CliValidation-class], a [CliResult-class] or a
-[CciResult-class].}
+\item{x}{A \linkS4class{CliValidation}, a \linkS4class{CliResult} or a
+\linkS4class{CciResult}.}
 
-\item{spec}{A [CliSpec-class]; taken from `x` when it is a `CliResult`.}
+\item{spec}{A \linkS4class{CliSpec}; taken from \code{x} when it is a \code{CliResult}.}
 }
 \value{
-A [CliQuality-class] object.
+A \linkS4class{CliQuality} object.
 }
 \description{
 Turns the validation results into a scorecard with an explicit verdict.
-The criteria come in three groups. For a coincident index ([cci_build()],
-[cci_validate()]) the turning-point and out-of-sample groups test timing
-instead of lead (see [cci_validate()]); the prediction group scores the
+The criteria come in three groups. For a coincident index (\code{\link[=cci_build]{cci_build()}},
+\code{\link[=cci_validate]{cci_validate()}}) the turning-point and out-of-sample groups test timing
+instead of lead (see \code{\link[=cci_validate]{cci_validate()}}); the prediction group scores the
 current contraction state (horizon 0).
 }
 \details{
-**Turning points** (OECD evaluation; Gyomai and Guidetti 2012): the
+\strong{Turning points} (OECD evaluation; Gyomai and Guidetti 2012): the
 composite must meet every leading criterion of the specification, the same
-ones used to classify candidates (see [cli_assess()]).
+ones used to classify candidates (see \code{\link[=cli_assess]{cli_assess()}}).
 
-**Prediction**:
-* the area under the ROC curve of the contraction probability is at least
-  `min_auc` (0.7 is "acceptable discrimination", Hosmer and Lemeshow 2000;
-  Berge and Jordà 2011 use the ROC curve to score business-cycle
-  classifiers);
-* the quadratic probability score beats the naive forecast, a constant
-  probability equal to the share of contraction periods (Diebold and
-  Rudebusch 1989);
-* the Pesaran and Timmermann (1992) test rejects that the composite's
-  direction is unrelated to the later direction of the reference.
+\strong{Prediction}:
+\itemize{
+\item the area under the ROC curve of the contraction probability is at least
+\code{min_auc} (0.7 is "acceptable discrimination", Hosmer and Lemeshow 2000;
+Berge and Jordà 2011 use the ROC curve to score business-cycle
+classifiers);
+\item the quadratic probability score beats the naive forecast, a constant
+probability equal to the share of contraction periods (Diebold and
+Rudebusch 1989);
+\item the Pesaran and Timmermann (1992) test rejects that the composite's
+direction is unrelated to the later direction of the reference.
+}
 
-**Out of sample** (only when [cli_selection_bias()] has been run, for
-example through `oos_cutoffs` in [cli_spec()]): over the cut-offs that
+\strong{Out of sample} (only when \code{\link[=cli_selection_bias]{cli_selection_bias()}} has been run, for
+example through \code{oos_cutoffs} in \code{\link[=cli_spec]{cli_spec()}}): over the cut-offs that
 leave at least three reference turning points, the median of the later
-median leads is at least `min_median_lead`, the composite leads at least
-`min_consistency` of those turning points, and the median of the
-in-sample minus later leads is at most `min_lead` periods (no selection
+median leads is at least \code{min_median_lead}, the composite leads at least
+\code{min_consistency} of those turning points, and the median of the
+in-sample minus later leads is at most \code{min_lead} periods (no selection
 effect). Medians are used because single cut-offs with few later turning
 points are noisy: in the package simulations genuine leaders show gaps of
 up to 3.5 months at individual cut-offs.
 
 The lead of the cross-correlation peak is also compared with the lead the
-OECD aims at (`target_lead`, 6 to 9 months); this row is information only.
-When the reference series of a [CliResult-class] was disaggregated by
-[cli_align()], a second information row and the note say that its
+OECD aims at (\code{target_lead}, 6 to 9 months); this row is information only.
+When the reference series of a \linkS4class{CliResult} was disaggregated by
+\code{\link[=cli_align]{cli_align()}}, a second information row and the note say that its
 turning-point dates, and so the lead, are uncertain by about half a source
 period: one month for quarterly data, 3 months for semiannual and 6 months
 for annual data.
 
-**Verdict**: `"good"` when all three groups pass; `"acceptable"` when the
+\strong{Verdict}: \code{"good"} when all three groups pass; \code{"acceptable"} when the
 turning-point and prediction groups pass but no out-of-sample check was
-run; `"weak"` otherwise.
+run; \code{"weak"} otherwise.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)
@@ -68,16 +70,16 @@ cli_quality(res)
 }
 \references{
 Berge, T. J. and Jordà, Ò. (2011). Evaluating the classification of
-economic activity into recessions and expansions. *American Economic
-Journal: Macroeconomics*, 3(2), 246--277.
+economic activity into recessions and expansions. \emph{American Economic
+Journal: Macroeconomics}, 3(2), 246--277.
 
 Diebold, F. X. and Rudebusch, G. D. (1989). Scoring the leading
-indicators. *Journal of Business*, 62(3), 369--391.
+indicators. \emph{Journal of Business}, 62(3), 369--391.
 
-Hosmer, D. W. and Lemeshow, S. (2000). *Applied Logistic Regression*, 2nd
+Hosmer, D. W. and Lemeshow, S. (2000). \emph{Applied Logistic Regression}, 2nd
 edition. Wiley, New York.
 
 Pesaran, M. H. and Timmermann, A. (1992). A simple nonparametric test of
-predictive performance. *Journal of Business and Economic Statistics*,
+predictive performance. \emph{Journal of Business and Economic Statistics},
 10(4), 461--465.
 }

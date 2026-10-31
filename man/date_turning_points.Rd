@@ -13,17 +13,17 @@ date_turning_points(dater, x, ...)
 \S4method{date_turning_points}{BBQ}(dater, x, name = "", ...)
 }
 \arguments{
-\item{dater}{A [Dater-class] object.}
+\item{dater}{A \linkS4class{Dater} object.}
 
-\item{x}{A monthly or quarterly `ts`. Leading and trailing `NA` are
-ignored; internal `NA` are not allowed.}
+\item{x}{A monthly or quarterly \code{ts}. Leading and trailing \code{NA} are
+ignored; internal \code{NA} are not allowed.}
 
 \item{...}{Unused.}
 
 \item{name}{Optional series name stored in the result.}
 }
 \value{
-A [TurningPoints-class] object.
+A \linkS4class{TurningPoints} object.
 }
 \description{
 Date the turning points of a series

@@ -10,15 +10,15 @@ Composite index
 \section{Slots}{
 
 \describe{
-\item{\code{index}}{Composite leading indicator (`ts`, long-term average 100).}
+\item{\code{index}}{Composite leading indicator (\code{ts}, long-term average 100).}
 
-\item{\code{cycle}}{Normalised composite cycle used for evaluation (`ts`).}
+\item{\code{cycle}}{Normalised composite cycle used for evaluation (\code{ts}).}
 
 \item{\code{components}}{Names of the components.}
 
 \item{\code{weights}}{Weights of the components.}
 
-\item{\code{aggregator}}{The [Aggregator-class] used.}
+\item{\code{aggregator}}{The \linkS4class{Aggregator} used.}
 
 \item{\code{amplitude}}{Amplitude factor matching the reference cycle.}
 
@@ -27,5 +27,5 @@ Composite index
 }}
 
 \seealso{
-[cli_composite()]
+\code{\link[=cli_composite]{cli_composite()}}
 }

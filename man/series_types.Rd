@@ -15,18 +15,20 @@ The type of a series sets how its frequency is changed (temporal
 aggregation constraint):
 }
 \details{
-* `"flow"`: an amount accumulated over the period (GDP, production, sales,
-  exports); a quarter is the sum of its months.
-* `"stock"`: a position at a point in time (money supply, outstanding
-  credit, reserves); a quarter is its last month.
-* `"average"`: an average over the period (price indices, exchange and
-  interest rates, survey balances, unemployment rate); a quarter is the
-  mean of its months.
+\itemize{
+\item \code{"flow"}: an amount accumulated over the period (GDP, production, sales,
+exports); a quarter is the sum of its months.
+\item \code{"stock"}: a position at a point in time (money supply, outstanding
+credit, reserves); a quarter is its last month.
+\item \code{"average"}: an average over the period (price indices, exchange and
+interest rates, survey balances, unemployment rate); a quarter is the
+mean of its months.
+}
 }
 \examples{
 series_types
 }
 \seealso{
-[cli_align()]
+\code{\link[=cli_align]{cli_align()}}
 }
 \keyword{datasets}

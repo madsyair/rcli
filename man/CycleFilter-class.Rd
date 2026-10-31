@@ -27,49 +27,50 @@ bk_filter(pl = NA, pu = NA, k = NA)
 hamilton_filter(h = NA, p = NA)
 }
 \arguments{
-\item{lambda}{HP smoothing parameter, or `NA` for the frequency default.}
+\item{lambda}{HP smoothing parameter, or \code{NA} for the frequency default.}
 
 \item{trend_period, smooth_period}{Cut-off periods (in observations) of the
-two HP filters, or `NA` for the defaults.}
+two HP filters, or \code{NA} for the defaults.}
 
 \item{pl, pu}{Lower and upper period (in observations) of the pass band, or
-`NA` for the defaults.}
+\code{NA} for the defaults.}
 
-\item{k}{Number of leads and lags of the Baxter-King filter, or `NA`.}
+\item{k}{Number of leads and lags of the Baxter-King filter, or \code{NA}.}
 
-\item{h, p}{Horizon and number of lags of the Hamilton filter, or `NA`.}
+\item{h, p}{Horizon and number of lags of the Hamilton filter, or \code{NA}.}
 }
 \value{
-An object inheriting from `CycleFilter`.
+An object inheriting from \code{CycleFilter}.
 }
 \description{
-A `CycleFilter` turns a (possibly log-transformed) series into its cyclical
-component. `rcli` ships five filters; new ones are added by defining a
-subclass of the virtual class `CycleFilter` and a method for
-[extract_cycle()].
+A \code{CycleFilter} turns a (possibly log-transformed) series into its cyclical
+component. \code{rcli} ships five filters; new ones are added by defining a
+subclass of the virtual class \code{CycleFilter} and a method for
+\code{\link[=extract_cycle]{extract_cycle()}}.
 }
 \details{
-Parameters given as `NA` are resolved from the frequency of the series when
+Parameters given as \code{NA} are resolved from the frequency of the series when
 the filter is applied, so the same specification works for monthly and
 quarterly data. Periods are expressed in observations.
-
-* `hp_filter()`: Hodrick-Prescott filter; the cycle is the deviation from
-  the HP trend. The default smoothing parameter is 1600 for quarterly and
-  129600 for monthly data (Ravn and Uhlig 2002). The trend solves the
-  pentadiagonal system of the filter with a banded LDL' factorisation in
-  O(n) time and memory (Golub and Van Loan 2013, sec. 4.3).
-* `hp_double_filter()`: the OECD double Hodrick-Prescott filter. A first HP
-  filter with a cut-off of `trend_period` removes the trend; a second one
-  with a cut-off of `smooth_period` removes high-frequency noise. Defaults:
-  10 and 1 year (120 and 12 months), as in Gyomai and Guidetti (2012).
-* `cf_filter()`: Christiano-Fitzgerald asymmetric band-pass filter for a
-  random walk (Christiano and Fitzgerald 2003), keeping periods between `pl`
-  and `pu` (defaults 1.5 and 8 years).
-* `bk_filter()`: Baxter-King symmetric band-pass filter with `k` leads and
-  lags (default 3 years); the first and last `k` values are missing.
-* `hamilton_filter()`: Hamilton (2018) regression filter; the cycle is the
-  residual of a regression of \eqn{y_{t+h}} on \eqn{y_t, \dots,
-  y_{t-p+1}}. Defaults: `h` = 2 years, `p` = 1 year.
+\itemize{
+\item \code{hp_filter()}: Hodrick-Prescott filter; the cycle is the deviation from
+the HP trend. The default smoothing parameter is 1600 for quarterly and
+129600 for monthly data (Ravn and Uhlig 2002). The trend solves the
+pentadiagonal system of the filter with a banded LDL' factorisation in
+O(n) time and memory (Golub and Van Loan 2013, sec. 4.3).
+\item \code{hp_double_filter()}: the OECD double Hodrick-Prescott filter. A first HP
+filter with a cut-off of \code{trend_period} removes the trend; a second one
+with a cut-off of \code{smooth_period} removes high-frequency noise. Defaults:
+10 and 1 year (120 and 12 months), as in Gyomai and Guidetti (2012).
+\item \code{cf_filter()}: Christiano-Fitzgerald asymmetric band-pass filter for a
+random walk (Christiano and Fitzgerald 2003), keeping periods between \code{pl}
+and \code{pu} (defaults 1.5 and 8 years).
+\item \code{bk_filter()}: Baxter-King symmetric band-pass filter with \code{k} leads and
+lags (default 3 years); the first and last \code{k} values are missing.
+\item \code{hamilton_filter()}: Hamilton (2018) regression filter; the cycle is the
+residual of a regression of \eqn{y_{t+h}} on \eqn{y_t, \dots,
+  y_{t-p+1}}. Defaults: \code{h} = 2 years, \code{p} = 1 year.
+}
 }
 \examples{
 x <- ts(cumsum(rnorm(120)) + 50, frequency = 12, start = 2000)
@@ -78,22 +79,22 @@ head(cyc)
 }
 \references{
 Christiano, L. J. and Fitzgerald, T. J. (2003). The band pass filter.
-*International Economic Review*, 44(2), 435--465.
+\emph{International Economic Review}, 44(2), 435--465.
 
-Golub, G. H. and Van Loan, C. F. (2013). *Matrix Computations*, 4th ed.
+Golub, G. H. and Van Loan, C. F. (2013). \emph{Matrix Computations}, 4th ed.
 Johns Hopkins University Press, Baltimore.
 
 Hamilton, J. D. (2018). Why you should never use the Hodrick-Prescott
-filter. *Review of Economics and Statistics*, 100(5), 831--843.
+filter. \emph{Review of Economics and Statistics}, 100(5), 831--843.
 
 Hodrick, R. J. and Prescott, E. C. (1997). Postwar U.S. business cycles: an
-empirical investigation. *Journal of Money, Credit and Banking*, 29(1),
+empirical investigation. \emph{Journal of Money, Credit and Banking}, 29(1),
 1--16.
 
 Ravn, M. O. and Uhlig, H. (2002). On adjusting the Hodrick-Prescott filter
-for the frequency of observations. *Review of Economics and Statistics*,
+for the frequency of observations. \emph{Review of Economics and Statistics},
 84(2), 371--376.
 }
 \seealso{
-[extract_cycle()], [cli_spec()]
+\code{\link[=extract_cycle]{extract_cycle()}}, \code{\link[=cli_spec]{cli_spec()}}
 }

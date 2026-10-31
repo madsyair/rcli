@@ -14,7 +14,7 @@ A positive number.
 }
 \description{
 Returns the \eqn{\lambda} at which the gain of the Hodrick-Prescott
-cyclical filter equals one half at `period` observations,
+cyclical filter equals one half at \code{period} observations,
 \eqn{\lambda = [4 (1 - \cos(2\pi/period))^2]^{-1}}. A cut-off of 120 months
 gives \eqn{\lambda \approx 133107.9}, the value used by the OECD.
 }

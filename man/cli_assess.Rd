@@ -7,14 +7,14 @@
 cli_assess(candidates, spec, cycles = NULL)
 }
 \arguments{
-\item{candidates}{A [CandidateSet-class].}
+\item{candidates}{A \linkS4class{CandidateSet}.}
 
-\item{spec}{A [CliSpec-class].}
+\item{spec}{A \linkS4class{CliSpec}.}
 
-\item{cycles}{Optional output of [cli_cycles()] to avoid recomputation.}
+\item{cycles}{Optional output of \code{\link[=cli_cycles]{cli_cycles()}} to avoid recomputation.}
 }
 \value{
-A [LeadAssessment-class].
+A \linkS4class{LeadAssessment}.
 }
 \description{
 For every candidate the function pairs its turning points with those of
@@ -28,31 +28,31 @@ reference. A candidate whose peak cross-correlation is negative is
 inverted and assessed again.
 }
 \details{
-The rule is the [Classifier-class] of the specification. With the default
-[rcli_classifier()], a candidate is **leading** when it has at least
+The rule is the \linkS4class{Classifier} of the specification. With the default
+\code{\link[=rcli_classifier]{rcli_classifier()}}, a candidate is \strong{leading} when it has at least
 three matched turning
 points, its cross-correlation with the reference peaks with a positive sign
-at a lead of at least `min_lead`, its median lead at turning points is at
-least `min_median_lead`, it leads at least `min_consistency` of the
+at a lead of at least \code{min_lead}, its median lead at turning points is at
+least \code{min_median_lead}, it leads at least \code{min_consistency} of the
 reference turning points, missed and extra turning points are at most
-`max_missed` and `max_extra` of the reference turning points, its
+\code{max_missed} and \code{max_extra} of the reference turning points, its
 concordance is significantly above the value under independence, and it
-Granger-causes the reference at level `alpha`. The Granger criterion was
+Granger-causes the reference at level \code{alpha}. The Granger criterion was
 added after the Monte Carlo calibration showed it cuts false "leading"
 labels of pure-noise series by a factor of about ten at almost no loss of
-power. **Coincident** and **lagging** series pass the matching, missed,
+power. \strong{Coincident} and \strong{lagging} series pass the matching, missed,
 extra and concordance criteria with a cross-correlation peak within
-`coincident_band` or at a lag of at least `min_lead`. All others are
-**rejected**; the `reasons` column lists the leading criteria they failed.
+\code{coincident_band} or at a lag of at least \code{min_lead}. All others are
+\strong{rejected}; the \code{reasons} column lists the leading criteria they failed.
 
-With [oecd_classifier()] the class follows the OECD table of median leads
+With \code{\link[=oecd_classifier]{oecd_classifier()}} the class follows the OECD table of median leads
 at turning points (coincident within +/- 2 months, lagging at -2 months
 or less); the other statistics are reported but not used.
 
 The lead of the cross-correlation peak is the primary lead measure because
 the Monte Carlo calibration of the package showed that median leads at
 turning points shrink towards zero as idiosyncratic noise grows, while the
-cross-correlation lead stays unbiased (see `vignette("rcli")`).
+cross-correlation lead stays unbiased (see \code{vignette("rcli")}).
 }
 \examples{
 sim <- simulate_cycles(seed = 1)
@@ -64,10 +64,10 @@ leaders(a)
 }
 \references{
 Atabek, A., Coşar, E. E. and Şahinöz, S. (2005). A new composite leading
-indicator for Turkish economic activity. *Emerging Markets Finance and
-Trade*, 41(1), 45--64.
+indicator for Turkish economic activity. \emph{Emerging Markets Finance and
+Trade}, 41(1), 45--64.
 
 Toda, H. Y. and Yamamoto, T. (1995). Statistical inference in vector
-autoregressions with possibly integrated processes. *Journal of
-Econometrics*, 66(1--2), 225--250.
+autoregressions with possibly integrated processes. \emph{Journal of
+Econometrics}, 66(1--2), 225--250.
 }

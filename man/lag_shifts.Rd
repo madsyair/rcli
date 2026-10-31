@@ -9,7 +9,7 @@ lag_shifts(components, assessment)
 \arguments{
 \item{components}{Names of the components.}
 
-\item{assessment}{A [LeadAssessment-class] from [cli_assess()].}
+\item{assessment}{A \linkS4class{LeadAssessment} from \code{\link[=cli_assess]{cli_assess()}}.}
 }
 \value{
 Named numeric vector of shifts (periods, at least 0).
@@ -20,8 +20,8 @@ moved later by its median lead at turning points minus the shortest
 median lead of the components, rounded to whole periods, so that the
 leads of the components coincide and their turning points reinforce each
 other in the composite. Components without a median lead are not moved.
-[cli_build()] applies these shifts when `lag_shift = TRUE` in the
-specification; pass them to [cli_composite()] for a manual composite.
+\code{\link[=cli_build]{cli_build()}} applies these shifts when \code{lag_shift = TRUE} in the
+specification; pass them to \code{\link[=cli_composite]{cli_composite()}} for a manual composite.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)

@@ -12,12 +12,12 @@ Cyclical component of one series
 \describe{
 \item{\code{name}}{Series name.}
 
-\item{\code{original}}{Original series (`ts`).}
+\item{\code{original}}{Original series (\code{ts}).}
 
 \item{\code{transformed}}{Series after transformation, outlier treatment and
-seasonal adjustment (`ts`).}
+seasonal adjustment (\code{ts}).}
 
-\item{\code{cycle}}{Filtered cycle (`ts`).}
+\item{\code{cycle}}{Filtered cycle (\code{ts}).}
 
 \item{\code{normalised}}{Normalised cycle (mean 0, mean absolute deviation 1).}
 
@@ -25,5 +25,5 @@ seasonal adjustment (`ts`).}
 }}
 
 \seealso{
-[cli_cycles()]
+\code{\link[=cli_cycles]{cli_cycles()}}
 }

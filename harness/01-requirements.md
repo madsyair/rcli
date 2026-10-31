@@ -83,9 +83,9 @@ Ekspor `series_frequencies` (daily, weekly, monthly, quarterly, semiannual, annu
 ### FR-008 — GUI: pemisah kolom dan tanda desimal berkas CSV
 GUI langkah 1 punya isian `csv_sep` (otomatis, koma, titik koma, tab) dan `csv_dec` (otomatis, titik, koma) untuk berkas yang diunggah.
 - AC-FR-008.1  Berkas berpemisah titik koma dan berdesimal koma (bentuk Excel berbahasa Indonesia) terbaca benar dengan pilihan otomatis maupun pilihan eksplisit; nilainya sama persis dengan berkas berpemisah koma yang setara.
-- AC-FR-008.2  Pengenalan otomatis: pemisah dari baris judul (tab, titik koma, atau koma, yang paling banyak); tanda desimal koma bila pemisahnya titik koma atau tab dan baris data pertama memuat angka seperti `1,5`; selain itu titik. Berkas berpemisah tab juga terbaca.
+- AC-FR-008.2  Pengenalan otomatis (revisi sesudah review R1–R3): pemisah adalah yang membagi setiap baris menjadi jumlah kolom yang sama (tanda kutip dihormati; yang terlebar; bila seri: tab, titik koma, lalu koma); tanda desimal mengikuti mayoritas sel bernilai pecahan (`1,5` dan `1.234,5` untuk koma; `1.5` dan `1,234.5` untuk titik), bukan hanya baris pertama; pemisah koma selalu bertitik desimal. Teks diperiksa sebagai bita, sehingga berkas Windows-1252 terbaca pada sesi UTF-8. Berkas berpemisah tab juga terbaca.
 - AC-FR-008.3  Pemisah dan tanda desimal yang sama (koma dan koma) → galat `rcli_error_argument`; langkah 1 tidak selesai.
-- AC-FR-008.4  Skrip R ekspor memakai `sep` dan `dec` yang benar-benar dipakai (hasil pengenalan otomatis), hanya bila berbeda dari bawaan `read.csv()`, dan mereproduksi data GUI; pilihan yang diubah sesudah langkah 1 tidak mengubah skrip.
+- AC-FR-008.4  Skrip R ekspor memakai `sep` dan `dec` yang benar-benar dipakai (hasil pengenalan otomatis), hanya bila berbeda dari bawaan `read.csv()`, serta `check.names = FALSE` seperti GUI, dan mereproduksi data GUI persis (nama kolom ikut sama); pilihan yang diubah sesudah langkah 1 tidak mengubah skrip.
 - AC-FR-008.5  Kedua isian punya teks Indonesia dan Inggris.
 
 ## Kebutuhan nonfungsional

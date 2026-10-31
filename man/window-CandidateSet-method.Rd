@@ -7,14 +7,14 @@
 \S4method{window}{CandidateSet}(x, start = NULL, end = NULL, ...)
 }
 \arguments{
-\item{x}{A [CandidateSet-class].}
+\item{x}{A \linkS4class{CandidateSet}.}
 
-\item{start, end}{Window limits passed to [stats::window()].}
+\item{start, end}{Window limits passed to \code{\link[stats:window]{stats::window()}}.}
 
 \item{...}{Unused.}
 }
 \value{
-A [CandidateSet-class].
+A \linkS4class{CandidateSet}.
 }
 \description{
 Restrict a candidate set to a time window

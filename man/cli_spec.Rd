@@ -39,18 +39,18 @@ cli_spec(
 \arguments{
 \item{freq}{Data frequency: 12 (monthly) or 4 (quarterly).}
 
-\item{filter}{A [CycleFilter-class]; default [hp_double_filter()].}
+\item{filter}{A \linkS4class{CycleFilter}; default \code{\link[=hp_double_filter]{hp_double_filter()}}.}
 
-\item{dater}{A [Dater-class]; default [bry_boschan()] for monthly and
-[bbq()] for quarterly data.}
+\item{dater}{A \linkS4class{Dater}; default \code{\link[=bry_boschan]{bry_boschan()}} for monthly and
+\code{\link[=bbq]{bbq()}} for quarterly data.}
 
-\item{aggregator}{An [Aggregator-class]; default [equal_weight()], which
+\item{aggregator}{An \linkS4class{Aggregator}; default \code{\link[=equal_weight]{equal_weight()}}, which
 after the last date with all components adds the average change of the
 available components to the previous value (since 0.2.0;
-`equal_weight(ragged_edge = "level")` restores rcli 0.1.x).}
+\code{equal_weight(ragged_edge = "level")} restores rcli 0.1.x).}
 
-\item{transform}{`"auto"` (logarithm for strictly positive series),
-`"log"`, `"none"` or `"test"` (logarithm when the log/level test of a
+\item{transform}{\code{"auto"} (logarithm for strictly positive series),
+\code{"log"}, \code{"none"} or \code{"test"} (logarithm when the log/level test of a
 regARIMA model prefers it, as TRAMO does at the OECD; needs
 \pkg{RJDemetra} or \pkg{seasonal}).}
 
@@ -58,8 +58,8 @@ regARIMA model prefers it, as TRAMO does at the OECD; needs
 \pkg{seasonal} package)?}
 
 \item{outlier_threshold}{Robust z-score of period-to-period changes above
-which an observation is replaced by interpolation; `Inf` disables. A
-shortcut for `outliers = robust_outliers(outlier_threshold)`.}
+which an observation is replaced by interpolation; \code{Inf} disables. A
+shortcut for \code{outliers = robust_outliers(outlier_threshold)}.}
 
 \item{min_lead}{Minimum lead of the cross-correlation peak, in periods
 (default 3 months or 1 quarter). Also the minimum lag of a lagging series.}
@@ -83,8 +83,8 @@ of a coincident series (default 1 month or 0 quarters).}
 scorecard for information (default 6 to 9 months or 2 to 3 quarters).}
 
 \item{lead_window}{Turning points are paired when the candidate turns at
-most `lead_window[1]` periods after and `lead_window[2]` periods before
-the reference (default `c(12, 24)` months or `c(4, 8)` quarters).}
+most \code{lead_window[1]} periods after and \code{lead_window[2]} periods before
+the reference (default \code{c(12, 24)} months or \code{c(4, 8)} quarters).}
 
 \item{ccf_lag_max}{Largest lead or lag of the cross-correlation search
 (default 24 months or 8 quarters).}
@@ -100,53 +100,52 @@ test (default 12 months or 4 quarters); the order is chosen by AIC.}
 
 \item{min_components}{Smallest number of components of the composite.}
 
-\item{horizon}{Horizon of the probability tests; `NA` uses the median lead
+\item{horizon}{Horizon of the probability tests; \code{NA} uses the median lead
 of the composite.}
 
-\item{oos_cutoffs}{Optional cut-off dates (decimal time, e.g. `2015`) for
-the selection-bias harness run by [cli_build()].}
+\item{oos_cutoffs}{Optional cut-off dates (decimal time, e.g. \code{2015}) for
+the selection-bias harness run by \code{\link[=cli_build]{cli_build()}}.}
 
-\item{holidays}{A [holiday_effect()], or a list of them, whose effects
-X-13ARIMA-SEATS estimates and removes (needs `seasonal_adjust = TRUE`).
-For Indonesian data, `holiday_effect(idulfitri_dates())` removes the
+\item{holidays}{A \code{\link[=holiday_effect]{holiday_effect()}}, or a list of them, whose effects
+X-13ARIMA-SEATS estimates and removes (needs \code{seasonal_adjust = TRUE}).
+For Indonesian data, \code{holiday_effect(idulfitri_dates())} removes the
 moving Idulfitri effect, which fixed monthly factors cannot.}
 
-\item{classifier}{A [Classifier-class]; default [rcli_classifier()]. Use
-[oecd_classifier()] for the OECD median-lead rule.}
+\item{classifier}{A \linkS4class{Classifier}; default \code{\link[=rcli_classifier]{rcli_classifier()}}. Use
+\code{\link[=oecd_classifier]{oecd_classifier()}} for the OECD median-lead rule.}
 
-\item{outliers}{An [OutlierTreatment-class]; default
-`robust_outliers(outlier_threshold)`. Use [tramo_outliers()] for the
+\item{outliers}{An \linkS4class{OutlierTreatment}; default
+\code{robust_outliers(outlier_threshold)}. Use \code{\link[=tramo_outliers]{tramo_outliers()}} for the
 OECD treatment.}
 
 \item{lag_shift}{Shift each component later by its median lead minus the
 shortest median lead of the components before aggregation, as the OECD
-does (default `FALSE`). Values moved past the last date of the data are
+does (default \code{FALSE}). Values moved past the last date of the data are
 dropped.}
 
-\item{extension}{An [Extension-class]; default [ar_extension()]: each
+\item{extension}{An \linkS4class{Extension}; default \code{\link[=ar_extension]{ar_extension()}}: each
 series is extended by one year of AR forecasts before the cycle filter.
-Use [no_extension()] for the behaviour of rcli 0.1.x.}
+Use \code{\link[=no_extension]{no_extension()}} for the behaviour of rcli 0.1.x.}
 }
 \value{
-A [CliSpec-class] object.
+A \linkS4class{CliSpec} object.
 }
 \description{
 Collects every methodological choice in one validated object. Arguments
-left at `NULL` take frequency-specific defaults: the monthly defaults
+left at \code{NULL} take frequency-specific defaults: the monthly defaults
 follow the OECD system of composite leading indicators (Gyomai and
 Guidetti 2012); the quarterly ones translate them to quarters. The
 classification thresholds were calibrated with the Monte Carlo harness in
-`data-raw/` (see `vignette("rcli")`): on simulated monthly data they
+\verb{data-raw/} (see \code{vignette("rcli")}): on simulated monthly data they
 classify about 87 percent of candidates correctly with at most 1.3
 percent of non-leading series wrongly labelled leading (recalibrated with
 the 0.2.0 defaults).
 }
 \details{
 Since rcli 0.2.0 the defaults chain the composite at the ragged edge
-(`equal_weight()`) and extend each series with one year of AR forecasts
-before the filter (`ar_extension()`). The settings of rcli 0.1.x are
-`cli_spec(aggregator = equal_weight(ragged_edge = "level"),
-extension = no_extension())`.
+(\code{equal_weight()}) and extend each series with one year of AR forecasts
+before the filter (\code{ar_extension()}). The settings of rcli 0.1.x are
+\code{cli_spec(aggregator = equal_weight(ragged_edge = "level"), extension = no_extension())}.
 }
 \examples{
 spec <- cli_spec(freq = 12)
@@ -154,6 +153,6 @@ spec
 update(spec, min_lead = 6, aggregator = dynamic_factor())
 }
 \references{
-Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
-Indicators*. OECD Publishing, Paris.
+Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
+Indicators}. OECD Publishing, Paris.
 }

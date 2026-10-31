@@ -17,28 +17,28 @@ cli_candidates(
 \S4method{[}{CandidateSet}(x, i, j, ..., drop = FALSE)
 }
 \arguments{
-\item{data}{A multivariate `ts`, or a data frame of numeric columns
-together with `start` and `frequency`.}
+\item{data}{A multivariate \code{ts}, or a data frame of numeric columns
+together with \code{start} and \code{frequency}.}
 
 \item{reference}{Name of the reference column.}
 
-\item{meta}{Optional data frame with a `name` column and any of
-`rationale` (one of `names(oecd_rationales)`), `source`,
-`release_lag` (publication delay in periods), `type` (one of
-`names(series_types)`) and `frequency`, the source frequency (one of
-`names(series_frequencies)`; a candidate cannot be semiannual or
-annual). When `data` comes from [cli_align()], the types, source
+\item{meta}{Optional data frame with a \code{name} column and any of
+\code{rationale} (one of \code{names(oecd_rationales)}), \code{source},
+\code{release_lag} (publication delay in periods), \code{type} (one of
+\code{names(series_types)}) and \code{frequency}, the source frequency (one of
+\code{names(series_frequencies)}; a candidate cannot be semiannual or
+annual). When \code{data} comes from \code{\link[=cli_align]{cli_align()}}, the types, source
 frequencies and conversion steps recorded there are kept as well, and a
-source frequency in `meta` must agree with the recorded one. (The
-`frequency` column of `meta` is the source frequency of a candidate; the
-argument `frequency` below is the number of periods a year of `data`.)}
+source frequency in \code{meta} must agree with the recorded one. (The
+\code{frequency} column of \code{meta} is the source frequency of a candidate; the
+argument \code{frequency} below is the number of periods a year of \code{data}.)}
 
 \item{vintages}{Optional named list of earlier releases, each shaped like
-`data`, for real-time evaluation.}
+\code{data}, for real-time evaluation.}
 
-\item{start, frequency}{Time attributes when `data` is a data frame.}
+\item{start, frequency}{Time attributes when \code{data} is a data frame.}
 
-\item{x}{A [CandidateSet-class].}
+\item{x}{A \linkS4class{CandidateSet}.}
 
 \item{i}{Candidate names or positions to keep (the reference is always
 kept).}
@@ -46,10 +46,10 @@ kept).}
 \item{j, drop, ...}{Unused.}
 }
 \value{
-A [CandidateSet-class] object.
+A \linkS4class{CandidateSet} object.
 }
 \description{
-Builds a [CandidateSet-class]: one reference series (for example GDP or an
+Builds a \linkS4class{CandidateSet}: one reference series (for example GDP or an
 industrial production index) and the candidate leading series, all at the
 same monthly or quarterly frequency. Series may start and end at different
 dates (ragged edges); internal gaps are filled by interpolation later.
@@ -66,5 +66,5 @@ cand <- cli_candidates(sim, reference = "reference", meta = meta)
 cand
 }
 \seealso{
-[simulate_cycles()] for example data.
+\code{\link[=simulate_cycles]{simulate_cycles()}} for example data.
 }

@@ -7,16 +7,16 @@
 cycle_states(tp)
 }
 \arguments{
-\item{tp}{A [TurningPoints-class] object.}
+\item{tp}{A \linkS4class{TurningPoints} object.}
 }
 \value{
-An integer `ts` aligned with the dated series.
+An integer \code{ts} aligned with the dated series.
 }
 \description{
 Returns 1 in expansions (after a trough up to and including the next peak)
 and 0 in contractions. Observations before the first turning point take the
 state that the first turning point ends; observations outside the
-non-missing span of the series are `NA`.
+non-missing span of the series are \code{NA}.
 }
 \examples{
 x <- ts(sin(2 * pi * (1:120) / 40), frequency = 4)
