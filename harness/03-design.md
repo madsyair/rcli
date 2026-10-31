@@ -53,3 +53,14 @@ Keputusan FR-009:
 - Sel kosong hanya membuang observasi seri itu, sehingga satu berkas boleh memuat seri dengan rentang berbeda.
 - Penyelarasan frekuensi dilakukan di langkah 2, bukan langkah 1, karena tipe variabel (aliran, stok, rata-rata) baru diisi di langkah 2. Langkah 1 menyimpan seri apa adanya (`rv$series`), `rv$data` kosong.
 - Perbaikan inti yang ikut: `complete_meta()` tidak lagi menimpa tipe dan frekuensi dari `cli_align()` dengan nilai kosong di `meta`.
+
+## Increment 0.5.0
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-010 | Argumen baru `cli_presentation(x, composite = NULL)`; GUI: `idulfitri`, panel `advanced_ui()` (isian `classifier`, `outlier_method`, `lag_shift`, parameter penyaring, penanggalan, ambang, cakupan agregasi, AR), isian penyelarasan `align_method`, `align_indicator`, `week_date`, `align_coverage` (`align_ui()`), `pres_form`, `pres_plot`, `dl_presentation`; fungsi internal `spec_call()`, `align_text()`, `assign_text()`, `call_text()`, `eval_code()`, `plot_presentation()` | `R/app-options.R` (baru), `R/app.R`, `R/app-text.R`, `R/app-plots.R`, `R/presentation.R` |
+
+Keputusan FR-010:
+- GUI menjalankan teks kode yang juga ditulis ke skrip ekspor (`eval_code()`), untuk spesifikasi (langkah 3) dan penyelarasan (langkah 2). Dengan begitu GUI dan skrip tidak dapat berbeda, dan setiap pilihan baru cukup ditambahkan di satu tempat.
+- Isian lanjutan yang kosong berarti bawaan paket; bawaan yang bergantung pada frekuensi tidak diduplikasi di GUI.
+- Opsi lanjutan hanya untuk metode rcli; metode "Persis OECD" tetap paket tetap `oecd_spec()`, kecuali efek Idulfitri yang berlaku untuk keduanya.
+- Seri indikator Chow–Lin dipilih dari seri yang frekuensinya sama dengan frekuensi analisis dan dibentuk di skrip dengan `cli_align(series["x"], freq = ...)[, "x"]`.

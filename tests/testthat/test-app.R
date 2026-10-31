@@ -41,10 +41,12 @@ test_that("small server helpers", {
   expect_null(rcli:::parse_start(" "))
   expect_error(rcli:::parse_start("2000"), class = "rcli_error_argument")
   for (k in c("hp_double", "hp", "cf", "bk", "hamilton")) {
-    expect_s4_class(rcli:::make_filter(k), "CycleFilter")
+    expect_s4_class(eval(parse(text = rcli:::filter_text(list(filter = k))),
+                         envir = asNamespace("rcli")), "CycleFilter")
   }
-  for (k in c("equal", "pca", "cb", "dfm")) {
-    expect_s4_class(rcli:::make_aggregator(k), "Aggregator")
+  for (k in c("equal", "equal_level", "oecd", "pca", "cb", "dfm")) {
+    expect_s4_class(eval(parse(text = rcli:::aggregator_text(
+      list(aggregator = k))), envir = asNamespace("rcli")), "Aggregator")
   }
   tr <- rcli:::app_translator("en")
   expect_equal(tr("s1"), "1. Data")

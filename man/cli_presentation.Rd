@@ -4,10 +4,14 @@
 \alias{cli_presentation}
 \title{The three OECD forms of a composite leading indicator}
 \usage{
-cli_presentation(x)
+cli_presentation(x, composite = NULL)
 }
 \arguments{
 \item{x}{A \linkS4class{CliResult} with a composite.}
+
+\item{composite}{Optional \linkS4class{CompositeIndex} presented instead of the
+composite of \code{x}, for instance one chosen by hand with
+\code{\link[=cli_composite]{cli_composite()}} from \code{cycles(x)}.}
 }
 \value{
 A data frame with \code{time} and the columns \code{amplitude_adjusted},

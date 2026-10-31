@@ -254,7 +254,8 @@ test_that("several files at different frequencies run in the browser", {
   app$click("run2")
   app$wait_for_idle()
   expect_match(notifications(app), "type")
-  app$set_inputs(ref_type = "average", typ_5 = "flow", wait_ = FALSE)
+  app$set_inputs(ref_type = "average", typ_5 = "flow",
+                 align_method = "linear", wait_ = FALSE)
   app$click("run2")
   app$wait_for_idle()
   expect_match(app$get_value(output = "cand_print"), "pdb")
@@ -271,6 +272,51 @@ test_that("several files at different frequencies run in the browser", {
   script <- readLines(app$get_download("dl_script"))
   expect_true(any(grepl("read_cli_series(", script, fixed = TRUE)))
   expect_true(any(grepl("cli_align(series, freq = 12", script,
+                        fixed = TRUE)))
+  expect_true(any(grepl('method = "linear"', script, fixed = TRUE)))
+  expect_no_browser_errors(app)
+})
+
+test_that("advanced options and the OECD forms work in the browser", {
+  skip_if_no_browser()
+  app <- start_app("options-en", "en")
+  on.exit(app$stop(), add = TRUE)
+  app$set_inputs(source = "example_m", wait_ = FALSE)
+  app$click("run1")
+  app$wait_for_idle()
+  go_to(app, 2L)
+  inputs <- stats::setNames(as.list(rep("early_stage", 7)),
+                            paste0("rat_", 1:7))
+  do.call(app$set_inputs, c(inputs, wait_ = FALSE))
+  app$click("run2")
+  go_to(app, 3L)
+  app$run_js("document.querySelector('details').open = true;")
+  app$set_inputs(classifier = "oecd", hp_trend_period = 100,
+                 lead_window = "10, 20", wait_ = FALSE)
+  app$click("run3")
+  app$wait_for_idle()
+  spec <- app$get_value(output = "spec_print")
+  expect_match(spec, "OECD rule")
+  for (k in 4:7) {
+    go_to(app, k)
+    app$click(paste0("run", k))
+    app$wait_for_idle(timeout = 120000)
+  }
+  for (form in c("amplitude_adjusted", "trend_restored", "rate_of_change")) {
+    app$set_inputs(pres_form = form)
+    expect_plot(app, "pres_plot")
+  }
+  go_to(app, 8L)
+  go_to(app, 9L)
+  go_to(app, 10L)
+  pres <- utils::read.csv(app$get_download("dl_presentation"))
+  expect_true(all(c("amplitude_adjusted", "trend_restored",
+                    "rate_of_change") %in% names(pres)))
+  script <- readLines(app$get_download("dl_script"))
+  expect_true(any(grepl("oecd_classifier()", script, fixed = TRUE)))
+  expect_true(any(grepl("trend_period = 100", script, fixed = TRUE)))
+  expect_true(any(grepl("lead_window = c(10, 20)", script, fixed = TRUE)))
+  expect_true(any(grepl("pres <- cli_presentation(res)", script,
                         fixed = TRUE)))
   expect_no_browser_errors(app)
 })

@@ -335,6 +335,9 @@ app_ui <- function(language = "id") {
             shiny::checkboxInput("seasonal", paste(
               t("seasonal"), if (!has_seasonal) t("seasonal_missing")),
               FALSE),
+            shiny::conditionalPanel(
+              "input.seasonal",
+              shiny::checkboxInput("idulfitri", t("idulfitri"), FALSE)),
             shiny::numericInput("outlier", t("outlier"), 5, min = 1),
             shiny::checkboxInput("extend", t("extend"), TRUE),
             shiny::textInput("oos_cutoffs", t("oos_cutoffs"), "")
@@ -358,6 +361,7 @@ app_ui <- function(language = "id") {
             shiny::numericInput("max_iter", t("max_iter"), 10, min = 1)
           )
         ),
+        shiny::conditionalPanel("input.method == 'rcli'", advanced_ui(t)),
         shiny::actionButton("run3", t("run3"), class = "btn-primary"),
         shiny::verbatimTextOutput("spec_print")
       ),
@@ -408,7 +412,13 @@ app_ui <- function(language = "id") {
                         shiny::plotOutput("components_plot", height = 300))
         ),
         shiny::h4(t("audit")), shiny::tableOutput("audit_table"),
-        shiny::plotOutput("audit_plot", height = 250)
+        shiny::plotOutput("audit_plot", height = 250),
+        shiny::h4(t("pres_title")),
+        shiny::helpText(t("pres_help")),
+        shiny::selectInput("pres_form", t("pres_form"), stats::setNames(
+          c("amplitude_adjusted", "trend_restored", "rate_of_change"),
+          c(t("pres_amp"), t("pres_trend"), t("pres_growth")))),
+        shiny::plotOutput("pres_plot", height = 340)
       ),
       step_panel(
         t, 8L,
@@ -455,6 +465,7 @@ app_ui <- function(language = "id") {
         shiny::downloadButton("dl_assess", t("dl_assess")),
         shiny::downloadButton("dl_audit", t("dl_audit")),
         shiny::downloadButton("dl_quality", t("dl_quality")),
+        shiny::downloadButton("dl_presentation", t("dl_presentation")),
         shiny::downloadButton("dl_rds", t("dl_rds")),
         shiny::downloadButton("dl_script", t("dl_script")),
         shiny::downloadButton("dl_cci", t("dl_cci")),
@@ -467,18 +478,7 @@ app_ui <- function(language = "id") {
 
 # ---- helpers used by the server ---------------------------------------
 
-make_filter <- function(key) {
-  switch(key, hp_double = hp_double_filter(), hp = hp_filter(),
-         cf = cf_filter(), bk = bk_filter(), hamilton = hamilton_filter())
-}
 
-make_aggregator <- function(key) {
-  switch(key, equal = equal_weight(),
-         equal_level = equal_weight(ragged_edge = "level"),
-         oecd = oecd_aggregate(),
-         pca = principal_component(), cb = conference_board(),
-         dfm = dynamic_factor())
-}
 
 parse_cutoffs <- function(text) {
   parts <- trimws(strsplit(text, ",")[[1]])
@@ -630,16 +630,8 @@ multi_lines <- function(state) {
   lines <- c("# 1. Data: one file per indicator",
              sprintf("series <- read_cli_series(%s%s)",
                      deparse_value(state$file_name), fmt))
-  al <- state$align
-  if (is.null(al)) return(lines)
-  args <- c(sprintf("series, freq = %s", al$freq),
-            if (length(al$type) > 0L) {
-              sprintf("type = %s", deparse_value(al$type))
-            },
-            sprintf("reference = %s", deparse_value(al$reference)))
-  c(lines, "# brought to one frequency in step 2",
-    sprintf("data <- cli_align(%s)",
-            paste(args, collapse = ",\n                  ")))
+  if (is.null(state$align)) return(lines)
+  c(lines, "# brought to one frequency in step 2", align_text(state$align))
 }
 
 # Step 2 of the script: the metadata and the candidate set built from `data`.
@@ -681,9 +673,11 @@ analysis_lines <- function(state) {
       deparse_value(state$components), state$reference, shift_arg),
       sprintf("val <- cli_validate(cli, cycles(res)[[\"%s\"]], spec)",
               state$reference),
+      "pres <- cli_presentation(res, composite = cli)  # three OECD forms",
       "", "# 8. Validation and quality", "cli_quality(val, spec)")
   } else {
-    lines <- c(lines, "audit_log(res)", "plot(res)", "",
+    lines <- c(lines, "audit_log(res)", "plot(res)",
+               "pres <- cli_presentation(res)  # three OECD forms", "",
                "# 8. Validation and quality", "cli_quality(res)")
   }
   if (!is.null(state$cci_mode)) {
@@ -702,45 +696,8 @@ analysis_lines <- function(state) {
   lines
 }
 
-spec_call <- function(input, freq) {
-  cut <- parse_cutoffs(input$oos_cutoffs)
-  if (identical(input$method, "oecd")) {
-    return(sprintf(paste0(
-      "spec <- oecd_spec(\n  freq = %s, seasonal_adjust = %s, alpha = %s,",
-      " min_auc = %s,\n  min_components = %s, max_iter = %s,",
-      " oos_cutoffs = %s\n)"),
-      freq, input$seasonal, input$alpha, input$min_auc,
-      input$min_components, input$max_iter, deparse_value(cut)))
-  }
-  agg <- c(equal = "equal_weight()",
-           equal_level = "equal_weight(ragged_edge = \"level\")",
-           oecd = "oecd_aggregate()",
-           pca = "principal_component()",
-           cb = "conference_board()", dfm = "dynamic_factor()")
-  flt <- c(hp_double = "hp_double_filter()", hp = "hp_filter()",
-           cf = "cf_filter()", bk = "bk_filter()",
-           hamilton = "hamilton_filter()")
-  sprintf(paste0(
-    "spec <- cli_spec(\n  freq = %s, filter = %s, aggregator = %s,\n",
-    "  transform = \"%s\", seasonal_adjust = %s, outlier_threshold = %s,\n",
-    "  min_lead = %s, min_median_lead = %s, min_consistency = %s,\n",
-    "  max_missed = %s, max_extra = %s, alpha = %s, min_auc = %s,\n",
-    "  min_components = %s, max_iter = %s, oos_cutoffs = %s,\n",
-    "  extension = %s\n)"),
-    freq, flt[[input$filter]], agg[[input$aggregator]], input$transform,
-    input$seasonal, input$outlier, input$min_lead, input$min_median_lead,
-    input$min_consistency, input$max_missed, input$max_extra, input$alpha,
-    input$min_auc, input$min_components, input$max_iter,
-    deparse_value(cut), make_extension_call(input$extend))
-}
 
-make_extension <- function(on) {
-  if (isFALSE(on)) no_extension() else ar_extension()
-}
 
-make_extension_call <- function(on) {
-  if (isFALSE(on)) "no_extension()" else "ar_extension()"
-}
 
 # ---- server -------------------------------------------------------------
 
@@ -1022,12 +979,20 @@ app_server <- function(language = "id") {
         }
         ref_type_for <<- input$reference
         from <- attr(rv$series[[input$reference]], "frequency")
-        shiny::fluidRow(shiny::column(6, shiny::selectInput(
+        type_row <- shiny::fluidRow(shiny::column(6, shiny::selectInput(
           "ref_type",
           sprintf("%s: %s (%s)", t("ref_type"), input$reference,
                   t(paste0("freq_", from))),
           type_choices, selected = if (is.null(old)) "" else old),
           shiny::helpText(t("ref_type_help"))))
+        old_align <- shiny::isolate(list(
+          align_method = input$align_method,
+          align_indicator = input$align_indicator,
+          week_date = input$week_date, align_coverage = input$align_coverage))
+        shiny::tagList(
+          type_row, shiny::h5(t("align_title")),
+          align_ui(t, rv$series, input$reference, rv$loaded$frequency,
+                   old_align))
       }
       shiny::tagList(
         ref_row,
@@ -1071,10 +1036,14 @@ app_server <- function(language = "id") {
         type <- type[!is.na(type) & nzchar(type)]
         type <- type[intersect(names(rv$series), names(type))]
         align <- list(freq = rv$loaded$frequency, type = type,
-                      reference = input$reference)
-        data <- safely(cli_align(rv$series, freq = align$freq,
-                                 type = if (length(type) > 0L) type,
-                                 reference = align$reference))
+                      reference = input$reference,
+                      method = input$align_method,
+                      indicator = input$align_indicator,
+                      week_date = input$week_date,
+                      min_coverage = input$align_coverage)
+        # the interface runs the code it writes into the script
+        data <- safely(eval_code(align_text(align), "data",
+                                 list(series = rv$series)))
       }
       cand <- if (!is.null(data)) {
         safely(cli_candidates(data, input$reference, meta = meta))
@@ -1103,27 +1072,12 @@ app_server <- function(language = "id") {
         return()
       }
       freq <- stats::frequency(rv$cand@data)
-      spec <- if (identical(input$method, "oecd")) safely(oecd_spec(
-        freq = freq, seasonal_adjust = input$seasonal, alpha = input$alpha,
-        min_auc = input$min_auc, min_components = input$min_components,
-        max_iter = input$max_iter,
-        oos_cutoffs = parse_cutoffs(input$oos_cutoffs)
-      )) else safely(cli_spec(
-        freq = freq, filter = make_filter(input$filter),
-        aggregator = make_aggregator(input$aggregator),
-        transform = input$transform, seasonal_adjust = input$seasonal,
-        outlier_threshold = input$outlier, min_lead = input$min_lead,
-        min_median_lead = input$min_median_lead,
-        min_consistency = input$min_consistency,
-        max_missed = input$max_missed, max_extra = input$max_extra,
-        alpha = input$alpha, min_auc = input$min_auc,
-        min_components = input$min_components, max_iter = input$max_iter,
-        oos_cutoffs = parse_cutoffs(input$oos_cutoffs),
-        extension = make_extension(input$extend)
-      ))
+      # the interface runs the code it writes into the script
+      code <- safely(spec_call(input, freq))
+      spec <- if (!is.null(code)) safely(eval_code(code, "spec"))
       if (is.null(spec)) return()
       rv$spec <- spec
-      rv$spec_call <- spec_call(input, freq)
+      rv$spec_call <- code
       finish(3L)
     })
     output$spec_print <- shiny::renderPrint({
@@ -1539,6 +1493,15 @@ app_server <- function(language = "id") {
     output$dl_quality <- csv_download("quality", function() {
       as.data.frame(quality())
     })
+    presentation <- shiny::reactive({
+      need(7L)
+      cli_presentation(result())
+    })
+    output$pres_plot <- shiny::renderPlot({
+      shiny::req(input$pres_form)
+      plot_presentation(presentation(), input$pres_form, tr = p)
+    })
+    output$dl_presentation <- csv_download("cli_presentation", presentation)
     output$dl_rds <- shiny::downloadHandler(
       filename = function() "cli_result.rds",
       content = function(file) saveRDS(result(), file)

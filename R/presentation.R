@@ -24,6 +24,9 @@
 #' not be mixed when reading signals.
 #'
 #' @param x A [CliResult-class] with a composite.
+#' @param composite Optional [CompositeIndex-class] presented instead of the
+#'   composite of `x`, for instance one chosen by hand with
+#'   [cli_composite()] from `cycles(x)`.
 #' @return A data frame with `time` and the columns `amplitude_adjusted`,
 #'   `trend_restored`, `rate_of_change`, `reference`, `reference_trend` and
 #'   `reference_rate_of_change`.
@@ -37,12 +40,20 @@
 #' pr <- cli_presentation(res)
 #' tail(pr)
 #' @export
-cli_presentation <- function(x) {
-  if (!is(x, "CliResult") || is.null(x@composite)) {
+cli_presentation <- function(x, composite = NULL) {
+  if (!is(x, "CliResult")) {
+    rcli_abort("`x` must be a CliResult (see cli_build()).",
+               "rcli_error_argument")
+  }
+  if (!is.null(composite) && !is(composite, "CompositeIndex")) {
+    rcli_abort("`composite` must be a CompositeIndex (see cli_composite()).",
+               "rcli_error_argument")
+  }
+  comp <- if (is.null(composite)) x@composite else composite
+  if (is.null(comp)) {
     rcli_abort("`x` must be a CliResult with a composite (see cli_build()).",
                "rcli_error_argument")
   }
-  comp <- x@composite
   ref <- x@cycles[[x@candidates@reference]]
   f <- stats::frequency(comp@cycle)
   amp_adj <- 100 + as.numeric(comp@cycle) * comp@amplitude
