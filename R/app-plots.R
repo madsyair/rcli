@@ -264,7 +264,7 @@ plot_series_dated <- function(series, reference, tr = function(x) x) {
 plot_presentation <- function(pres, form, tr = function(x) x) {
   cli <- pres[[form]]
   ref <- switch(form,
-    amplitude_adjusted = 100 * pres$reference / pres$reference_trend,
+    amplitude_adjusted = pres$reference_amplitude_adjusted,
     trend_restored = pres$reference,
     rate_of_change = pres$reference_rate_of_change)
   ylab <- switch(form,

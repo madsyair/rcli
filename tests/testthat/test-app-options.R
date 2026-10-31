@@ -165,7 +165,8 @@ test_that("AC-FR-010.2: the three OECD forms in step 7 and the script", {
       run_all_steps(session, mode = mode, cutoffs = "")
       pres <- presentation()
       expect_named(pres, c("time", "amplitude_adjusted", "trend_restored",
-                           "rate_of_change", "reference", "reference_trend",
+                           "rate_of_change", "reference",
+                           "reference_amplitude_adjusted", "reference_trend",
                            "reference_rate_of_change"))
       for (form in c("amplitude_adjusted", "trend_restored",
                      "rate_of_change")) {
@@ -219,6 +220,9 @@ test_that("AC-FR-010.3: alignment options for several files", {
     skip_if_not_installed("tempdisagg")
     session$setInputs(align_indicator = "coincident", run2 = 3)
     expect_true(2L %in% rv$done)
+    # R2: the indicator is not a candidate
+    expect_false("coincident" %in% colnames(rv$cand@data))
+    expect_false("coincident" %in% rv$cand@meta$name)
     expect_match(rv$cand@alignment$method[1], "chow-lin")
     txt <- paste(rcli:::data_lines(current_state()), collapse = "\n")
     expect_match(txt, 'indicator = cli_align(series["coincident"]',
@@ -230,5 +234,90 @@ test_that("AC-FR-010.3: alignment options for several files", {
     session$setInputs(source = "example_m", seed = 1, run1 = 2)
     session$setInputs(reference = "reference")
     expect_false(grepl("align_method", as.character(output$meta_ui$html)))
+  })
+})
+
+test_that("R1: names from files cannot run as code", {
+  skip_if_not_installed("shiny")
+  odd <- c('k" = "flow", zz = {writeLines("x", "PWNED"); "flow"}, "j',
+           "back`tick", "a=b)", "line\nbreak", "ok")
+  for (nm in odd) {
+    txt <- rcli:::chr_text(stats::setNames("flow", nm))
+    expect_identical(eval(parse(text = txt), envir = baseenv()),
+                     stats::setNames("flow", nm), info = nm)
+  }
+  expect_equal(rcli:::chr_text(c(pdb = "average")), 'c(pdb = "average")')
+  expect_equal(rcli:::chr_text("a\"b"), '"a\\"b"')
+  # a quarterly file whose name tries to inject code
+  dir <- tempfile("inject")
+  dir.create(dir)
+  bad <- 'k" = "flow", zz = {writeLines("x", "PWNED"); "flow"}, "j.csv'
+  q <- paste0(rep(1995:2014, each = 4), "Q", 1:4)
+  m <- format(seq(as.Date("1995-01-01"), by = "month", length.out = 240),
+              "%Y-%m")
+  sim <- simulate_cycles(seed = 1, n_years = 20)
+  writeLines(c("date,value", paste0(q, ",", 100 + seq_along(q))),
+             file.path(dir, "q.csv"))
+  writeLines(c("date,a,b", paste0(m, ",", sim[, "lead_6"], ",",
+                                  sim[, "lead_3"])), file.path(dir, "m.csv"))
+  files <- data.frame(name = c(bad, "m.csv"), size = 1, type = "text/csv",
+                      datapath = file.path(dir, c("q.csv", "m.csv")))
+  old <- setwd(dir)
+  on.exit(setwd(old), add = TRUE)
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(source = "upload_multi", csv_sep = "auto",
+                      csv_dec = "auto", target_freq = "12", files = files,
+                      run1 = 1)
+    ref <- sub("\\.csv$", "", bad)
+    session$setInputs(reference = "a")
+    session$setInputs(rat_1 = "early_stage", rat_2 = "early_stage",
+                      typ_1 = "flow", run2 = 1)
+    expect_false(file.exists(file.path(dir, "PWNED")))
+    expect_true(2L %in% rv$done)
+    expect_true(ref %in% colnames(rv$cand@data))
+  })
+})
+
+test_that("R5/R6: the code calls exported functions and writes doubles", {
+  input <- c(step3_base, list(
+    seasonal = TRUE, idulfitri = TRUE, classifier = "oecd",
+    outlier_method = "tramo", lag_shift = TRUE, filter = "bk",
+    band_pl = 18, band_pu = 96, bk_k = 24, dater_min_phase = 7,
+    agg_min_coverage = 0.8, ar_h = 6, lead_window = "10, 20",
+    min_lead = 3L, max_iter = 10L))
+  texts <- c(rcli:::spec_call(input, 12), rcli:::spec_call(input, 4),
+             rcli:::spec_call(utils::modifyList(input, list(
+               method = "oecd")), 12),
+             rcli:::align_text(list(freq = 12, type = c(a = "flow"),
+                                    reference = "a", method = "chow-lin",
+                                    indicator = "b", week_date = "end",
+                                    min_coverage = 0.5)))
+  ns <- asNamespace("rcli")
+  for (txt in texts) {
+    called <- unique(all.names(parse(text = txt), functions = TRUE))
+    ours <- called[vapply(called, exists, logical(1), envir = ns,
+                          inherits = FALSE)]
+    expect_true(all(ours %in% getNamespaceExports("rcli")),
+                info = paste(setdiff(ours, getNamespaceExports("rcli")),
+                             collapse = ", "))
+  }
+  expect_false(grepl("[0-9]L", texts[1]))
+  expect_match(texts[1], "min_lead = 3,", fixed = TRUE)
+})
+
+test_that("R7: inputs without effect are hidden", {
+  skip_if_not_installed("shiny")
+  html <- as.character(rcli:::app_ui("en"))
+  expect_match(html, "input.outlier_method != &#39;tramo&#39;", fixed = TRUE)
+  files <- multi_files()
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(source = "upload_multi", csv_sep = "auto",
+                      csv_dec = "auto", target_freq = "4", files = files,
+                      run1 = 1)
+    # a quarterly reference in a quarterly analysis is not converted
+    session$setInputs(reference = "pdb")
+    html <- as.character(output$meta_ui$html)
+    expect_false(grepl('id="align_method"', html, fixed = TRUE))
+    expect_match(html, 'id="week_date"', fixed = TRUE)
   })
 })

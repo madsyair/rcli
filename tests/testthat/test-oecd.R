@@ -253,8 +253,11 @@ test_that("cli_presentation gives the three OECD forms", {
   res <- cli_build(cand)
   pr <- cli_presentation(res)
   expect_named(pr, c("time", "amplitude_adjusted", "trend_restored",
-                     "rate_of_change", "reference", "reference_trend",
+                     "rate_of_change", "reference",
+                     "reference_amplitude_adjusted", "reference_trend",
                      "reference_rate_of_change"))
+  expect_equal(pr$reference_amplitude_adjusted,
+               100 * pr$reference / pr$reference_trend)
   comp <- res@composite
   expect_equal(pr$amplitude_adjusted,
                100 + as.numeric(comp@cycle) * comp@amplitude)
@@ -269,4 +272,28 @@ test_that("cli_presentation gives the three OECD forms", {
   last_cli <- max(which(!is.na(pr$amplitude_adjusted)))
   expect_false(is.na(pr$trend_restored[last_cli]))
   expect_error(cli_presentation(1), class = "rcli_error_argument")
+})
+
+test_that("R3/R4: the forms of a reference that is not logged", {
+  # a balance that crosses zero is not logged
+  sim <- simulate_cycles(seed = 4, n_years = 20)
+  bal <- sim
+  bal[, "reference"] <- sim[, "reference"] - mean(sim[, "reference"])
+  meta <- data.frame(name = colnames(bal)[-1], rationale = "early_stage")
+  res <- cli_build(cli_candidates(bal, "reference", meta = meta),
+                   cli_spec(12, transform = "none"))
+  pr <- cli_presentation(res)
+  ref <- cycles(res)$reference
+  expect_false(rcli:::is_logged(ref))
+  scale <- mean(abs(as.numeric(ref@transformed)), na.rm = TRUE)
+  ok <- !is.na(pr$trend_restored)
+  expect_equal(pr$trend_restored[ok], pr$reference_trend[ok] +
+                 (pr$amplitude_adjusted[ok] - 100) / 100 * scale)
+  expect_equal(pr$reference_amplitude_adjusted,
+               100 + 100 * (pr$reference - pr$reference_trend) / scale)
+  # the de-trended reference is on the scale of the composite (the old
+  # ratio to a trend near zero ran into the thousands)
+  ratio <- stats::sd(pr$reference_amplitude_adjusted, na.rm = TRUE) /
+    stats::sd(pr$amplitude_adjusted, na.rm = TRUE)
+  expect_true(ratio > 0.5 && ratio < 2)
 })

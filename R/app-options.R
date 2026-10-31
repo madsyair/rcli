@@ -18,8 +18,41 @@ call_text <- function(fun, args = list()) {
          ")")
 }
 
-# Code text of an input value, or NULL when the input is empty.
-value_text <- function(x) if (given(x)) deparse_value(x) else NULL
+# Code text of an input value, or NULL when the input is empty. Numbers
+# are written as doubles (the browser sends whole numbers as integers).
+value_text <- function(x) {
+  if (!given(x)) return(NULL)
+  if (is.numeric(x)) x <- as.numeric(x)
+  deparse_value(x)
+}
+
+# Code text of a character vector, names included, that reads back as the
+# same vector whatever the strings hold (quotes, backticks, line breaks):
+# names come from file names and column headers, and the interface runs
+# this text. A vector that does not read back exactly is refused.
+chr_text <- function(x) {
+  nm <- names(x)
+  x <- as.character(x)
+  vals <- encodeString(unname(x), quote = "\"")
+  out <- if (is.null(nm)) {
+    if (length(x) == 1L) vals else paste0("c(", paste(vals, collapse = ", "),
+                                          ")")
+  } else if (all(nzchar(nm) & make.names(nm) == nm)) {
+    paste0("c(", paste(nm, "=", vals, collapse = ", "), ")")
+  } else {
+    paste0("stats::setNames(c(", paste(vals, collapse = ", "), "), c(",
+           paste(encodeString(nm, quote = "\""), collapse = ", "), "))")
+  }
+  back <- tryCatch(eval(parse(text = out), envir = baseenv()),
+                   error = function(e) NULL)
+  ref <- x
+  if (!is.null(nm)) names(ref) <- nm
+  if (!identical(back, ref)) {
+    rcli_abort(paste("A series name or value cannot be written as R code;",
+                     "rename the file or column."), "rcli_error_argument")
+  }
+  out
+}
 
 # `name <- fun(...)`, wrapping the arguments over lines of at most `width`
 # characters, continuation lines aligned after the opening parenthesis. An
@@ -221,20 +254,27 @@ advanced_ui <- function(t) {
 # Code of the alignment: `data <- cli_align(series, ...)`; `al` holds the
 # choices of step 2.
 align_text <- function(al) {
-  indicator <- if (identical(al$method, "chow-lin") && given(al$indicator)) {
+  chow <- identical(al$method, "chow-lin") && given(al$indicator)
+  # the indicator of Chow-Lin explains the reference, so it is not a
+  # candidate (see ?cli_align)
+  first <- if (chow) {
+    sprintf("series[names(series) != %s]", chr_text(al$indicator))
+  } else {
+    "series"
+  }
+  indicator <- if (chow) {
     sprintf("cli_align(series[%s], freq = %s)[, %s]",
-            deparse_value(al$indicator), al$freq,
-            deparse_value(al$indicator))
+            chr_text(al$indicator), al$freq, chr_text(al$indicator))
   }
   cov <- if (given(al$min_coverage) && al$min_coverage != 0.7) {
-    deparse_value(al$min_coverage)
+    value_text(al$min_coverage)
   }
   args <- list(
-    "series", freq = al$freq,
-    type = if (length(al$type) > 0L) deparse_value(al$type),
-    reference = deparse_value(al$reference),
+    first, freq = al$freq,
+    type = if (length(al$type) > 0L) chr_text(al$type),
+    reference = chr_text(al$reference),
     method = if (given(al$method) && al$method != "denton-cholette") {
-      deparse_value(al$method)
+      chr_text(al$method)
     },
     indicator = indicator,
     week_date = if (identical(al$week_date, "end")) "\"end\"",
@@ -244,6 +284,7 @@ align_text <- function(al) {
 
 # Inputs of the alignment options, shown in step 2 for several files.
 align_ui <- function(t, series, reference, freq, old) {
+  # the disaggregation options only matter when the reference is converted
   keep <- function(id, default) {
     v <- old[[id]]
     if (is.null(v)) default else v
@@ -253,6 +294,7 @@ align_ui <- function(t, series, reference, freq, old) {
     identical(attr(s, "frequency"), target)
   }, logical(1))]
   same <- setdiff(same, reference)
+  convert <- !identical(attr(series[[reference]], "frequency"), target)
   has_td <- requireNamespace("tempdisagg", quietly = TRUE)
   methods <- stats::setNames(
     c("denton-cholette", "chow-lin", "linear"),
@@ -260,14 +302,15 @@ align_ui <- function(t, series, reference, freq, old) {
       paste(t("align_cl"), if (!has_td) t("tempdisagg_missing")),
       t("align_lin")))
   shiny::fluidRow(
-    shiny::column(3, shiny::selectInput(
+    if (convert) shiny::column(3, shiny::selectInput(
       "align_method", t("align_method"), methods,
       selected = keep("align_method", "denton-cholette"))),
-    shiny::column(3, shiny::conditionalPanel(
+    if (convert) shiny::column(3, shiny::conditionalPanel(
       "input.align_method == 'chow-lin'",
       shiny::selectInput("align_indicator", t("align_indicator"),
                          c(stats::setNames("", t("none")), same),
-                         selected = keep("align_indicator", "")))),
+                         selected = keep("align_indicator", "")),
+      shiny::helpText(t("align_indicator_help")))),
     shiny::column(3, shiny::selectInput(
       "week_date", t("week_date"),
       stats::setNames(c("start", "end"), c(t("week_start"), t("week_end"))),

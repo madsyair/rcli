@@ -21,18 +21,28 @@ reproduces each of them.
   message.
 * Step 2 (several files): the disaggregation of the reference series
   (Denton-Cholette, Chow-Lin with an indicator series of the analysis
-  frequency, or linear interpolation), the dates of weekly data (start or
+  frequency, which then is not a candidate, or linear interpolation; shown
+  only when the reference is converted), the dates of weekly data (start or
   end of the week) and the minimum coverage of daily and weekly data.
 * Step 7 shows the three OECD forms of the composite (amplitude adjusted,
   trend restored, rate of change over a year) next to the matching form of
   the reference series; step 10 downloads them as CSV.
 * Steps 2 and 3 now run the very code they write into the script, so the
-  interface and the script cannot differ.
+  interface and the script cannot differ. Series names from file names and
+  column headers are written so that they read back exactly, whatever
+  characters they hold. Whole numbers are written without the `L` suffix.
 
 ## Presentation
 
 * `cli_presentation()` gains `composite`, to present a composite chosen by
-  hand with `cli_composite()`.
+  hand with `cli_composite()`, and the column
+  `reference_amplitude_adjusted` (the reference without trend, in the units
+  of the amplitude-adjusted CLI).
+* For a reference that is not logged (a balance that may cross zero),
+  `cli_presentation()` now measures deviations in percent of the mean
+  absolute level, as the amplitude of the composite does, and restores the
+  trend by adding them to it; before, it multiplied by a trend that could be
+  near zero or negative, which inverted or blew up the trend-restored form.
 
 # rcli 0.4.0
 

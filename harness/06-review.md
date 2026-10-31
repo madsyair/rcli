@@ -1,115 +1,66 @@
 # 06 — Review
 
-- Increment: rcli 0.4.0 (FR-009)
+- Increment: rcli 0.5.0 (FR-010)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 2 (putaran 1 terhadap 0fd867f, putaran 2 terhadap 38984f2;
-  basis 1b66e30, 0.3.1 di main)
-- Review 0.3.1 tersimpan di riwayat git berkas ini (komit a1a433b).
+- Putaran: 1 terhadap 0db13de (basis 986d2ea, 0.4.0 di main)
+- Review 0.4.0 tersimpan di riwayat git berkas ini (komit 3b87683).
 
 ## Yang diperiksa (putaran 1)
-- `test-read-series.R` 58/58 dan `test-app-multi.R` 38/38 lolos; lintr
-  bersih; `roxygenise()` tidak mengubah apa pun; contoh
-  `read_cli_series()` 3,2 detik.
-- Skrip ekspor jalur triwulanan dievaluasi: data kandidat dan indeks
-  komposit sama persis dengan GUI.
-- Perubahan `complete_meta()` aman bagi pengguna lama: bawaan yang
-  dipakai adalah NA kecuali `cli_align()` mencatat sesuatu; frekuensi di
-  `meta` yang bertentangan tetap ditolak.
-- Rantai indeks sejalan sebagai acuan, seri basi sesudah muat ulang,
-  nama unggahan dan `datapath`, kunci teks dua bahasa, kunci
-  `app_phrases_id` baru, `shiny::`, tanpa Imports baru, NEWS: tanpa
-  masalah.
+- `test-app-options.R` lolos (90 harapan); lintr bersih; tidak ada baris
+  lebih dari 80 karakter; kunci `app_text` sama di kedua bahasa; tujuh
+  kunci baru `app_phrases_id` dipakai di `plot_presentation()`.
+- Injeksi lewat `pair_text`, `parse_cutoffs`, isian angka, `target_freq`,
+  nama seri acuan dan indikator (nilai string): aman.
+- Format angka (`1e-04`, `1e+05`, negatif, NA) menghasilkan teks yang
+  terbaca ulang; GUI dan skrip memakai teks yang sama.
+- Idulfitri, pilihan penanggal menurut frekuensi, persistensi isian
+  penyelarasan, dan mode manual `cli_presentation(res, composite = cli)`:
+  benar.
 
 ## Temuan putaran 1
-- [x] [R1][major] R/read-series.R — kolom `value` yang diberi nama berkas
-  menimpa kolom lain bernama sama (`gdp_sa.csv` dengan `date,value,gdp_sa`
-  menghasilkan satu seri); pemeriksaan duplikat tidak pernah aktif; tajuk
-  ganda `a,a` diam-diam menjadi `a`, `a.1`.
-- [x] [R2][minor] read-series.R — kolom angka tanpa tajuk menjadi seri
-  bernama `""`, lalu `cli_align()` gagal dengan pesan yang tidak menyebut
-  berkas.
-- [x] [R3][minor] R/app.R — tipe seri acuan terbawa saat seri acuan
-  diganti, sehingga seri acuan baru dikonversi dengan tipe yang keliru.
-- [x] [R4][minor] app.R — `target_freq` hanya dibaca di langkah 1;
-  mengubahnya sesudah itu tidak berpengaruh walaupun pilihan berubah.
-- [x] [R5][minor] app.R — isian frekuensi asal di mode beberapa berkas
-  dapat diubah, tetapi setiap perubahan pasti gagal, dan pilihan pengguna
-  ditimpa saat panel digambar ulang.
-- [x] [R6][minor] read-series.R — tanda nilai hilang di tabel terbitan
-  (`-`, `..`, `...`, `#N/A`) membuang seluruh kolom.
-- [x] [R7][nit] read-series.R — seri tidak diurutkan menurut tanggal.
-- [x] [R8][nit] read-series.R — kolom tanggal kosong dan seri satu
-  observasi memberi pesan yang tidak menyebut berkas.
-- [x] [R9][nit] read-series.R — bentuk tanggal yang diterima lebih luas
-  dari dokumentasi; tanggal-waktu Excel tengah malam ditolak.
-- [x] [R10][minor] tests — uji untuk R1–R4, `multi_lines()` dengan
-  `sep`/`dec`, dan evaluasi skrip triwulanan belum ada.
+- [x] [R1][blocker] R/app-options.R `align_text` — `deparse()` tidak
+  meloloskan tanda kutip di dalam nama vektor; nama seri dari nama berkas
+  unggahan atau tajuk kolom dapat menjalankan kode R di server pada
+  langkah 2 (didemonstrasikan dengan berkas yang menulis berkas lain).
+- [x] [R2][major] app-options.R `align_ui` — indikator Chow–Lin hanya dapat
+  dipilih dari kandidat, padahal `?cli_align` melarang indikator menjadi
+  kandidat; kandidat pendahulu menjadi sejalan semu.
+- [x] [R3][major] R/app-plots.R — seri acuan tanpa tren digambar sebagai
+  `100 * reference / trend`; untuk seri acuan tanpa log yang trennya
+  mendekati nol, grafik meledak (−2 427 sampai 38 685).
+- [x] [R4][minor] R/presentation.R — `trend_restored` multiplikatif juga
+  untuk seri acuan tanpa log; tren negatif membalik siklus.
+- [x] [R5][minor] tests — skrip dievaluasi di lingkungan yang dapat
+  menjangkau fungsi internal; tidak ada bukti skrip berjalan hanya dengan
+  `library(rcli)`.
+- [x] [R6][nit] app-options.R `value_text` — isian angka dari peramban
+  bertipe integer, sehingga skrip menulis `5L`.
+- [x] [R7][nit] Isian ambang pencilan tetap tampil saat TRAMO dipilih;
+  pilihan disagregasi tampil walaupun seri acuan tidak diubah.
+- [x] [R8][nit] R/app.R — sisa baris kosong ganda.
 
 Putusan putaran 1: CHANGES-REQUESTED
 
 ## Tindak lanjut A5 sesudah putaran 1
-- R1: nama diambil dari tajuk berkas (`names(df)[-1]`), bukan dari
-  `df[-1]`; nama ganda di antara kolom angka satu berkas adalah galat
-  yang menyebut berkas dan nama. Uji "R1/R2".
-- R2: kolom angka tanpa tajuk adalah galat yang menyebut berkas; kolom
-  kosong akibat pemisah di akhir baris tetap diabaikan.
-- R3: tipe seri acuan hanya dipertahankan selama seri acuannya sama
-  (`ref_type_for`). Uji "R3/R10".
-- R4: mengubah frekuensi analisis sesudah berkas dibaca mengosongkan
-  langkah 2 dan seterusnya, memperbarui `rv$loaded$frequency`, dan
-  menyesuaikan ambang *lead*.
-- R5: di mode beberapa berkas, frekuensi asal ditampilkan sebagai teks
-  (`frq_text_i`) dan diisi dari deteksi di metadata.
-- R6: argumen baru `na` dengan bawaan `NA`, `-`, `..`, `...`, `#N/A`.
-- R7: setiap seri diurutkan menurut tanggal.
-- R8: kolom tanggal tanpa isi (`rcli_error_dates`) dan seri dengan kurang
-  dari dua observasi (`rcli_error_argument`) menyebut berkas; kelas galat
-  didokumentasikan di `@return`.
-- R9: dokumentasi menyebut semua pemisah yang diterima dan bahwa tanggal
-  dibaca hari lebih dulu; akhiran `00:00` atau `00:00:00` diabaikan; jam
-  lain tetap ditolak.
-- R10: uji ditambahkan; uji triwulanan kini mengevaluasi skrip dan
-  membandingkan data kandidat dan indeks komposit.
-- Bukti merah: uji baru dijalankan pada kode 0fd867f: 9 kegagalan (3 di
-  `test-read-series.R`, 6 di `test-app-multi.R`); semuanya lolos sesudah
-  perbaikan.
-
-## Review putaran 2 (38984f2)
-- Uji: `test-read-series` 77/77, `test-app-multi` 48/48,
-  `test-app-frequency` 13/13, `test-app-reference` 33/33, `test-app-csv`
-  78/78; lintr bersih.
-- R1–R10 tertutup, masing-masing diverifikasi dengan kode: nama ganda dan
-  kolom tanpa tajuk ditolak; tipe seri acuan dikosongkan saat acuan
-  diganti; mengganti frekuensi analisis mengosongkan langkah 2 dan skrip
-  tetap mereproduksi GUI; frekuensi asal tampil sebagai teks; tanda nilai
-  hilang tidak mengganggu deteksi desimal; urutan tanggal; pesan galat
-  menyebut berkas; tanggal-waktu tengah malam.
-- Jalur indeks sejalan sebagai acuan dengan beberapa berkas: skrip ekspor
-  dievaluasi tanpa galat, indeks komposit dan `meta` sama dengan GUI.
-
-### Temuan baru putaran 2
-- [x] [R11][minor] read-series.R `series_dates` — tanggal bulan/hari/tahun
-  (ekspor Excel en-US) terbaca sebagai hari 1–12 Januari dan dikenali
-  harian tanpa galat; `cli_align()` lalu menghasilkan hampir semua NA.
-- [x] [R12][nit] app.R — sesudah indeks sejalan menjadi acuan, mengubah
-  frekuensi analisis tidak berpengaruh, tetapi pilihannya berubah.
-- [x] [R13][nit] read-series.R — seri satu observasi menggagalkan seluruh
-  berkas, sedangkan kolom kosong hanya dibuang dengan peringatan.
-- [x] [R14][nit] read-series.R — jam tengah malam satu digit (`0:00`)
-  tidak dibuang; `na` tidak divalidasi.
-- [x] [R15][nit] app.R — tipe seri acuan terbawa ke berkas baru dengan
-  nama seri acuan yang sama.
-
-Putusan: APPROVE
-
-## Tindak lanjut A5 sesudah putaran 2
-- R11: tanggal hari-bulan-tahun yang menghasilkan deret hari berjarak
-  lebih dari sebulan ditolak (`rcli_error_dates`) dengan saran format
-  ISO; data harian sungguhan tetap diterima.
-- R12: pilihan frekuensi analisis dikembalikan ke nilai yang dipakai.
-- R13: seri dengan kurang dari dua observasi dibuang dengan
-  `rcli_warning_dropped`; galat hanya bila tidak ada seri yang tersisa.
-- R14: pola `[ T]0?0:00(:00)?$`; `na` harus character.
-- R15: `ref_type_for` dikosongkan di langkah 1.
-- Uji "R11/R13/R14" dan tambahan di `test-app-multi.R`; pada 38984f2
-  uji-uji itu gagal 3 kali.
+- R1: `chr_text()` menulis vektor karakter dengan `encodeString()`; nama
+  tak sintaktis lewat `stats::setNames()`; teks diuji terbaca ulang identik
+  sebelum dipakai, kalau tidak `rcli_error_argument`. Dipakai untuk tipe,
+  seri acuan, metode, indikator, dan nama berkas di skrip. Uji "R1" memakai
+  nama berkas injeksi dari review.
+- R2: seri indikator Chow–Lin dikeluarkan dari kandidat
+  (`series[names(series) != "x"]`) dan dari metadata; teks bantuan
+  menjelaskannya.
+- R3: `cli_presentation()` mendapat kolom `reference_amplitude_adjusted`
+  dalam satuan CLI disesuaikan amplitudo; grafik memakai kolom itu.
+- R4: untuk seri acuan tanpa log, simpangan diukur dalam persen rata-rata
+  level absolut (sama dengan amplitudo komposit) dan tren dipulihkan
+  secara aditif. Uji "R3/R4".
+- R5: uji memeriksa bahwa setiap fungsi paket yang dipanggil teks kode
+  termasuk ekspor.
+- R6: angka ditulis sebagai double.
+- R7: ambang pencilan disembunyikan saat TRAMO; pilihan disagregasi dan
+  indikator hanya tampil (dan hanya dipakai) bila seri acuan diubah
+  frekuensinya.
+- R8: baris kosong dirapikan.
+- Bukti merah: uji baru gagal 12 kali pada 0db13de (7 di
+  `test-app-options.R`, 5 di `test-oecd.R`).

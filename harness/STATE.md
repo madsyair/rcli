@@ -64,6 +64,8 @@
 | 2026-11-01 05:40 | INC-09 | A5 | G4–G5 | R11–R15 ditindaklanjuti; merah 3 kegagalan pada 38984f2 | 2/3 | gerbang penuh, PR |
 | 2026-11-01 06:00 | INC-09 | A0 | G1–G8 | LOLOS (cakupan 97,1%); CI hijau; PR #4 digabung pengguna | 2/3 | INC-10 |
 | 2026-11-01 06:15 | INC-10 | A1, A4, A5 | G1, G4, G5 | audit GUI; merah 34 kegagalan → hijau | 1/3 | A6 |
+| 2026-11-01 06:35 | INC-10 | A6 | G6 | CHANGES-REQUESTED (R1 blocker: injeksi kode lewat nama seri; R2–R3 major) | 1/3 | A5 perbaiki |
+| 2026-11-01 06:55 | INC-10 | A5 | G4–G5 | R1–R8 ditindaklanjuti; merah 12 kegagalan pada 0db13de | 2/3 | A6 putaran 2 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

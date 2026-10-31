@@ -338,7 +338,9 @@ app_ui <- function(language = "id") {
             shiny::conditionalPanel(
               "input.seasonal",
               shiny::checkboxInput("idulfitri", t("idulfitri"), FALSE)),
-            shiny::numericInput("outlier", t("outlier"), 5, min = 1),
+            shiny::conditionalPanel(
+              "input.method == 'oecd' || input.outlier_method != 'tramo'",
+              shiny::numericInput("outlier", t("outlier"), 5, min = 1)),
             shiny::checkboxInput("extend", t("extend"), TRUE),
             shiny::textInput("oos_cutoffs", t("oos_cutoffs"), "")
           ),
@@ -477,8 +479,6 @@ app_ui <- function(language = "id") {
 }
 
 # ---- helpers used by the server ---------------------------------------
-
-
 
 parse_cutoffs <- function(text) {
   parts <- trimws(strsplit(text, ",")[[1]])
@@ -629,7 +629,7 @@ multi_lines <- function(state) {
   }
   lines <- c("# 1. Data: one file per indicator",
              sprintf("series <- read_cli_series(%s%s)",
-                     deparse_value(state$file_name), fmt))
+                     chr_text(unname(state$file_name)), fmt))
   if (is.null(state$align)) return(lines)
   c(lines, "# brought to one frequency in step 2", align_text(state$align))
 }
@@ -695,9 +695,6 @@ analysis_lines <- function(state) {
   }
   lines
 }
-
-
-
 
 # ---- server -------------------------------------------------------------
 
@@ -1035,12 +1032,25 @@ app_server <- function(language = "id") {
                                 c(input$reference, cands))
         type <- type[!is.na(type) & nzchar(type)]
         type <- type[intersect(names(rv$series), names(type))]
+        # the disaggregation options apply only to a reference that is
+        # converted; inputs no longer shown keep their last value
+        target <- c(`12` = "monthly", `4` = "quarterly")[[
+          as.character(rv$loaded$frequency)]]
+        convert <- !identical(attr(rv$series[[input$reference]],
+                                   "frequency"), target)
         align <- list(freq = rv$loaded$frequency, type = type,
                       reference = input$reference,
-                      method = input$align_method,
-                      indicator = input$align_indicator,
+                      method = if (convert) input$align_method,
+                      indicator = if (convert) input$align_indicator,
                       week_date = input$week_date,
                       min_coverage = input$align_coverage)
+        if (identical(align$method, "chow-lin") &&
+            given(align$indicator)) {
+          # the Chow-Lin indicator is not a candidate
+          keep <- meta$name != align$indicator
+          meta <- meta[keep, , drop = FALSE]
+          align$type <- align$type[names(align$type) != align$indicator]
+        }
         # the interface runs the code it writes into the script
         data <- safely(eval_code(align_text(align), "data",
                                  list(series = rv$series)))
