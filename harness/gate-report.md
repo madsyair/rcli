@@ -1,4 +1,4 @@
-# Gate report — 2026-10-24T13:04:49
+# Gate report — 2026-10-31T16:57:57
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -7,12 +7,12 @@
 | G3 Desain | LOLOS | 0 |
 | G4 Uji-dulu | LOLOS | 0 |
 | G5 Build & uji | LOLOS | 0 |
-| G6 Review | LOLOS | 0 |
+| G6 Review | GAGAL | 1 |
 | G7 Dokumentasi | LOLOS | 0 |
-| G8 Rilis | LOLOS | 0 |
+| G8 Rilis | GAGAL | 1 |
 
 ## G1 Kebutuhan
-- [x] Ada kebutuhan FR/NFR — 10 ID
+- [x] Ada kebutuhan FR/NFR — 11 ID
 - [x] Setiap FR/NFR punya kriteria penerimaan — lengkap
 - [x] Tidak ada TODO
 - [x] Bagian 'Di luar cakupan' ada
@@ -33,29 +33,29 @@
 - [x] F-02: uji yang diturunkan — 7 butir
 
 ## G3 Desain
-- [x] Setiap FR terpetakan di desain — 7 FR
+- [x] Setiap FR terpetakan di desain — 8 FR
 - [x] Ada ADR — 2 ADR
 - [x] Tidak ada TODO
 
 ## G4 Uji-dulu
 - [x] Ada berkas uji
-- [x] Setiap FR/NFR dilacak ke uji — 10 ID
+- [x] Setiap FR/NFR dilacak ke uji — 11 ID
 - [x] Setiap F-xx dilacak ke uji — 4 formula
 - [x] Bukti merah tercatat — sebelum implementasi (2026-10-23): `devtools::test(filter = "ragged-edge|end-ext
 
 ## G5 Build & uji
-- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1646 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=32949 -Dhttp.nonProxyHosts=localhost|127.
+- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1701 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44707 -Dhttp.nonProxyHosts=localhost|127.
 - [x] lint — exit 0: 
-- [x] coverage — exit 0: coverage 96.89223
+- [x] coverage — exit 0: coverage 96.93928
 
 ## G6 Review
 - [x] Tidak ada temuan blocker/major terbuka
-- [x] Putusan APPROVE — APPROVE
+- [ ] Putusan APPROVE — CHANGES-REQUESTED
 
 ## G7 Dokumentasi
 - [x] document — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli
 - [x] examples — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli | ℹ Loading rcli | ℹ Loading rcli
 
 ## G8 Rilis
-- [x] Gerbang G1–G7 lolos
+- [ ] Gerbang G1–G7 lolos — gagal: G6
 - [x] check-as-cran — exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli

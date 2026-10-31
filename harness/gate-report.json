@@ -1,5 +1,5 @@
 {
-  "generated": "2026-10-24T13:04:49",
+  "generated": "2026-10-31T16:57:57",
   "gates": [
     {
       "gate": "G1",
@@ -8,7 +8,7 @@
         {
           "name": "Ada kebutuhan FR/NFR",
           "ok": true,
-          "detail": "10 ID"
+          "detail": "11 ID"
         },
         {
           "name": "Setiap FR/NFR punya kriteria penerimaan",
@@ -109,7 +109,7 @@
         {
           "name": "Setiap FR terpetakan di desain",
           "ok": true,
-          "detail": "7 FR"
+          "detail": "8 FR"
         },
         {
           "name": "Ada ADR",
@@ -137,7 +137,7 @@
         {
           "name": "Setiap FR/NFR dilacak ke uji",
           "ok": true,
-          "detail": "10 ID"
+          "detail": "11 ID"
         },
         {
           "name": "Setiap F-xx dilacak ke uji",
@@ -160,7 +160,7 @@
         {
           "name": "tests",
           "ok": true,
-          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1646 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=32949 -Dhttp.nonProxyHosts=localhost|127."
+          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1701 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=44707 -Dhttp.nonProxyHosts=localhost|127."
         },
         {
           "name": "lint",
@@ -170,7 +170,7 @@
         {
           "name": "coverage",
           "ok": true,
-          "detail": "exit 0: coverage 96.89223"
+          "detail": "exit 0: coverage 96.93928"
         }
       ],
       "skipped": false,
@@ -187,12 +187,12 @@
         },
         {
           "name": "Putusan APPROVE",
-          "ok": true,
-          "detail": "APPROVE"
+          "ok": false,
+          "detail": "CHANGES-REQUESTED"
         }
       ],
       "skipped": false,
-      "passed": true
+      "passed": false
     },
     {
       "gate": "G7",
@@ -218,8 +218,8 @@
       "checks": [
         {
           "name": "Gerbang G1–G7 lolos",
-          "ok": true,
-          "detail": ""
+          "ok": false,
+          "detail": "gagal: G6"
         },
         {
           "name": "check-as-cran",
@@ -228,7 +228,7 @@
         }
       ],
       "skipped": false,
-      "passed": true
+      "passed": false
     }
   ]
 }
