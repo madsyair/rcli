@@ -27,7 +27,7 @@
 | INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
 | INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | selesai (G1–G8) |
 | INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | selesai (G1–G8; PR #4) |
-| INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | berjalan |
+| INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -70,6 +70,7 @@
 | 2026-11-01 06:45 | INC-10 | A5 | G4–G5 | R9–R13 ditindaklanjuti (validasi isian dan daftar putih kode) | 3/3 | A6 putaran 3 (anggaran terakhir) |
 | 2026-11-01 06:58 | INC-10 | A6 | G6 | APPROVE putaran 3 (R9–R13 tertutup; R14–R15 minor, R16–R18 nit) | 3/3 | A5 R14–R18, gerbang penuh |
 | 2026-11-01 07:00 | INC-10 | A5 | G4–G5 | R14–R18 ditindaklanjuti | 3/3 | gerbang penuh, PR |
+| 2026-11-01 10:40 | INC-10 | A0 | G1–G8 | LOLOS (cakupan 97,4%; check 0/0); uji peramban 168 lolos | 3/3 | PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

@@ -1,5 +1,5 @@
 {
-  "generated": "2026-11-01T05:45:25",
+  "generated": "2026-11-01T10:46:32",
   "gates": [
     {
       "gate": "G1",
@@ -8,7 +8,7 @@
         {
           "name": "Ada kebutuhan FR/NFR",
           "ok": true,
-          "detail": "12 ID"
+          "detail": "13 ID"
         },
         {
           "name": "Setiap FR/NFR punya kriteria penerimaan",
@@ -109,7 +109,7 @@
         {
           "name": "Setiap FR terpetakan di desain",
           "ok": true,
-          "detail": "9 FR"
+          "detail": "10 FR"
         },
         {
           "name": "Ada ADR",
@@ -137,7 +137,7 @@
         {
           "name": "Setiap FR/NFR dilacak ke uji",
           "ok": true,
-          "detail": "12 ID"
+          "detail": "13 ID"
         },
         {
           "name": "Setiap F-xx dilacak ke uji",
@@ -160,7 +160,7 @@
         {
           "name": "tests",
           "ok": true,
-          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1883 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=34333 -Dhttp.nonProxyHosts=localhost|127."
+          "detail": "exit 0:     x |  1. \\-app$set_inputs(pres_form = form) at test-app-e2e.R:306:5 |  2.   \\-shinytest2:::app_set_inputs(...) | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=43669 -Dhttp.nonPro"
         },
         {
           "name": "lint",
@@ -170,7 +170,7 @@
         {
           "name": "coverage",
           "ok": true,
-          "detail": "exit 0: coverage 97.12329"
+          "detail": "exit 0: coverage 97.35777"
         }
       ],
       "skipped": false,
