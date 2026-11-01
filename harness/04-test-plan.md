@@ -43,3 +43,4 @@ Bukti merah: sebelum implementasi FR-010 (2026-11-01), `test-app-options.R` gaga
 
 ### Bukti merah 0.5.1 (G4)
 Bukti merah: sebelum implementasi FR-011 (2026-11-01), `test-fixes-051.R` gagal 27 kali (fungsi `clean_forecast()` dan `min_overlap()` belum ada; pencilan triwulanan dan di ujung seri tidak terhapus; Conference Board dan penyajian memakai seri asli; uji luar sampel tanpa geser lag; galat tanpa kelas; tanpa peringatan).
+Sesudah review putaran 1 (R1, R2, R4, R6, R7, R10): AC-FR-011.6 versi pertama ternyata lolos pada kode lama dan diperbaiki; versi baru gagal dengan `R/selection-bias.R` dari c66b115. Uji baru untuk laju TC X-13 triwulanan, periode di luar tahun, vintage, NA, dan jalur tanpa log.

@@ -114,6 +114,12 @@ cli_candidates <- function(data, reference, meta = NULL, vintages = list(),
   if (!is.list(vintages)) {
     rcli_abort("`vintages` must be a list.", "rcli_error_argument")
   }
+  if (length(empty) > 0L) {
+    vintages <- lapply(vintages, function(v) {
+      if (is.null(colnames(v))) v else v[, !colnames(v) %in% empty,
+                                           drop = FALSE]
+    })
+  }
   new("CandidateSet", data = data, reference = reference, meta = meta,
       vintages = vintages, alignment = alignment)
 }
@@ -254,11 +260,15 @@ setMethod("[", "CandidateSet", function(x, i, j, ..., drop = FALSE) {
 #' window(cand, end = c(2015, 12))
 #' @export
 setMethod("window", "CandidateSet", function(x, start = NULL, end = NULL, ...) {
-  x@data <- tryCatch(
-    suppressWarnings(stats::window(x@data, start = start, end = end)),
-    error = function(e) {
-      rcli_abort("The window lies outside the data.",
-                 "rcli_error_short_series")
-    })
+  tsp0 <- stats::tsp(x@data)
+  as_time <- function(v) {
+    if (length(v) == 2L) v[1] + (v[2] - 1) / tsp0[3] else v[1]
+  }
+  eps <- 1e-8
+  if ((!is.null(end) && as_time(end) < tsp0[1] - eps) ||
+      (!is.null(start) && as_time(start) > tsp0[2] + eps)) {
+    rcli_abort("The window lies outside the data.", "rcli_error_short_series")
+  }
+  x@data <- stats::window(x@data, start = start, end = end)
   x
 })

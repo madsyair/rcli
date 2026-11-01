@@ -22,6 +22,13 @@ test_that("AC-FR-011.1 (F1): TRAMO outlier names with Roman periods", {
   expect_equal(eff[t0 + 0:2, "TC"], 0.7^(0:2))
   expect_error(rcli:::outlier_effects("AO (spring-2011)", 1, xm),
                class = "rcli_error_outliers")
+  # periods outside 1..frequency do not roll into another year
+  expect_error(rcli:::outlier_effects("AO (V-2009)", 1, xq),
+               class = "rcli_error_outliers")
+  expect_error(rcli:::outlier_effects("AO (13-2009)", 1, xm),
+               class = "rcli_error_outliers")
+  expect_error(rcli:::outlier_effects("AO (0-2009)", 1, xm),
+               class = "rcli_error_outliers")
 })
 
 test_that("AC-FR-011.2 (F2): forecasts continue the removed effects", {
@@ -35,6 +42,12 @@ test_that("AC-FR-011.2 (F2): forecasts continue the removed effects", {
                fc - 0.245 * 0.7^(1:3))
   expect_equal(rcli:::clean_forecast(fc, eff, "AO"), fc)
   expect_equal(rcli:::clean_forecast(numeric(0), eff, "LS"), numeric(0))
+  # the decay rate of the engine: TRAMO 0.7, X-13 0.7^(12/f)
+  expect_equal(rcli:::tc_rate("tramo", 4), 0.7)
+  expect_equal(rcli:::tc_rate("x13", 12), 0.7)
+  expect_equal(rcli:::tc_rate("x13", 4), 0.343)
+  expect_equal(rcli:::clean_forecast(fc, eff, "TC", 0.343),
+               fc - 0.245 * 0.343^(1:3))
   # end to end with X-13: no jump between the clean series and its forecast
   skip_if_not_installed("seasonal")
   set.seed(5)
@@ -48,17 +61,33 @@ test_that("AC-FR-011.2 (F2): forecasts continue the removed effects", {
   expect_lt(jump, 0.03)
 })
 
-test_that("AC-FR-011.3 (F3): extreme changes at the ends are replaced", {
+test_that("AC-FR-011.2b (F2): X-13 transitory changes in quarterly data", {
+  skip_if_not_installed("seasonal")
+  set.seed(7)
+  x <- stats::ts(cumsum(rnorm(100, 0, 0.004)) + 4.6, start = c(2000, 1),
+                 frequency = 4)
+  x <- x + c(rep(0, 95), 0.08 * 0.343^(0:4))
+  fit <- rcli:::regarima_x13(x, 4, NA)
+  skip_if(fit$count[["TC"]] == 0L, "X-13 found no transitory change")
+  e <- fit$effects[, "TC"]
+  # the rate passed on to the forecasts is the one X-13 used in the data
+  expect_equal(fit$tc_rate, e[100] / e[99], tolerance = 1e-6)
+  out <- treat_outliers(tramo_outliers(engine = "x13", remove = "TC"), x)
+  expect_equal(out$forecast, fit$forecast - e[100] * 0.343^(1:4),
+               tolerance = 1e-8)
+})
+
+test_that("AC-FR-011.3 (F3): an extreme first change is replaced", {
   set.seed(2)
   v <- cumsum(rnorm(120))
   d <- diff(v)
   s <- stats::mad(d)
+  # the last observation is the newest signal and is left alone
   last <- v
   last[120] <- v[119] + 15 * s
   out <- rcli:::replace_outliers(stats::ts(last), 5)
-  expect_equal(out$n, 1L)
-  expect_equal(as.numeric(out$x)[120], v[119] + stats::median(d),
-               tolerance = 0.02 * s)
+  expect_equal(out$n, 0L)
+  expect_equal(as.numeric(out$x), last)
   first <- v
   first[1] <- v[2] - 15 * s
   out <- rcli:::replace_outliers(stats::ts(first), 5)
@@ -76,6 +105,13 @@ test_that("AC-FR-011.3 (F3): extreme changes at the ends are replaced", {
     rcli:::replace_outliers(stats::ts(cumsum(rnorm(240))), 5)$n
   }, integer(1))
   expect_lte(sum(n_flag), 2)
+  # heavy tails: the last observation is never replaced
+  last_kept <- vapply(1:200, function(k) {
+    set.seed(k)
+    y <- cumsum(stats::rt(240, 3))
+    as.numeric(rcli:::replace_outliers(stats::ts(y), 5)$x)[240] == y[240]
+  }, logical(1))
+  expect_true(all(last_kept))
 })
 
 test_that("AC-FR-011.4 (G6): Conference Board works on cleaned levels", {
@@ -94,12 +130,27 @@ test_that("AC-FR-011.4 (G6): Conference Board works on cleaned levels", {
   expect_equal(as.numeric(a@index), as.numeric(b@index))
   # the index follows the formula on the levels of the transformed series
   lev <- sapply(comps, function(nm) exp(as.numeric(cyc[[nm]]@transformed)))
-  ch <- apply(lev, 2, function(v) c(NA, 200 * diff(v) / (v[-1] + v[-length(v)])))
+  ch <- apply(lev, 2, function(v) {
+    c(NA, 200 * diff(v) / (v[-1] + v[-length(v)]))
+  })
   s <- apply(ch, 2, stats::sd, na.rm = TRUE)
   m <- as.numeric(ch %*% ((1 / s) / sum(1 / s)))
   m <- m[-1]
   lv <- 100 * cumprod((200 + m) / (200 - m))
-  expect_equal(as.numeric(a@index)[-1], lv / mean(lv) * 100, tolerance = 1e-8)
+  expect_equal(as.numeric(a@index)[-1], lv / mean(lv) * 100,
+               tolerance = 1e-8)
+  # without logs the levels are the transformed series themselves
+  spec_n <- cli_spec(12, aggregator = conference_board(), transform = "none")
+  cyc_n <- cli_cycles(cand, spec_n)
+  expect_identical(rcli:::cycle_level(cyc_n$lead_6),
+                   as.numeric(cyc_n$lead_6@transformed))
+  spiked_n <- cyc_n
+  orig <- spiked_n$lead_6@original
+  orig[100] <- orig[100] * 3
+  spiked_n$lead_6@original <- orig
+  expect_equal(
+    as.numeric(cli_composite(cyc_n, comps, spec_n, cyc_n$reference)@index),
+    as.numeric(cli_composite(spiked_n, comps, spec_n, cyc_n$reference)@index))
 })
 
 test_that("AC-FR-011.5 (G9): presentation uses the cleaned reference", {
@@ -115,20 +166,22 @@ test_that("AC-FR-011.5 (G9): presentation uses the cleaned reference", {
 test_that("AC-FR-011.6 (G7/E1): the out-of-sample check keeps lag shifts", {
   cand <- sim_cand()
   spec <- update(cli_spec(12), lag_shift = TRUE)
+  train <- cli_build(window(cand, end = 2012),
+                     update(spec, oos_cutoffs = numeric(0)))
+  expect_gt(length(train@composite@shifts), 0L)
   seen <- list()
   real <- rcli::cli_composite
   testthat::local_mocked_bindings(
     cli_composite = function(cycles, components, spec, reference = NULL,
                              shifts = NULL) {
-      seen[[length(seen) + 1L]] <<- shifts
+      # list() keeps a NULL entry, so a call without shifts is recorded
+      seen[length(seen) + 1L] <<- list(shifts)
       real(cycles, components, spec, reference, shifts)
     },
     .package = "rcli"
   )
   sb <- cli_selection_bias(cand, spec, cutoffs = 2012)
-  train <- cli_build(window(cand, end = 2012),
-                     update(spec, oos_cutoffs = numeric(0)))
-  expect_gt(length(train@composite@shifts), 0L)
+  # the last call is the out-of-sample composite of one_cutoff()
   expect_equal(seen[[length(seen)]], train@composite@shifts)
 })
 
@@ -136,8 +189,10 @@ test_that("AC-FR-011.7 (E2): windows outside the data", {
   cand <- sim_cand()
   expect_error(window(cand, end = 1990), class = "rcli_error_short_series")
   expect_error(window(cand, start = 2040), class = "rcli_error_short_series")
-  res <- suppressWarnings(cli_build(cand, cli_spec(12,
-                                                   oos_cutoffs = c(1990, 2012))))
+  # start after end inside the data is an ordinary window error
+  expect_error(window(cand, start = 2010, end = 2005), "start")
+  spec <- cli_spec(12, oos_cutoffs = c(1990, 2012))
+  res <- suppressWarnings(cli_build(cand, spec))
   expect_s4_class(res, "CliResult")
   sb <- res@validation@out_of_sample
   expect_equal(sb$note[sb$cutoff == 1990], "training window too short")
@@ -155,6 +210,11 @@ test_that("AC-FR-011.8 (E3): empty candidates and unusable references", {
   expect_false("dead" %in% cand@meta$name)
   res <- suppressWarnings(cli_build(cand))
   expect_s4_class(res, "CliResult")
+  # the dropped candidate also leaves the data vintages
+  expect_warning(cand_v <- cli_candidates(dead, "reference", meta = meta,
+                                          vintages = list(v1 = dead)),
+                 class = "rcli_warning_dropped")
+  expect_false("dead" %in% colnames(cand_v@vintages$v1))
   empty_ref <- sim
   empty_ref[, "reference"] <- NA
   expect_error(cli_candidates(empty_ref, "reference"),
@@ -172,10 +232,15 @@ test_that("AC-FR-011.9 (E4): invalid specifications give classed errors", {
   expect_error(cli_spec(alpha = 2), class = "rcli_error_argument")
   expect_error(update(cli_spec(12), freq = 7), class = "rcli_error_argument")
   for (arg in c("max_iter", "min_components", "ccf_lag_max",
-                "granger_max_lag")) {
+                "granger_max_lag", "granger_dmax", "horizon")) {
     expect_error(do.call(cli_spec, stats::setNames(list(2.5), arg)),
                  class = "rcli_error_argument", info = arg)
   }
+  expect_error(cli_spec(12, max_iter = NA), "must not be NA",
+               class = "rcli_error_argument")
+  expect_error(cli_spec(12, ccf_lag_max = NA), "must not be NA",
+               class = "rcli_error_argument")
+  expect_s4_class(cli_spec(12, horizon = NA), "CliSpec")
   cand <- sim_cand()
   spec <- cli_spec(12)
   cyc <- cli_cycles(cand, spec)

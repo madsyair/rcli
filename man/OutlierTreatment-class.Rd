@@ -71,7 +71,11 @@ outlier when its change from the previous period and the next change
 are both more than \code{threshold} robust z-scores (deviation from the
 median change divided by the median absolute deviation) and of
 opposite sign, that is, a one-period spike. Spikes are replaced by
-linear interpolation. No model and no external program are needed.
+linear interpolation. An extreme first change is replaced too (the
+first value becomes the second minus the median change); the last
+observation is left alone, because an extreme last change cannot yet
+be told apart from a level shift or a turn. No model and no external
+program are needed.
 \item \code{tramo_outliers()}: the OECD treatment (Gyomai and Guidetti 2012,
 p. 6--7). A regARIMA model with automatic outlier detection finds
 additive outliers (AO), transitory changes (TC) and level shifts (LS);

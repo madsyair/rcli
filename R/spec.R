@@ -227,6 +227,12 @@ setValidity("CliSpec", function(object) {
     if (!one(s)) msg <- c(msg, sprintf("`%s` must have length 1.", s))
   }
   if (length(msg) > 0L) return(msg)
+  for (s in setdiff(scalar_slots, "horizon")) {
+    if (is.na(slot(object, s))) {
+      msg <- c(msg, sprintf("`%s` must not be NA.", s))
+    }
+  }
+  if (length(msg) > 0L) return(msg)
   if (!object@freq %in% c(4, 12)) msg <- c(msg, "`freq` must be 4 or 12.")
   if (length(object@seasonal_adjust) != 1L || is.na(object@seasonal_adjust)) {
     msg <- c(msg, "`seasonal_adjust` must be TRUE or FALSE.")
@@ -265,7 +271,7 @@ setValidity("CliSpec", function(object) {
   }
   if (!(object@max_iter >= 1)) msg <- c(msg, "`max_iter` must be >= 1.")
   for (s in c("max_iter", "min_components", "ccf_lag_max",
-              "granger_max_lag")) {
+              "granger_max_lag", "granger_dmax", "horizon")) {
     v <- slot(object, s)
     if (is.finite(v) && abs(v - round(v)) > 1e-8) {
       msg <- c(msg, sprintf("`%s` must be a whole number.", s))

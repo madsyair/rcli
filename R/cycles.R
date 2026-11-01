@@ -150,18 +150,17 @@ replace_outliers <- function(x, threshold) {
   # a spike shows as two consecutive extreme changes of opposite sign
   flag <- which(z[-length(z)] > threshold & z[-1] > threshold &
                   sign(d[-length(d)]) != sign(d[-1])) + 1L
-  # at the ends only one change is seen: an extreme first or last change
-  # is treated as a spike (until a later observation shows a level shift)
+  # the first observation shows only one change: an extreme first change
+  # is treated as a spike. The last observation is left alone, because an
+  # extreme last change cannot be told apart from a level shift or a turn
+  # until the next observation arrives, and it is the newest signal.
   m <- length(d)
   first <- z[1] > threshold && !(m > 1L && z[2] > threshold)
-  last <- z[m] > threshold && !(m > 1L && z[m - 1L] > threshold)
-  n_flag <- length(flag) + first + last
+  n_flag <- length(flag) + first
   if (n_flag == 0L) return(list(x = x, n = 0L))
   v[flag] <- NA
   v <- fill_internal_na(v)
-  med <- stats::median(d)
-  if (first) v[1] <- v[2] - med
-  if (last) v[m + 1L] <- v[m] + med
+  if (first) v[1] <- v[2] - stats::median(d)
   list(x = as_ts_like(v, x), n = as.integer(n_flag))
 }
 

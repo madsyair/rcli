@@ -15,7 +15,8 @@ composite of \code{x}, for instance one chosen by hand with
 }
 \value{
 A data frame with \code{time} and the columns \code{amplitude_adjusted},
-\code{trend_restored}, \code{rate_of_change}, \code{reference},
+\code{trend_restored}, \code{rate_of_change}, \code{reference} (seasonally adjusted
+and cleaned of outliers),
 \code{reference_amplitude_adjusted} (the reference without trend, in the
 units of \code{amplitude_adjusted}), \code{reference_trend} and
 \code{reference_rate_of_change}.
@@ -32,8 +33,8 @@ composite for every aggregation method except the Conference Board's);
 compared with the de-trended reference series it reads as an output
 gap ("growth cycle");
 \item \strong{trend restored}: the long-term trend of the reference series times
-the amplitude-adjusted CLI divided by 100, comparable with the original
-reference series ("business cycle"). The trend is the Hodrick-Prescott
+the amplitude-adjusted CLI divided by 100, comparable with the level of
+the reference series ("business cycle"). The trend is the Hodrick-Prescott
 trend with the cut-off of the specification's double HP filter (120
 months by default), taken from the transformed reference series and
 extended linearly beyond the last reference observation;
@@ -46,6 +47,11 @@ For a reference that is not logged (for instance a balance that crosses
 zero), deviations are measured in percent of the mean absolute level, as
 in the amplitude of the composite, and the trend is restored by adding
 them to the trend rather than by multiplying.
+
+The reference series in the output is the transformed one: seasonally
+adjusted and cleaned of outliers as in the specification, in the units
+of the original data, so that neither seasonality nor spikes enter the
+comparison.
 
 Peaks and troughs differ between forms: trend restoration moves peaks
 later and troughs earlier, and peaks of the rate of change mark

@@ -1,23 +1,30 @@
 # rcli 0.5.1
 
-Corrections from the review of 1 November 2026. Defaults are unchanged;
-improvements of the candidate evaluation that need a new calibration are
+Corrections from the review of 1 November 2026. Default settings are
+unchanged, but default results can change where a fix applies: an extreme
+first change of a series, short quarterly samples, `oecd_spec()` with
+quarterly data, and the aggregator recorded for a single component.
+Improvements of the candidate evaluation that need a new calibration are
 planned for 0.6.0.
 
 ## Bug fixes
 
 * `tramo_outliers()`: outliers of quarterly data, which JDemetra+ dates
-  with Roman numerals ("AO (IV-2009)"), were skipped silently; they are now
-  removed. An outlier whose date cannot be read is an error
+  with Roman numerals ("AO (IV-2009)"), were not removed (with a warning
+  "NAs introduced by coercion"); they are now removed. An outlier whose
+  date cannot be read, or whose period lies outside the year, is an error
   (`rcli_error_outliers`).
 * `tramo_outliers(remove = ...)` with level shifts or transitory changes:
   the regARIMA forecasts used to extend the series now continue the removed
-  effects (a level shift unchanged, a transitory change decaying at 0.7),
-  so the clean series no longer jumps where it meets its forecasts.
+  effects (a level shift unchanged, a transitory change decaying at the
+  rate of the engine: 0.7 for TRAMO, 0.7^(12/f) for X-13, i.e. 0.343 for
+  quarterly data), so the clean series no longer jumps where it meets its
+  forecasts.
 * `robust_outliers()` (the default) also replaces an extreme change at the
-  first or last observation, which the two-sided rule could never flag;
-  the last value is then the previous one plus the median change, until a
-  later observation shows whether the change persists.
+  first observation, which the two-sided rule could never flag. The last
+  observation is deliberately left alone: an extreme last change cannot be
+  told apart from a level shift or a turn until the next observation
+  arrives, and it is the newest signal of the indicator.
 * `conference_board()` computes its symmetric changes from the seasonally
   adjusted, cleaned and transformed series instead of the original data,
   so seasonal adjustment and outlier treatment now apply to it.
@@ -34,20 +41,23 @@ planned for 0.6.0.
 * `window()` on a candidate set outside the data is an
   `rcli_error_short_series`, so a cut-off before the data start gives a
   note in the out-of-sample check instead of stopping `cli_build()`.
-* `cli_candidates()` drops candidates without any observation, with a
-  warning (`rcli_warning_dropped`), and refuses an empty or constant
-  reference series.
+* `cli_candidates()` drops candidates without any observation (also from
+  the data vintages), with a warning (`rcli_warning_dropped`), and refuses
+  an empty or constant reference series.
 * Invalid specifications from `cli_spec()` and `update()` give
-  `rcli_error_argument`; `max_iter`, `min_components`, `ccf_lag_max` and
-  `granger_max_lag` must be whole numbers. `cli_validate()` checks `spec`
-  and `cli_composite()` checks `reference`.
+  `rcli_error_argument`; scalar settings other than `horizon` must not be
+  `NA`, and `max_iter`, `min_components`, `ccf_lag_max`, `granger_max_lag`,
+  `granger_dmax` and `horizon` must be whole numbers. `cli_validate()`
+  checks `spec` and `cli_composite()` checks `reference`.
 * The cross-correlation needs two years of overlap (24 months as before, 8
   quarters instead of 24), and candidates whose cross-correlation or
   Granger test cannot be computed are named in a warning
   (`rcli_warning_short_series`).
 * `principal_component()` and `dynamic_factor()` warn when they fall back
-  to equal weights (`rcli_warning_fallback`), and the composite records the
-  aggregator actually used.
+  to equal weights with two or more components (`rcli_warning_fallback`),
+  and the composite records the aggregator actually used; with a single
+  component this is `equal_weight()`, which `print()` and the GUI now
+  show.
 
 ## Documentation
 

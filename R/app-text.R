@@ -135,7 +135,8 @@ app_text <- list(
     pres_help = paste(
       "Disesuaikan amplitudonya: siklus pertumbuhan, dibandingkan dengan",
       "seri acuan tanpa tren. Dipulihkan trennya: dikalikan dengan tren",
-      "seri acuan, sebanding dengan seri acuan asli. Laju perubahan:",
+      "seri acuan, sebanding dengan seri acuan yang disesuaikan musim dan",
+      "dibersihkan pencilannya. Laju perubahan:",
       "perubahan setahun bentuk yang dipulihkan trennya. Titik balik",
       "ketiga bentuk berbeda, jadi jangan dicampur saat membaca sinyal."),
     pres_amp = "Disesuaikan amplitudonya", pres_trend = "Dipulihkan trennya",
@@ -344,7 +345,8 @@ app_text <- list(
     pres_help = paste(
       "Amplitude adjusted: the growth cycle, compared with the reference",
       "without trend. Trend restored: multiplied by the trend of the",
-      "reference, comparable with the original reference. Rate of change:",
+      "reference, comparable with the reference adjusted for seasonality",
+      "and cleaned of outliers. Rate of change:",
       "the change over a year of the trend-restored form. The turning",
       "points of the three forms differ, so do not mix them when reading",
       "signals."),
