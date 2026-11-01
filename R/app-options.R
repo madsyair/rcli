@@ -163,7 +163,10 @@ align_functions <- "cli_align"
 # defence, code that names anything else than `functions`, `code_names`,
 # `name` and `values` is refused before it runs.
 eval_code <- function(text, name, values = list(), functions) {
-  exprs <- parse(text = text)
+  exprs <- tryCatch(parse(text = text), error = function(e) {
+    rcli_abort(sprintf("The generated code does not parse: %s",
+                       conditionMessage(e)), "rcli_error_argument")
+  })
   used <- all.names(exprs)
   other <- setdiff(used, c(functions, code_names, name, names(values)))
   if (length(other) > 0L) {

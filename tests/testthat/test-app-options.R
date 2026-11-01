@@ -326,7 +326,9 @@ test_that("R9: crafted input values cannot run as code", {
   skip_if_not_installed("shiny")
   dir <- tempfile("r9")
   dir.create(dir)
-  flag <- file.path(dir, "PWNED")
+  # forward slashes, so that the path also reads as R code on Windows
+  flag <- normalizePath(file.path(dir, "PWNED"), winslash = "/",
+                        mustWork = FALSE)
   evil_name <- sprintf('a" = 1, b = {writeLines("x", "%s")}, "c', flag)
   evil <- stats::setNames(list(1), evil_name)
   # numeric and choice inputs of step 3
@@ -370,6 +372,10 @@ test_that("R9: crafted input values cannot run as code", {
     expect_error(rcli:::eval_code(bad, "spec", functions = fns),
                  class = "rcli_error_argument", info = bad)
   }
+  # text that does not parse is refused with a classed error
+  expect_error(rcli:::eval_code('spec <- cli_spec("C:\\Users")', "spec",
+                                functions = fns),
+               class = "rcli_error_argument")
   expect_false(file.exists(flag))
   expect_s4_class(rcli:::eval_code("spec <- cli_spec(freq = 12)", "spec",
                                    functions = fns), "CliSpec")
