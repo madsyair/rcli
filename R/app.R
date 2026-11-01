@@ -326,7 +326,9 @@ app_ui <- function(language = "id") {
               c("rcli", "oecd"), c(t("method_rcli"), t("method_oecd")))),
             shiny::conditionalPanel(
               "input.method == 'oecd'",
-              shiny::helpText(t("method_help"))),
+              shiny::helpText(t("method_help")),
+              shiny::checkboxInput("oecd_conformity", t("oecd_conformity"),
+                                   TRUE)),
             shiny::selectInput("filter", t("filter"), filter_choices),
             shiny::selectInput("aggregator", t("aggregator"),
                                aggregator_choices),
@@ -547,6 +549,9 @@ assessment_display <- function(tab, p = function(x) x) {
   out <- data.frame(
     candidate = paste0(tab$name, ifelse(tab$inverted, " *", "")),
     class = tab$class,
+    direction = paste0(ifelse(tab$inverted, "countercyclical", "procyclical"),
+                       ifelse(sign_sources(tab) == "meta", " (declared)",
+                              "")),
     rationale = ifelse(is.na(tab$rationale), "", tab$rationale),
     lead = tab$ccf_lag,
     median = tab$median_lead,
@@ -558,6 +563,7 @@ assessment_display <- function(tab, p = function(x) x) {
     stringsAsFactors = FALSE
   )
   out$class <- p(out$class)
+  out$direction <- p(out$direction)
   translate_names(out, p)
 }
 
@@ -649,17 +655,32 @@ one_text <- function(v) {
 # Step 2 of the script: the metadata and the candidate set built from `data`.
 candidate_lines <- function(state, data) {
   meta <- state$meta
+  # the direction is written only when some candidate has one
+  sign <- if ("sign" %in% names(meta) && any(!is.na(meta$sign))) {
+    sprintf(",\n  sign = %s", deparse_value(as.numeric(meta$sign)))
+  } else {
+    ""
+  }
   c("# 2. Candidates and their economic rationale",
     sprintf(paste0("meta <- data.frame(\n  name = %s,\n",
                    "  rationale = %s,\n  source = %s,\n",
-                   "  type = %s,\n  frequency = %s\n)"),
+                   "  type = %s,\n  frequency = %s%s\n)"),
             deparse_value(meta$name),
             deparse_value(meta$rationale),
             deparse_value(meta$source),
             deparse_value(meta_column(meta, "type")),
-            deparse_value(meta_column(meta, "frequency"))),
+            deparse_value(meta_column(meta, "frequency")), sign),
     sprintf("cand <- cli_candidates(%s, reference = %s, meta = meta)",
             data, chr_text(state$reference)))
+}
+
+# A sign chosen in step 2: 1, -1 or NA (automatic); anything else is NA.
+sign_value <- function(v) {
+  if (is.character(v) && length(v) == 1L && v %in% c("1", "-1")) {
+    as.numeric(v)
+  } else {
+    NA_real_
+  }
 }
 
 meta_column <- function(meta, col) {
@@ -943,10 +964,10 @@ app_server <- function(language = "id") {
           if (!is.null(v)) return(v)
         }
         col <- c(rat = "rationale", typ = "type", src = "source",
-                 frq = "frequency")[[prefix]]
+                 frq = "frequency", sgn = "sign")[[prefix]]
         if (!is.null(known) && col %in% names(known) && nm %in% known$name) {
           v <- known[[col]][match(nm, known$name)]
-          return(if (is.na(v)) "" else v)
+          return(if (is.na(v)) "" else as.character(v))
         }
         default
       }
@@ -962,6 +983,9 @@ app_server <- function(language = "id") {
         shiny::selectInput(paste0("frq_", i), NULL, freq_choices,
                            selected = keep(paste0("frq_", i), ""))
       }
+      sign_choices <- stats::setNames(c("", "1", "-1"),
+                                      c(t("sign_auto"), t("sign_pro"),
+                                        t("sign_counter")))
       rows <- lapply(seq_along(cands), function(i) {
         shiny::fluidRow(
           shiny::column(2, shiny::tags$p(shiny::strong(cands[i]),
@@ -971,10 +995,13 @@ app_server <- function(language = "id") {
             selected = keep(paste0("rat_", i),
                             if (example) "early_stage" else ""))),
           shiny::column(2, shiny::selectInput(
+            paste0("sgn_", i), NULL, sign_choices,
+            selected = keep(paste0("sgn_", i), ""))),
+          shiny::column(2, shiny::selectInput(
             paste0("typ_", i), NULL, type_choices,
             selected = keep(paste0("typ_", i), ""))),
-          shiny::column(2, frq_cell(i)),
-          shiny::column(3, shiny::textInput(
+          shiny::column(1, frq_cell(i)),
+          shiny::column(2, shiny::textInput(
             paste0("src_", i), NULL, keep(paste0("src_", i), ""),
             placeholder = t("data_source")))
         )
@@ -1004,11 +1031,13 @@ app_server <- function(language = "id") {
       }
       shiny::tagList(
         ref_row,
+        shiny::helpText(t("sign_help")),
         shiny::fluidRow(shiny::column(2, shiny::strong("")),
                         shiny::column(3, shiny::strong(t("rationale"))),
+                        shiny::column(2, shiny::strong(t("sign"))),
                         shiny::column(2, shiny::strong(t("var_type"))),
-                        shiny::column(2, shiny::strong(t("var_freq"))),
-                        shiny::column(3, shiny::strong(t("data_source")))),
+                        shiny::column(1, shiny::strong(t("var_freq"))),
+                        shiny::column(2, shiny::strong(t("data_source")))),
         rows
       )
     })
@@ -1029,6 +1058,9 @@ app_server <- function(language = "id") {
           if (multi()) return(attr(rv$series[[cands[i]]], "frequency"))
           one_text(input[[paste0("frq_", i)]])
         }, character(1)),
+        sign = vapply(seq_along(cands), function(i) {
+          sign_value(input[[paste0("sgn_", i)]])
+        }, numeric(1)),
         stringsAsFactors = FALSE
       )
       align <- NULL
@@ -1205,8 +1237,10 @@ app_server <- function(language = "id") {
     output$ccf_plot <- shiny::renderPlot({
       need(6L)
       shiny::req(input$as_series %in% names(rv$cycles_used))
+      tab <- rv$assessment@table
       plot_ccf(rv$cycles_used, reference(), input$as_series,
-               rv$spec@ccf_lag_max, tr = p)
+               rv$spec@ccf_lag_max, tr = p,
+               peak = tab$ccf_lag[tab$name == input$as_series])
     })
     output$aligned_plot <- shiny::renderPlot({
       need(6L)

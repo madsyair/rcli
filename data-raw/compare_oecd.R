@@ -22,16 +22,19 @@ if (grepl("A", parts)) {
 }
 d$oecd <- reclass(oecd_classifier())
 d$oecd_min1 <- reclass(oecd_classifier(min_matched = 1))
+d$oecd_median <- reclass(oecd_classifier(conformity = FALSE))
 rate <- function(cls, rows) mean(cls[rows] == d$truth[rows])
 classification <- do.call(rbind, lapply(
   split(seq_len(nrow(d)), list(d$freq, d$noise_sd)), function(i) {
     lead <- i[d$truth[i] == "leading"]
     other <- i[d$truth[i] != "leading"]
     noise <- i[d$truth[i] == "rejected"]
-    do.call(rbind, lapply(c("class", "oecd", "oecd_min1"), function(r) {
+    do.call(rbind, lapply(c("class", "oecd", "oecd_min1", "oecd_median"),
+                          function(r) {
       data.frame(freq = d$freq[i[1]], noise_sd = d$noise_sd[i[1]],
                  rule = c(class = "rcli", oecd = "OECD (min 3 matched)",
-                          oecd_min1 = "OECD (literal)")[[r]],
+                          oecd_min1 = "OECD (min 1 matched)",
+                          oecd_median = "OECD (median lead only)")[[r]],
                  overall = rate(d[[r]], i),
                  leading_found = mean(d[[r]][lead] == "leading"),
                  false_leading = mean(d[[r]][other] == "leading"),

@@ -67,8 +67,14 @@ classification table shows why each series was kept or rejected:
 assessment(res)
 ```
 
-The counter-cyclical series was inverted before it was assessed. The audit
-log records each iteration of the selection loop:
+The counter-cyclical series was inverted before it was assessed. Its
+direction was read from the cross-correlation within a quarter of the
+average reference cycle; a longer window would let the opposite phase of a
+regular cycle decide. Where the direction is known from the economic
+rationale, declare it in a `sign` column of `meta` (1 or -1), as the OECD
+does: leads beyond a quarter of the cycle cannot be told apart from
+inversion by the data. The audit log records each iteration of the
+selection loop:
 
 ```{r audit}
 audit_log(res)[, c("iteration", "action", "components", "ccf_lag", "passed")]
@@ -103,9 +109,10 @@ components(cli_build(cand, alt))
 ## 4. How the classification rules were calibrated
 
 The thresholds were not guessed. The script `data-raw/calibrate_collect.R`
-simulates 60 samples for each frequency and three noise levels, classifies
-every candidate and compares the class with the truth. Two lessons shaped the
-defaults:
+simulates 100 samples for each frequency and three noise levels, classifies
+every candidate and compares the class with the truth (run again for 0.6.0,
+after the changes to the direction rule and the tests). Two lessons shaped
+the defaults:
 
 * the median lead at turning points shrinks towards zero as noise grows,
   whereas the lead of the cross-correlation peak stays unbiased, so the
@@ -124,7 +131,15 @@ acc[, c("freq", "noise_sd", "correct.leading", "correct.rejected",
 With low or moderate noise most candidates are classified correctly, and
 non-leading series are almost never labelled leading. With quarterly data and
 strong noise the power to detect leaders falls: thirty years give only 120
-observations.
+observations. Pure-noise series are then also called coincident or lagging
+more often (up to about 15 percent), which does no harm to the composite.
+
+The tests behind the criteria allow for the persistence of cycles. Phases
+last years, so the usual Newey-West variance made the concordance test reject
+independent cycles 19 to 37 percent of the time at the 5 percent level; with
+the fixed-b variance of Kiefer and Vogelsang (2005) it rejects 6 to 18
+percent (`inst/calibration/test-size.csv`, which also records the size of
+the Pesaran-Timmermann test and of the prediction criteria).
 
 ## 5. Is the in-sample lead real?
 
@@ -149,15 +164,18 @@ checks three groups of criteria:
 
 * **turning points**: the composite meets every leading criterion used to
   classify candidates;
-* **prediction**: the area under the ROC curve of the implied probability of
-  contraction is at least 0.7, the quadratic probability score beats a
-  constant probability, and the Pesaran-Timmermann test finds that the
-  composite's direction predicts the later direction of the reference;
+* **prediction**: out-of-sample probabilities of contraction, each from a
+  logit fitted to earlier periods only, have an area under the ROC curve of
+  at least 0.7 and a quadratic probability score below that of the naive
+  forecast from the same past data, and the Pesaran-Timmermann test finds
+  that the composite's direction predicts the later direction of the
+  reference. The horizon is fixed in advance (the lower end of
+  `target_lead`, 6 months by default), not taken from the composite;
 * **out of sample**: after the cut-off dates the composite still leads, and
   the in-sample lead does not exceed the later lead by more than `min_lead`.
 
 The verdict is *good* when all three groups pass, *acceptable* when the
-in-sample groups pass but the out-of-sample check was not run, and *weak*
+first two groups pass but the out-of-sample check was not run, and *weak*
 otherwise.
 
 ```{r quality}
@@ -241,7 +259,8 @@ the official dates when you have them.
 2012): TRAMO outliers with short forecasts before the filter
 (`tramo_outliers()`, through RJDemetra or, without Java, the regARIMA part
 of X-13), the TRAMO log/level test (`transform = "test"`), the median-lead
-classification (`oecd_classifier()`), lag-shifting (`lag_shift = TRUE`) and
+classification with the OECD criteria of cyclical conformity and missed or
+extra cycles (`oecd_classifier()`), lag-shifting (`lag_shift = TRUE`) and
 the chained average growth of the components (`oecd_aggregate()`).
 `cli_presentation()` returns the three OECD forms of any composite:
 amplitude adjusted, trend restored and its 12-month rate of change.
@@ -258,14 +277,17 @@ calibration candidates give these rates:
 ```{r oecd-classification}
 cmp <- read.csv(system.file("calibration", "oecd-classification.csv",
                             package = "rcli"))
-cmp[cmp$rule != "OECD (literal)", ]
+cmp[cmp$rule != "OECD (min 1 matched)", ]
 ```
 
-The median-lead rule finds a few more true leaders, but it labels a fifth to
-more than a quarter of the non-leading candidates (and up to half of the
-pure-noise series) leading, against at most about 1 percent for the
-default rule. The aggregation experiment points the other way at the end of
-the sample:
+The median lead alone (the rule of rcli 0.5.1, `oecd_classifier(conformity
+= FALSE)`) labels a fifth of the non-leading candidates (and up to almost
+half of the pure-noise series) leading. With the conformity criteria, the
+default since 0.6.0, the OECD rule finds as many true leaders and labels
+only 2 to 8 percent of the others leading; the default rule of the package
+stays at about 1 percent or less, but finds fewer leaders in very noisy
+data. The aggregation experiment points the other way at the end of the
+sample:
 
 ```{r oecd-aggregation}
 read.csv(system.file("calibration", "oecd-aggregation.csv",
@@ -399,9 +421,21 @@ New aggregation methods work the same way with `Aggregator` and
 
 ## References
 
+Estrella, A. and Mishkin, F. S. (1998). Predicting U.S. recessions:
+financial variables as leading indicators. *Review of Economics and
+Statistics*, 80(1), 45–61.
+
 Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
 Indicators*. OECD Publishing, Paris.
+
+Kiefer, N. M. and Vogelsang, T. J. (2005). A new asymptotic theory for
+heteroskedasticity-autocorrelation robust tests. *Econometric Theory*,
+21(6), 1130–1164.
 
 Marcellino, M. (2006). Leading indicators. In G. Elliott, C. W. J. Granger and
 A. Timmermann (eds.), *Handbook of Economic Forecasting*, Vol. 1, 879–960.
 Elsevier.
+
+Pesaran, M. H. and Timmermann, A. (2009). Testing dependence among serially
+correlated multicategory variables. *Journal of the American Statistical
+Association*, 104(485), 325–337.

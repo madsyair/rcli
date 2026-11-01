@@ -5,7 +5,13 @@
 \alias{roc_curve}
 \title{Probability of contraction implied by a composite}
 \usage{
-contraction_probability(composite, reference, spec, horizon = NULL)
+contraction_probability(
+  composite,
+  reference,
+  spec,
+  horizon = NULL,
+  recursive = TRUE
+)
 
 roc_curve(score, outcome)
 }
@@ -16,8 +22,13 @@ roc_curve(score, outcome)
 
 \item{spec}{A \linkS4class{CliSpec}.}
 
-\item{horizon}{Lead \eqn{h} in periods; \code{NULL} uses the lead of the
-cross-correlation peak, as in \code{\link[=cli_validate]{cli_validate()}}.}
+\item{horizon}{Lead \eqn{h} in periods; \code{NULL} uses the horizon of
+\code{\link[=cli_validate]{cli_validate()}} (\code{spec@horizon}, or the lower end of
+\code{spec@target_lead}).}
+
+\item{recursive}{\code{TRUE} for out-of-sample probabilities, each from a model
+fitted to earlier periods only; \code{FALSE} for the fitted values of one
+model estimated on the whole sample (rcli 0.5.1).}
 
 \item{score}{Predicted probabilities (or any score, higher meaning more
 likely contraction).}
@@ -26,15 +37,18 @@ likely contraction).}
 }
 \value{
 \code{contraction_probability()}: a data frame with \code{time},
-\code{contraction} (0/1) and \code{probability} (\code{NA} where the model cannot be
-evaluated), or \code{NULL} when there are too few observations.
+\code{contraction} (0/1), \code{probability} (\code{NA} where the model cannot be
+evaluated, and before the first recursive forecast) and \code{naive} (the
+share of contraction periods in the same estimation sample), or \code{NULL}
+when there are too few observations.
 \code{roc_curve()}: a data frame with \code{threshold}, \code{fpr} and \code{tpr}.
 }
 \description{
 Fits the logit model used by \code{\link[=cli_validate]{cli_validate()}}: the reference contraction
 state (1 between a peak and the next trough) at time \eqn{t} on the change
-of the composite over the quarter ending at \eqn{t - h}. \code{roc_curve()}
-turns the fitted probabilities into the points of the ROC curve.
+of the composite over the quarter ending at \eqn{t - h}, recursively out
+of sample by default (see \code{\link[=cli_validate]{cli_validate()}}). \code{roc_curve()} turns the
+probabilities into the points of the ROC curve.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)

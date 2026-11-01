@@ -177,8 +177,11 @@ setMethod("show", "LeadAssessment", function(object) {
                                       "rejected")))
   cat("<LeadAssessment> ", paste(names(counts), counts, sep = ": ",
                                  collapse = ", "), "\n", sep = "")
+  declared <- sign_sources(tab) == "meta"
   out <- data.frame(
-    name = paste0(tab$name, ifelse(tab$inverted, "*", "")), class = tab$class,
+    name = paste0(tab$name, ifelse(tab$inverted, "*", ""),
+                  ifelse(declared, "^", "")),
+    class = tab$class,
     lead = tab$ccf_lag, median = tab$median_lead,
     led = round(tab$pct_led, 2),
     missed = paste0(tab$missed, "/", tab$n_ref),
@@ -189,7 +192,8 @@ setMethod("show", "LeadAssessment", function(object) {
   print(out, row.names = FALSE)
   cat("lead: cross-correlation lead; median: median lead at turning points;\n",
       "led: share of reference turning points led; conc: concordance\n",
-      if (any(tab$inverted)) "* inverted (counter-cyclical)\n", sep = "")
+      if (any(tab$inverted)) "* inverted (counter-cyclical)\n",
+      if (any(declared)) "^ direction declared in `meta$sign`\n", sep = "")
   invisible(object)
 })
 

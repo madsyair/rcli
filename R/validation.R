@@ -8,16 +8,26 @@
 #'   leading criterion of the specification;
 #' * **probability of contraction**: a logit model of the reference
 #'   contraction state at time \eqn{t} on the change of the composite over
-#'   the quarter ending at \eqn{t - h} (3 months or 1 quarter) gives the
-#'   quadratic probability score (QPS, Diebold and Rudebusch 1989) and the
-#'   area under the ROC curve (Berge and Jordà 2011);
-#' * **direction**: the Pesaran and Timmermann (1992) test that the sign of
-#'   the composite's change predicts the sign of the reference change
-#'   \eqn{h} periods later.
+#'   the quarter ending at \eqn{t - h} (3 months or 1 quarter), estimated
+#'   recursively out of sample (Estrella and Mishkin 1998): the probability
+#'   for \eqn{t} comes from a model fitted to the periods up to
+#'   \eqn{t - h} only, starting after 40 percent of the sample. Its
+#'   quadratic probability score (QPS, Diebold and Rudebusch 1989) is
+#'   compared with the naive forecast, the share of contraction periods up to
+#'   \eqn{t - h}, and its area under the ROC curve (Berge and Jordà 2011)
+#'   is computed from the same forecasts (`n_forecasts` of them). Fitted in
+#'   sample, a logit always beats the naive forecast and says nothing;
+#' * **direction**: the regression form of the Pesaran and Timmermann
+#'   (2009) test that the sign of the composite's change predicts the sign
+#'   of the reference change \eqn{h} periods later, with the fixed-b HAC
+#'   variance of [concordance()], which allows for the strong persistence of
+#'   the signs of cyclical changes.
 #'
-#' The horizon \eqn{h} is `spec@horizon` or, when that is `NA`, the lead of
-#' the composite's cross-correlation peak (at least 1). These are in-sample
-#' measures; use [cli_selection_bias()] for the out-of-sample check.
+#' The horizon \eqn{h} is `spec@horizon` or, when that is `NA`, the lower
+#' end of `spec@target_lead` (6 months or 2 quarters by default), fixed in
+#' advance: a horizon taken from the composite's own cross-correlation would
+#' be chosen from the data being tested. Use [cli_selection_bias()] for the
+#' check of the selection itself.
 #'
 #' @param composite A [CompositeIndex-class].
 #' @param reference The reference [CycleSeries-class].
@@ -31,9 +41,13 @@
 #' Diebold, F. X. and Rudebusch, G. D. (1989). Scoring the leading
 #' indicators. *Journal of Business*, 62(3), 369--391.
 #'
-#' Pesaran, M. H. and Timmermann, A. (1992). A simple nonparametric test of
-#' predictive performance. *Journal of Business and Economic Statistics*,
-#' 10(4), 461--465.
+#' Estrella, A. and Mishkin, F. S. (1998). Predicting U.S. recessions:
+#' financial variables as leading indicators. *Review of Economics and
+#' Statistics*, 80(1), 45--61.
+#'
+#' Pesaran, M. H. and Timmermann, A. (2009). Testing dependence among
+#' serially correlated multicategory variables. *Journal of the American
+#' Statistical Association*, 104(485), 325--337.
 #' @examples
 #' sim <- simulate_cycles(seed = 1)
 #' meta <- data.frame(name = colnames(sim)[-1], rationale = "early_stage")
@@ -57,8 +71,7 @@ cli_validate <- function(composite, reference, spec) {
   comp_tp <- date_turning_points(spec@dater, comp_cs@normalised, name = "CLI")
   row <- assess_pair(reference, ref_tp, comp_cs, comp_tp, spec)$row
   chk <- leading_checks(row, spec)
-  h <- if (is.na(spec@horizon)) max(1, row$ccf_lag, na.rm = TRUE) else
-    spec@horizon
+  h <- validation_horizon(spec)
   prob <- probability_scores(as.numeric(composite@cycle), ref_tp, h,
                              span = max(1, spec@freq / 4))
   pt <- pesaran_timmermann(as.numeric(composite@cycle),
@@ -79,49 +92,93 @@ composite_as_cycle <- function(composite) {
       normalised = composite@cycle, steps = "composite")
 }
 
+# Horizon of the prediction tests: fixed in advance, never taken from the
+# composite being tested.
+validation_horizon <- function(spec) {
+  if (is.na(spec@horizon)) spec@target_lead[1] else spec@horizon
+}
+
 probability_scores <- function(cli, ref_tp, h, span) {
-  pr <- contraction_fit(cli, ref_tp, h, span)
-  if (is.null(pr)) {
-    return(data.frame(horizon = h, qps = NA_real_, qps_naive = NA_real_,
-                      auc = NA_real_))
-  }
+  pr <- contraction_fit(cli, ref_tp, h, span, recursive = TRUE)
+  empty <- data.frame(horizon = h, qps = NA_real_, qps_naive = NA_real_,
+                      auc = NA_real_, n_forecasts = 0L)
+  if (is.null(pr)) return(empty)
   ok <- !is.na(pr$probability)
+  if (!any(ok)) return(empty)
   y <- pr$contraction[ok]
   p <- pr$probability[ok]
   data.frame(horizon = h, qps = 2 * mean((p - y)^2),
-             qps_naive = 2 * mean((mean(y) - y)^2), auc = auc_score(p, y))
+             qps_naive = 2 * mean((pr$naive[ok] - y)^2),
+             auc = auc_score(p, y), n_forecasts = sum(ok))
 }
 
-# Logit of the reference contraction state on the lagged change of the CLI.
-contraction_fit <- function(cli, ref_tp, h, span) {
+# Logit of the reference contraction state on the lagged change of the CLI,
+# fitted once in sample or recursively out of sample (F-07).
+contraction_fit <- function(cli, ref_tp, h, span, recursive = TRUE) {
   y <- 1 - as.numeric(cycle_states(ref_tp))
   change <- cli - shift_vec(cli, as.integer(span))
   x <- shift_vec(change, as.integer(h))
   ok <- !is.na(x) & !is.na(y)
   if (sum(ok) < 20L || length(unique(y[ok])) < 2L) return(NULL)
+  time <- as.numeric(stats::time(ref_tp@series))
+  if (recursive) {
+    rl <- recursive_logit(y, x, h)
+    return(data.frame(time = time, contraction = y,
+                      probability = rl$probability, naive = rl$naive))
+  }
   fit <- suppressWarnings(stats::glm(y[ok] ~ x[ok],
                                      family = stats::binomial()))
   p <- rep(NA_real_, length(y))
   p[ok] <- stats::fitted(fit)
-  data.frame(time = as.numeric(stats::time(ref_tp@series)),
-             contraction = y, probability = p)
+  data.frame(time = time, contraction = y, probability = p,
+             naive = ifelse(ok, mean(y[ok]), NA_real_))
+}
+
+# Recursive out-of-sample logit (F-07): the forecast for t uses the pairs
+# (x_s, y_s) with s <= t - max(h, 1), which are known at t - h when x_t is
+# (for h = 0, the state of t itself is unknown), and starts after `start`
+# of the usable observations. `naive` is the share of contractions in the
+# same training sample.
+recursive_logit <- function(y, x, h, start = 0.4) {
+  n <- length(y)
+  p <- naive <- rep(NA_real_, n)
+  ok <- which(!is.na(x) & !is.na(y))
+  if (length(ok) < 20L) return(list(probability = p, naive = naive))
+  t0 <- ok[ceiling(start * length(ok))]
+  gap <- max(as.integer(h), 1L)
+  for (t in ok[ok > t0]) {
+    train <- ok[ok <= t - gap]
+    if (length(train) < 10L || length(unique(y[train])) < 2L) next
+    fit <- suppressWarnings(stats::glm.fit(cbind(1, x[train]), y[train],
+                                           family = stats::binomial()))
+    p[t] <- stats::plogis(sum(fit$coefficients * c(1, x[t])))
+    naive[t] <- mean(y[train])
+  }
+  list(probability = p, naive = naive)
 }
 
 #' Probability of contraction implied by a composite
 #'
 #' Fits the logit model used by [cli_validate()]: the reference contraction
 #' state (1 between a peak and the next trough) at time \eqn{t} on the change
-#' of the composite over the quarter ending at \eqn{t - h}. `roc_curve()`
-#' turns the fitted probabilities into the points of the ROC curve.
+#' of the composite over the quarter ending at \eqn{t - h}, recursively out
+#' of sample by default (see [cli_validate()]). `roc_curve()` turns the
+#' probabilities into the points of the ROC curve.
 #'
 #' @param composite A [CompositeIndex-class].
 #' @param reference The reference [CycleSeries-class].
 #' @param spec A [CliSpec-class].
-#' @param horizon Lead \eqn{h} in periods; `NULL` uses the lead of the
-#'   cross-correlation peak, as in [cli_validate()].
+#' @param horizon Lead \eqn{h} in periods; `NULL` uses the horizon of
+#'   [cli_validate()] (`spec@horizon`, or the lower end of
+#'   `spec@target_lead`).
+#' @param recursive `TRUE` for out-of-sample probabilities, each from a model
+#'   fitted to earlier periods only; `FALSE` for the fitted values of one
+#'   model estimated on the whole sample (rcli 0.5.1).
 #' @return `contraction_probability()`: a data frame with `time`,
-#'   `contraction` (0/1) and `probability` (`NA` where the model cannot be
-#'   evaluated), or `NULL` when there are too few observations.
+#'   `contraction` (0/1), `probability` (`NA` where the model cannot be
+#'   evaluated, and before the first recursive forecast) and `naive` (the
+#'   share of contraction periods in the same estimation sample), or `NULL`
+#'   when there are too few observations.
 #'   `roc_curve()`: a data frame with `threshold`, `fpr` and `tpr`.
 #' @examples
 #' sim <- simulate_cycles(seed = 1)
@@ -133,21 +190,16 @@ contraction_fit <- function(cli, ref_tp, h, span) {
 #' head(roc_curve(pr$probability, pr$contraction))
 #' @export
 contraction_probability <- function(composite, reference, spec,
-                                    horizon = NULL) {
+                                    horizon = NULL, recursive = TRUE) {
   if (!is(composite, "CompositeIndex") || !is(reference, "CycleSeries")) {
     rcli_abort("Supply a CompositeIndex and the reference CycleSeries.",
                "rcli_error_argument")
   }
   ref_tp <- date_turning_points(spec@dater, reference@normalised,
                                 name = reference@name)
-  if (is.null(horizon)) {
-    cc <- cross_correlation(as.numeric(composite@cycle),
-                            as.numeric(reference@normalised),
-                            spec@ccf_lag_max, min_overlap(spec@freq))
-    horizon <- max(1, cc$lag, na.rm = TRUE)
-  }
+  if (is.null(horizon)) horizon <- validation_horizon(spec)
   contraction_fit(as.numeric(composite@cycle), ref_tp, horizon,
-                  span = max(1, spec@freq / 4))
+                  span = max(1, spec@freq / 4), recursive = recursive)
 }
 
 #' @rdname contraction_probability
@@ -181,22 +233,19 @@ auc_score <- function(score, y) {
   (sum(r[pos]) - n1 * (n1 + 1) / 2) / (n1 * n0)
 }
 
+# Pesaran and Timmermann (2009), regression form: the sign of the reference
+# change on the sign of the composite change h periods earlier, with the
+# fixed-b HAC test of F-06. `stat` is the share of agreeing signs minus its
+# value under independence (as in Pesaran and Timmermann 1992).
 pesaran_timmermann <- function(cli, ref, h) {
   dx <- shift_vec(c(NA, diff(cli)), as.integer(h))
   dy <- c(NA, diff(ref))
   ok <- !is.na(dx) & !is.na(dy) & dx != 0 & dy != 0
-  n <- sum(ok)
-  if (n < 20L) return(list(stat = NA_real_, p_value = NA_real_))
-  px <- mean(dx[ok] > 0)
-  py <- mean(dy[ok] > 0)
-  p_hat <- mean((dx[ok] > 0) == (dy[ok] > 0))
-  p_star <- py * px + (1 - py) * (1 - px)
-  v_p <- p_star * (1 - p_star) / n
-  v_star <- (2 * py - 1)^2 * px * (1 - px) / n +
-    (2 * px - 1)^2 * py * (1 - py) / n +
-    4 * py * px * (1 - py) * (1 - px) / n^2
-  denom <- v_p - v_star
-  if (!(denom > 0)) return(list(stat = NA_real_, p_value = NA_real_))
-  stat <- (p_hat - p_star) / sqrt(denom)
-  list(stat = stat, p_value = stats::pnorm(stat, lower.tail = FALSE))
+  if (sum(ok) < 20L) return(list(stat = NA_real_, p_value = NA_real_))
+  x <- as.numeric(dx[ok] > 0)
+  y <- as.numeric(dy[ok] > 0)
+  px <- mean(x)
+  py <- mean(y)
+  stat <- mean(x == y) - (px * py + (1 - px) * (1 - py))
+  list(stat = stat, p_value = hac_fixed_b_p(y, x))
 }

@@ -1,3 +1,82 @@
+# rcli 0.6.0
+
+The evaluation of candidates and the validation of the composite are
+revised after the review of 1 November 2026 (findings G1, G2, G3 and G5).
+Default results change, so the calibration was run again; the evidence is
+in `data-raw/evaluation_060.R` and `inst/calibration/test-size.csv`.
+
+## Direction of a candidate (G1)
+
+* `meta` in `cli_candidates()` takes a column `sign`: 1 (procyclical), -1
+  (countercyclical) or `NA` (from the data). A declared sign is used as
+  given, as the OECD sets the direction from the economic rationale. The
+  assessment table records `sign_source`, `print()` marks declared signs
+  with `^`, and the interface has a direction entry in step 2.
+* Where no sign is declared, it is the sign of the strongest
+  cross-correlation within a quarter of the average reference cycle,
+  instead of within +/- `ccf_lag_max`. With regular cycles the old rule
+  inverted true leaders about half of the time (a 6-month lead on a 4-year
+  cycle correlates almost as strongly, with opposite sign, at a lag of 18
+  months).
+* The cross-correlation lead is the peak of the oriented correlation within
+  half a reference cycle, so that the same phase one cycle later is not
+  taken for it.
+
+## Tests that allow for persistent cycles (G3, G5)
+
+* The concordance test uses a Bartlett HAC variance with a fixed bandwidth
+  of 30 percent of the sample and the fixed-b critical values of Kiefer and
+  Vogelsang (2005). The Newey-West bandwidth of earlier versions rejected
+  independent cycles 19 to 37 percent of the time at the 5 percent level;
+  the new test 6 to 18 percent (the upper end when the shift is the median
+  lead chosen from the same data). `concordance()` reports a one-sided
+  p-value.
+* The Pesaran-Timmermann test of `cli_validate()` and `cci_validate()` uses
+  the regression form of Pesaran and Timmermann (2009) with the same
+  variance.
+* The probability of contraction of `cli_validate()` comes from a recursive
+  out-of-sample logit (Estrella and Mishkin 1998): the QPS is compared with
+  a naive forecast from the same past data, and the AUC is computed from
+  the forecasts (`n_forecasts`). In sample, a logit always beat the naive
+  forecast. `contraction_probability(recursive = FALSE)` gives the old
+  in-sample fit.
+* `horizon = NA` now means the lower end of `target_lead` (6 months or 2
+  quarters), fixed in advance, instead of the lag of the composite's own
+  cross-correlation peak.
+
+## OECD classifier (G2)
+
+* `oecd_classifier(conformity = TRUE)`, the new default, also requires the
+  OECD criteria of cyclical conformity and missing or extra cycles: a
+  positive cross-correlation peak, few missed and extra turning points and
+  significant concordance. Without them the median lead alone labelled
+  about half of all independent cycles leading. `conformity = FALSE` (also
+  in the interface) gives the 0.5.1 rule; classifiers saved before 0.6.0
+  keep it.
+* `oecd_spec()` takes a `classifier` argument.
+* The default matching window stays asymmetric: a symmetric one did not
+  remove the bias of the median lead of independent series and lost true
+  leaders (`inst/calibration/lead-window.csv`).
+
+## Calibration
+
+* The calibration harness was run again (100 samples per frequency and
+  noise level). Classification accuracy is as before; true leaders are
+  found slightly more often, false "leading" labels stay at about 1 percent
+  or less, and in very noisy quarterly data pure-noise series are called
+  coincident or lagging somewhat more often (up to about 15 percent, from
+  7 percent).
+* With the conformity criteria, `oecd_classifier()` labels 2 to 8 percent of
+  the non-leading calibration candidates leading, against 19 to 23 percent
+  with the median lead alone (`inst/calibration/oecd-classification.csv`).
+
+## Documentation
+
+* The Toda-Yamamoto test on filtered cycles rejects independent series
+  somewhat more often than its nominal level; this is noted in
+  `?cli_assess`.
+* `?concordance` reports the size of the new test in simulations.
+
 # rcli 0.5.1
 
 Corrections from the review of 1 November 2026. Default settings are

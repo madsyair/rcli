@@ -18,10 +18,10 @@
          Granger causality p-value      8.9e-13 < 0.05            pass  
       
         prediction
-         criterion                   value   threshold       status
-         area under the ROC curve    0.944   >= 0.7          pass  
-         quadratic probability score 0.187   < 0.497 (naive) pass  
-         Pesaran-Timmermann p-value  6.5e-35 < 0.05          pass  
+         criterion                   value threshold       status
+         area under the ROC curve    0.86  >= 0.7          pass  
+         quadratic probability score  0.3  < 0.526 (naive) pass  
+         Pesaran-Timmermann p-value  1e-04 < 0.05          pass  
       
         information
          criterion                         value threshold status

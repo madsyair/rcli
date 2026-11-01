@@ -22,12 +22,25 @@ the reference series and computes: the number of reference turning points
 it can be compared with, matched, missed and extra turning points; the
 median, mean and standard deviation of the lead; the share of reference
 turning points it leads; the lag and value of the peak cross-correlation;
-the concordance index at the median lead with a Newey-West test; and the
-p-value of a Toda-Yamamoto test that the candidate Granger-causes the
-reference. A candidate whose peak cross-correlation is negative is
-inverted and assessed again.
+the concordance index at the median lead with a fixed-b test (see
+\code{\link[=concordance]{concordance()}}); and the p-value of a Toda-Yamamoto test that the
+candidate Granger-causes the reference.
 }
 \details{
+Countercyclical candidates are inverted first. The direction is the
+\code{sign} given in the metadata of \code{\link[=cli_candidates]{cli_candidates()}} (the OECD sets it from
+the economic rationale); where it is missing, it is the sign of the
+strongest cross-correlation at lags up to a quarter of the average
+reference cycle. A longer window would let the opposite-phase peak of a
+regular cycle decide: a series leading 6 months on a 4-year cycle
+correlates almost as strongly, with opposite sign, at a lag of 18 months.
+Leads beyond a quarter of the cycle cannot be told apart from inversion by
+the data, so declare the sign for such series. When no sign can be read
+the series is not inverted. The column \code{sign_source} records where the
+direction came from. The lead of the cross-correlation is then the peak
+of the oriented correlation within half a reference cycle (and
+\code{ccf_lag_max}), since the same phase recurs a cycle later.
+
 The rule is the \linkS4class{Classifier} of the specification. With the default
 \code{\link[=rcli_classifier]{rcli_classifier()}}, a candidate is \strong{leading} when it has at least
 three matched turning
@@ -40,8 +53,11 @@ concordance is significantly above the value under independence, and it
 Granger-causes the reference at level \code{alpha}. The Granger criterion was
 added after the Monte Carlo calibration showed it cuts false "leading"
 labels of pure-noise series by a factor of about ten at almost no loss of
-power. \strong{Coincident} and \strong{lagging} series pass the matching, missed,
-extra and concordance criteria with a cross-correlation peak within
+power. On cycles from a two-sided filter the Toda-Yamamoto test is itself
+somewhat liberal (about 8 to 10 percent rejections of independent series
+at the 5 percent level), so it is one criterion among several, not a test
+to read alone. \strong{Coincident} and \strong{lagging} series pass the matching,
+missed, extra and concordance criteria with a cross-correlation peak within
 \code{coincident_band} or at a lag of at least \code{min_lead}. All others are
 \strong{rejected}; the \code{reasons} column lists the leading criteria they failed.
 

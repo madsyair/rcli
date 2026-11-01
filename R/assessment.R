@@ -58,7 +58,8 @@ match_turning_points <- function(ref, cand, window, end_exclusion) {
 # Smallest overlap of a correlation: two years of data.
 min_overlap <- function(freq) as.integer(2L * freq)
 
-cross_correlation <- function(cand, ref, lag_max, min_obs = 24L) {
+cross_correlation <- function(cand, ref, lag_max, min_obs = 24L,
+                              peak_max = lag_max) {
   lags <- -lag_max:lag_max
   r <- vapply(lags, function(k) {
     a <- shift_vec(cand, k)
@@ -70,47 +71,126 @@ cross_correlation <- function(cand, ref, lag_max, min_obs = 24L) {
   if (all(is.na(r))) {
     return(list(lag = NA_real_, r = NA_real_, lags = lags, all = r))
   }
-  best <- which.max(abs(r))
+  # the peak of the correlation itself, since series are oriented before,
+  # searched within half a reference cycle so that the same peak one cycle
+  # earlier cannot be taken for it (F-05, Proposition 5)
+  inside <- abs(lags) <= peak_max & !is.na(r)
+  if (!any(inside)) {
+    return(list(lag = NA_real_, r = NA_real_, lags = lags, all = r))
+  }
+  best <- which(inside)[which.max(r[inside])]
   list(lag = lags[best], r = r[best], lags = lags, all = r)
 }
 
-# Newey-West test of the slope in a regression of y on x.
-hac_slope_p <- function(y, x) {
+# Sign of a series (F-05): the sign of the strongest cross-correlation with
+# the reference at lags |k| <= k_max. With k_max a quarter of the reference
+# cycle, the opposite-phase peak of a regular cycle lies outside the window.
+orient_sign <- function(r, lags, k_max) {
+  inside <- abs(lags) <= k_max & !is.na(r)
+  if (!any(inside)) return(NA_real_)
+  ri <- r[inside]
+  s <- sign(ri[which.max(abs(ri))])
+  if (s == 0) NA_real_ else s
+}
+
+# Mean distance between consecutive turning points of the same type: the
+# average length of the reference cycle in periods (NA when there are not
+# two peaks or two troughs).
+reference_period <- function(tp) {
+  d <- c(diff(tp@index[tp@type == "peak"]),
+         diff(tp@index[tp@type == "trough"]))
+  if (length(d) == 0L) NA_real_ else mean(d)
+}
+
+# Largest lag at which the sign is read: a quarter of the reference cycle
+# (at least 1), and the whole cross-correlation range when the cycle cannot
+# be measured. A wider window would let the opposite-phase peak in.
+sign_lag_max <- function(ref_tp, spec) {
+  p <- reference_period(ref_tp)
+  if (is.na(p)) return(spec@ccf_lag_max)
+  min(spec@ccf_lag_max, max(1, floor(p / 4)))
+}
+
+# Largest lag at which the lead of the cross-correlation is read: half the
+# reference cycle, since the same phase recurs one cycle later.
+peak_lag_max <- function(ref_tp, spec) {
+  p <- reference_period(ref_tp)
+  if (is.na(p)) return(spec@ccf_lag_max)
+  min(spec@ccf_lag_max, max(1, floor(p / 2)))
+}
+
+# One-sided test that the slope of y on x is positive, with a Bartlett HAC
+# variance of fixed bandwidth b n (b = 0.3) and the fixed-b null distribution
+# of Kiefer and Vogelsang (2005) (F-06).
+hac_fixed_b_p <- function(y, x, b = 0.3) {
   n <- length(y)
   if (n < 10L || stats::var(x) == 0 || stats::var(y) == 0) return(NA_real_)
   xm <- cbind(1, x)
   fit <- stats::lm.fit(xm, y)
   u <- xm * fit$residuals
-  bw <- floor(4 * (n / 100)^(2 / 9))
+  m <- b * n
   s <- crossprod(u)
-  if (bw >= 1L) {
-    for (l in seq_len(bw)) {
-      g <- crossprod(u[(l + 1L):n, , drop = FALSE],
-                     u[1:(n - l), , drop = FALSE])
-      s <- s + (1 - l / (bw + 1)) * (g + t(g))
-    }
+  for (l in seq_len(min(ceiling(m) - 1L, n - 1L))) {
+    g <- crossprod(u[(l + 1L):n, , drop = FALSE],
+                   u[1:(n - l), , drop = FALSE])
+    s <- s + (1 - l / m) * (g + t(g))
   }
   bread <- solve(crossprod(xm))
   v <- bread %*% s %*% bread
-  if (!(v[2, 2] > 0)) return(NA_real_)
-  2 * stats::pnorm(-abs(fit$coefficients[2] / sqrt(v[2, 2])))
+  beta <- fit$coefficients[[2]]
+  if (!(v[2, 2] > 0)) {
+    # an exact fit: y is a linear function of x
+    if (max(abs(fit$residuals)) < 1e-12 && beta != 0) {
+      return(fixed_b_p(sign(beta) * Inf))
+    }
+    return(NA_real_)
+  }
+  fixed_b_p(beta / sqrt(v[2, 2]))
+}
+
+# Upper-tail probability of the fixed-b t statistic (b = 0.3), from the
+# table simulated by data-raw/fixed_b_table.R; symmetric, and capped at the
+# smallest tabulated probability.
+fixed_b_p <- function(t) {
+  tab <- fixed_b_null
+  if (is.na(t)) return(NA_real_)
+  a <- abs(t)
+  up <- if (a >= max(tab$t)) {
+    min(tab$upper)
+  } else {
+    stats::approx(c(0, tab$t), c(0.5, tab$upper), a)$y
+  }
+  if (t >= 0) up else 1 - up
 }
 
 #' Concordance index of two cycles
 #'
 #' Harding and Pagan (2002) concordance: the share of periods in which the
 #' two series are in the same phase, compared with its value under
-#' independence, and a Newey-West test of no synchronisation (Harding and
-#' Pagan 2006).
+#' independence, and a one-sided test of no synchronisation. The test is the
+#' regression of Harding and Pagan (2006) with a Bartlett HAC variance of
+#' fixed bandwidth (30 percent of the sample) and the fixed-b critical values
+#' of Kiefer and Vogelsang (2005), which keep the size close to nominal for
+#' phases lasting years, where the usual Newey-West bandwidth rejects far too
+#' often. In simulations of independent cycles over 30 years it rejects
+#' about 6 to 10 percent at the 5 percent level (Newey-West: 11 to 19
+#' percent); with about 120 observations and phases of two years, about 11
+#' percent. When `shift` is chosen from the same data (for instance the
+#' median lead), it is more liberal still (11 to 18 percent). See
+#' `inst/calibration/test-size.csv`.
 #'
 #' @param x,y [TurningPoints-class] objects of the same frequency and length.
 #' @param shift Periods by which `x` is moved forward before comparing (use
 #'   the lead of `x`).
 #' @return A list with `index`, `expected` (value under independence) and
-#'   `p_value`.
+#'   `p_value` (one-sided: more concordant than under independence).
 #' @references
 #' Harding, D. and Pagan, A. (2006). Synchronization of cycles. *Journal of
 #' Econometrics*, 132(1), 59--79.
+#'
+#' Kiefer, N. M. and Vogelsang, T. J. (2005). A new asymptotic theory for
+#' heteroskedasticity-autocorrelation robust tests. *Econometric Theory*,
+#' 21(6), 1130--1164.
 #' @examples
 #' t <- 1:240
 #' a <- ts(sin(2 * pi * t / 48), frequency = 12)
@@ -135,7 +215,7 @@ concordance <- function(x, y, shift = 0) {
   mx <- mean(sx)
   my <- mean(sy)
   list(index = index, expected = mx * my + (1 - mx) * (1 - my),
-       p_value = hac_slope_p(sy, sx))
+       p_value = hac_fixed_b_p(sy, sx))
 }
 
 lag_matrix <- function(x, lags) {
@@ -206,7 +286,8 @@ assess_pair <- function(ref_cs, ref_tp, cand_cs, cand_tp, spec) {
   med <- if (length(leads) > 0L) stats::median(leads) else NA_real_
   ccf <- cross_correlation(as.numeric(cand_cs@normalised),
                            as.numeric(ref_cs@normalised), spec@ccf_lag_max,
-                           min_overlap(spec@freq))
+                           min_overlap(spec@freq),
+                           peak_max = peak_lag_max(ref_tp, spec))
   shift <- if (!is.na(med)) med else if (!is.na(ccf$lag)) ccf$lag else 0
   conc <- concordance(cand_tp, ref_tp, shift = shift)
   row <- data.frame(
@@ -295,12 +376,25 @@ oecd_band <- function(classifier, spec) {
     spec@freq / 12
 }
 
+# OECD criteria of cyclical conformity and missing or extra cycles
+# (Gyomai and Guidetti 2012, p. 8); none for classifiers without them.
+conformity_checks <- function(classifier, row, spec) {
+  if (!oecd_conformity(classifier)) return(logical(0))
+  share <- function(k) if (row$n_ref > 0L) k / row$n_ref else Inf
+  c(ccf = isTRUE(row$ccf_r > 0),
+    missed = share(row$missed) <= spec@max_missed,
+    extra = share(row$extra) <= spec@max_extra,
+    concordance = isTRUE(row$concordance_p < spec@alpha) &&
+      isTRUE(row$concordance > row$concordance_expected))
+}
+
 #' @rdname Classifier-class
 setMethod("leading_criteria", "OecdClassifier", function(classifier, row,
                                                          spec) {
   band <- oecd_band(classifier, spec)
   c(matched = isTRUE(row$n_matched >= classifier@min_matched),
-    lead = isTRUE(row$median_lead >= band[["coincident"]]))
+    lead = isTRUE(row$median_lead >= band[["coincident"]]),
+    conformity_checks(classifier, row, spec))
 })
 
 #' @rdname Classifier-class
@@ -310,6 +404,11 @@ setMethod("classify_candidate", "OecdClassifier", function(classifier, row,
   lead <- row$median_lead
   if (!isTRUE(row$n_matched >= classifier@min_matched) || is.na(lead)) {
     return(list(class = "rejected", reasons = "matched"))
+  }
+  conf <- conformity_checks(classifier, row, spec)
+  if (!all(conf)) {
+    return(list(class = "rejected",
+                reasons = paste(names(conf)[!conf], collapse = ", ")))
   }
   if (lead >= band[["coincident"]]) {
     reasons <- if (lead > band[["long"]]) {
@@ -325,6 +424,25 @@ setMethod("classify_candidate", "OecdClassifier", function(classifier, row,
   list(class = "coincident", reasons = "lead")
 })
 
+# Where the direction came from; assessments made before 0.6.0 have none.
+sign_sources <- function(tab) {
+  if ("sign_source" %in% names(tab)) tab$sign_source else
+    rep("data", nrow(tab))
+}
+
+# Signs declared in `meta$sign` (NA where the data decide), by candidate;
+# candidate sets saved before 0.6.0 have no sign column.
+declared_signs <- function(candidates) {
+  nms <- candidate_names(candidates)
+  meta <- candidates@meta
+  s <- if ("sign" %in% names(meta)) {
+    as.numeric(meta$sign[match(nms, meta$name)])
+  } else {
+    rep(NA_real_, length(nms))
+  }
+  stats::setNames(as.list(s), nms)
+}
+
 invert_cycle <- function(cs) {
   cs@cycle <- -cs@cycle
   cs@normalised <- -cs@normalised
@@ -339,10 +457,23 @@ invert_cycle <- function(cs) {
 #' it can be compared with, matched, missed and extra turning points; the
 #' median, mean and standard deviation of the lead; the share of reference
 #' turning points it leads; the lag and value of the peak cross-correlation;
-#' the concordance index at the median lead with a Newey-West test; and the
-#' p-value of a Toda-Yamamoto test that the candidate Granger-causes the
-#' reference. A candidate whose peak cross-correlation is negative is
-#' inverted and assessed again.
+#' the concordance index at the median lead with a fixed-b test (see
+#' [concordance()]); and the p-value of a Toda-Yamamoto test that the
+#' candidate Granger-causes the reference.
+#'
+#' Countercyclical candidates are inverted first. The direction is the
+#' `sign` given in the metadata of [cli_candidates()] (the OECD sets it from
+#' the economic rationale); where it is missing, it is the sign of the
+#' strongest cross-correlation at lags up to a quarter of the average
+#' reference cycle. A longer window would let the opposite-phase peak of a
+#' regular cycle decide: a series leading 6 months on a 4-year cycle
+#' correlates almost as strongly, with opposite sign, at a lag of 18 months.
+#' Leads beyond a quarter of the cycle cannot be told apart from inversion by
+#' the data, so declare the sign for such series. When no sign can be read
+#' the series is not inverted. The column `sign_source` records where the
+#' direction came from. The lead of the cross-correlation is then the peak
+#' of the oriented correlation within half a reference cycle (and
+#' `ccf_lag_max`), since the same phase recurs a cycle later.
 #'
 #' The rule is the [Classifier-class] of the specification. With the default
 #' [rcli_classifier()], a candidate is **leading** when it has at least
@@ -356,8 +487,11 @@ invert_cycle <- function(cs) {
 #' Granger-causes the reference at level `alpha`. The Granger criterion was
 #' added after the Monte Carlo calibration showed it cuts false "leading"
 #' labels of pure-noise series by a factor of about ten at almost no loss of
-#' power. **Coincident** and **lagging** series pass the matching, missed,
-#' extra and concordance criteria with a cross-correlation peak within
+#' power. On cycles from a two-sided filter the Toda-Yamamoto test is itself
+#' somewhat liberal (about 8 to 10 percent rejections of independent series
+#' at the 5 percent level), so it is one criterion among several, not a test
+#' to read alone. **Coincident** and **lagging** series pass the matching,
+#' missed, extra and concordance criteria with a cross-correlation peak within
 #' `coincident_band` or at a lag of at least `min_lead`. All others are
 #' **rejected**; the `reasons` column lists the leading criteria they failed.
 #'
@@ -399,19 +533,29 @@ cli_assess <- function(candidates, spec, cycles = NULL) {
   rows <- list()
   matches <- list()
   inverted <- character(0)
+  declared <- declared_signs(candidates)
+  k_sign <- sign_lag_max(ref_tp, spec)
+  ref_v <- as.numeric(ref_cs@normalised)
   for (nm in candidate_names(candidates)) {
     cs <- cycles[[nm]]
-    tp <- date_turning_points(spec@dater, cs@normalised, name = nm)
-    res <- assess_pair(ref_cs, ref_tp, cs, tp, spec)
-    is_inv <- isTRUE(res$row$ccf_r < 0)
+    s <- declared[[nm]]
+    source <- "meta"
+    if (is.na(s)) {
+      source <- "data"
+      cc <- cross_correlation(as.numeric(cs@normalised), ref_v,
+                              spec@ccf_lag_max, min_overlap(spec@freq))
+      s <- orient_sign(cc$all, cc$lags, k_sign)
+    }
+    is_inv <- isTRUE(s < 0)
     if (is_inv) {
       cs <- invert_cycle(cs)
-      tp <- date_turning_points(spec@dater, cs@normalised, name = nm)
-      res <- assess_pair(ref_cs, ref_tp, cs, tp, spec)
       inverted <- c(inverted, nm)
     }
+    tp <- date_turning_points(spec@dater, cs@normalised, name = nm)
+    res <- assess_pair(ref_cs, ref_tp, cs, tp, spec)
     cls <- classify_row(res$row, spec)
     res$row$inverted <- is_inv
+    res$row$sign_source <- source
     res$row$class <- cls$class
     res$row$reasons <- cls$reasons
     rows[[nm]] <- res$row
@@ -421,7 +565,7 @@ cli_assess <- function(candidates, spec, cycles = NULL) {
   warn_short_tests(tab, spec)
   meta <- candidates@meta
   tab$rationale <- meta$rationale[match(tab$name, meta$name)]
-  first <- c("name", "class", "rationale", "inverted")
+  first <- c("name", "class", "rationale", "inverted", "sign_source")
   tab <- tab[, c(first, setdiff(names(tab), c(first, "reasons")), "reasons")]
   rownames(tab) <- NULL
   new("LeadAssessment", table = tab, matches = matches, inverted = inverted)

@@ -9,6 +9,7 @@ oecd_spec(
   seasonal_adjust = FALSE,
   holidays = list(),
   engine = c("auto", "tramo", "x13"),
+  classifier = oecd_classifier(),
   ...
 )
 }
@@ -19,6 +20,9 @@ quarterly data the month thresholds are converted to quarters.}
 \item{seasonal_adjust, holidays}{See \code{\link[=cli_spec]{cli_spec()}}.}
 
 \item{engine}{Engine of \code{\link[=tramo_outliers]{tramo_outliers()}} and of the log/level test.}
+
+\item{classifier}{An OECD \linkS4class{Classifier}, by default
+\code{\link[=oecd_classifier]{oecd_classifier()}}.}
 
 \item{...}{Further arguments of \code{\link[=cli_spec]{cli_spec()}}.}
 }
@@ -39,8 +43,9 @@ estimates (\code{\link[=tramo_outliers]{tramo_outliers()}});
 \item cycle: double Hodrick-Prescott filter, 12 to 120 months
 (\code{\link[=hp_double_filter]{hp_double_filter()}});
 \item turning points: simplified Bry-Boschan (\code{\link[=bry_boschan]{bry_boschan()}});
-\item classification: median lead, coincident within +/- 2 months
-(\code{\link[=oecd_classifier]{oecd_classifier()}});
+\item classification: median lead, coincident within +/- 2 months, with
+cyclical conformity and few missed or extra cycles
+(\code{\link[=oecd_classifier]{oecd_classifier()}}; \code{classifier = oecd_classifier(conformity = FALSE)} for the median lead alone, as in rcli 0.5.1);
 \item lag-shifting: the leads of the components aligned (\code{lag_shift = TRUE});
 \item aggregation: chained average growth with the 60 percent rule
 (\code{\link[=oecd_aggregate]{oecd_aggregate()}});

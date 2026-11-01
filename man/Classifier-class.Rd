@@ -25,7 +25,7 @@
 \usage{
 rcli_classifier()
 
-oecd_classifier(coincident = 2, long = 8, min_matched = 3)
+oecd_classifier(coincident = 2, long = 8, min_matched = 3, conformity = TRUE)
 
 classify_candidate(classifier, row, spec)
 
@@ -58,6 +58,9 @@ quality_criteria(classifier, row, spec)
 leading" (OECD: 8).}
 
 \item{min_matched}{Minimum number of matched turning points.}
+
+\item{conformity}{Require cyclical conformity and few missed or extra
+cycles (see above).}
 
 \item{classifier}{A \code{Classifier}.}
 
@@ -92,10 +95,17 @@ or medium" up to \code{long} months, "longer" beyond) and lagging at
 converted to quarters for quarterly data. The OECD sets no minimum
 number of turning points; \code{min_matched} (default 3) is the smallest
 number of matched turning points from which a median lead is computed,
-set it to 1 to follow the OECD table literally. The other statistics
-(mean lead and its standard deviation, cross-correlation peak, missed
-and extra turning points) are reported for judgement, as in the OECD
-evaluation step, but do not enter the class.
+set it to 1 to follow the OECD table literally. With \code{conformity = TRUE} (the default since 0.6.0) the OECD evaluation criteria of cyclical
+conformity and missing or extra cycles (Gyomai and Guidetti 2012, p. 8)
+are required as well: a positive cross-correlation peak, at most
+\code{max_missed} missed and \code{max_extra} extra turning points, and a
+concordance significantly above its value under independence. Without
+them the median lead alone labels about half of all independent cycles
+as leading; with them about one in ten (monthly) to one in five
+(quarterly) in the simulations of \code{inst/calibration/lead-window.csv},
+since the OECD rule has no test of predictive content such as the
+Granger test of \code{\link[=rcli_classifier]{rcli_classifier()}} (0 to 3 percent). \code{conformity = FALSE} gives the rule of rcli 0.5.1; the other statistics are then
+reported for judgement only.
 }
 
 New rules are added by defining a subclass of \code{Classifier} and methods

@@ -63,7 +63,7 @@ test_that("contraction probabilities and ROC curve", {
   cyc <- cli_cycles(cand, spec)
   ci <- cli_composite(cyc, c("lead_6", "lead_3"), spec, cyc$reference)
   pr <- contraction_probability(ci, cyc$reference, spec)
-  expect_named(pr, c("time", "contraction", "probability"))
+  expect_named(pr, c("time", "contraction", "probability", "naive"))
   ok <- !is.na(pr$probability)
   expect_true(all(pr$probability[ok] >= 0 & pr$probability[ok] <= 1))
   roc <- roc_curve(pr$probability, pr$contraction)
