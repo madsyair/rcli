@@ -9,8 +9,8 @@
 #'   compared with the de-trended reference series it reads as an output
 #'   gap ("growth cycle");
 #' * **trend restored**: the long-term trend of the reference series times
-#'   the amplitude-adjusted CLI divided by 100, comparable with the original
-#'   reference series ("business cycle"). The trend is the Hodrick-Prescott
+#'   the amplitude-adjusted CLI divided by 100, comparable with the level of
+#'   the reference series ("business cycle"). The trend is the Hodrick-Prescott
 #'   trend with the cut-off of the specification's double HP filter (120
 #'   months by default), taken from the transformed reference series and
 #'   extended linearly beyond the last reference observation;
@@ -23,6 +23,11 @@
 #' in the amplitude of the composite, and the trend is restored by adding
 #' them to the trend rather than by multiplying.
 #'
+#' The reference series in the output is the transformed one: seasonally
+#' adjusted and cleaned of outliers as in the specification, in the units
+#' of the original data, so that neither seasonality nor spikes enter the
+#' comparison.
+#'
 #' Peaks and troughs differ between forms: trend restoration moves peaks
 #' later and troughs earlier, and peaks of the rate of change mark
 #' inflection points of the amplitude-adjusted series, so the forms should
@@ -33,7 +38,8 @@
 #'   composite of `x`, for instance one chosen by hand with
 #'   [cli_composite()] from `cycles(x)`.
 #' @return A data frame with `time` and the columns `amplitude_adjusted`,
-#'   `trend_restored`, `rate_of_change`, `reference`,
+#'   `trend_restored`, `rate_of_change`, `reference` (seasonally adjusted
+#'   and cleaned of outliers),
 #'   `reference_amplitude_adjusted` (the reference without trend, in the
 #'   units of `amplitude_adjusted`), `reference_trend` and
 #'   `reference_rate_of_change`.
@@ -67,7 +73,9 @@ cli_presentation <- function(x, composite = NULL) {
   logged <- is_logged(ref)
   trend <- reference_trend(ref, x@spec)
   trend_level <- if (logged) exp(trend) else trend
-  orig <- as.numeric(ref@original)
+  # the reference as seasonally adjusted and cleaned of outliers, so that
+  # neither seasonality nor spikes enter the comparison
+  orig <- cycle_level(ref)
   if (logged) {
     # percent deviation from trend, as the amplitude of a logged reference
     tr <- trend_level * amp_adj / 100
@@ -92,6 +100,13 @@ cli_presentation <- function(x, composite = NULL) {
 }
 
 is_logged <- function(cs) any(grepl("^log", cs@steps))
+
+# Level of the transformed series of a CycleSeries: seasonally adjusted and
+# cleaned of outliers, in the units of the original data.
+cycle_level <- function(cs) {
+  v <- as.numeric(cs@transformed)
+  if (is_logged(cs)) exp(v) else v
+}
 
 rate_of_change <- function(v, lag) {
   prev <- shift_vec(v, as.integer(lag))

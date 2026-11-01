@@ -27,7 +27,8 @@
 | INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
 | INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | selesai (G1–G8) |
 | INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | selesai (G1–G8; PR #4) |
-| INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8) |
+| INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8; PR #5) |
+| INC-11 | Perbaikan cacat hasil kajian menyeluruh (0.5.1) | FR-011 | — | selesai (PR) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -71,8 +72,16 @@
 | 2026-11-01 06:58 | INC-10 | A6 | G6 | APPROVE putaran 3 (R9–R13 tertutup; R14–R15 minor, R16–R18 nit) | 3/3 | A5 R14–R18, gerbang penuh |
 | 2026-11-01 07:00 | INC-10 | A5 | G4–G5 | R14–R18 ditindaklanjuti | 3/3 | gerbang penuh, PR |
 | 2026-11-01 10:40 | INC-10 | A0 | G1–G8 | LOLOS (cakupan 97,4%; check 0/0); uji peramban 168 lolos | 3/3 | PR |
+| 2026-11-01 19:05 | — | A6 ×4 | — | kajian menyeluruh (teori, kode, pedoman); Project `claude/kajian-menyeluruh-rcli-0.5.0.md` | — | 0.5.1 |
+| 2026-11-01 19:25 | INC-11 | A1, A4, A5 | G1, G4, G5 | merah 27 kegagalan → hijau | 1/3 | A6 |
+| 2026-11-01 21:20 | INC-11 | A6 | G6 | CHANGES-REQUESTED (R1 uji G7 tidak merah; R2 laju TC X-13 triwulanan; R3 aturan ujung akhir) | 1/3 | A5 perbaiki |
+| 2026-11-01 21:30 | INC-11 | A5 | G4–G5 | R1–R13 ditindaklanjuti (ujung akhir tidak disentuh; laju TC per mesin) | 2/3 | A6 putaran 2 |
+| 2026-11-01 21:42 | INC-11 | A6 | G6 | APPROVE putaran 2 (R14 minor, R15–R17 nit) | 2/3 | A5 R14–R17, gerbang penuh |
+| 2026-11-01 21:45 | INC-11 | A5 | G4–G5 | R14–R17 ditindaklanjuti | 2/3 | gerbang penuh, PR |
+| 2026-11-01 22:30 | INC-11 | A0 | G1–G8 | LOLOS (cakupan 97,3%; check 0/0, 2 catatan) | 2/3 | PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
-- Di luar increment 0.2.1 (temuan A6): dengan `lag_shift = TRUE` (bawaan `oecd_spec()`), uji bias seleksi membandingkan komposit tergeser di dalam sampel dengan komposit tanpa geser sesudah titik potong, sehingga `lead_gap` (R/selection-bias.R) bias. Ada sejak 0.1.3; diusulkan sebagai isu terpisah.
+- (Ditutup di 0.5.1, AC-FR-011.6.) Di luar increment 0.2.1 (temuan A6): dengan `lag_shift = TRUE` (bawaan `oecd_spec()`), uji bias seleksi membandingkan komposit tergeser di dalam sampel dengan komposit tanpa geser sesudah titik potong, sehingga `lead_gap` (R/selection-bias.R) bias. Ada sejak 0.1.3; diusulkan sebagai isu terpisah.
 - Di luar increment 0.5.0 (temuan A6 putaran 3): pesan websocket buatan dapat mengisi `datapath` isian berkas dengan jalur sembarang, sehingga server membaca CSV yang dapat diakses proses R. Penting bila GUI di-hosting untuk umum; usul: pastikan `datapath` berada di bawah direktori unggahan Shiny.
+- Ditunda ke 0.6.0 (kajian menyeluruh): G1 inversi palsu, G2 jendela pemasangan asimetris, G3 *bandwidth* uji konkordansi, G5 kriteria prediksi di dalam sampel; memerlukan kalibrasi ulang.

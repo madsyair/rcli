@@ -51,8 +51,9 @@ change (\code{\link[=cli_presentation]{cli_presentation()}}).
 Seasonal adjustment, which the OECD applies only to series that are not
 already adjusted at the source, uses X-13ARIMA-SEATS (the successor of
 X-12-ARIMA, with SEATS) when \code{seasonal_adjust = TRUE}. Quarterly
-components are interpolated linearly by \code{\link[=cli_align]{cli_align()}} with
-\code{method = "linear"}, as the OECD does. The selection loop of
+candidates are always interpolated linearly by \code{\link[=cli_align]{cli_align()}}, at the
+month the OECD uses (\code{method} only concerns the reference series). The
+selection loop of
 \code{\link[=cli_build]{cli_build()}} then evaluates composites with the OECD classifier.
 
 The minimum median lead of the out-of-sample check is set to the

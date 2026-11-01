@@ -78,13 +78,28 @@ setMethod("aggregate_components", "OecdAggregate",
   list(cycle = index, index = NULL, weights = stats::setNames(w, colnames(z)))
 })
 
+# Equal weights when a factor model cannot be estimated; with two or more
+# components this is a fallback that the user is told about, and the
+# aggregator actually used is returned with the result.
+factor_fallback <- function(aggregator, z, levels, spec) {
+  ew <- equal_weight(aggregator@min_coverage)
+  if (ncol(z) >= 2L) {
+    rcli_warn(sprintf(paste("%s needs at least %d dates with all components;",
+                            "equal weights were used instead."),
+                      aggregator@label, 3L * ncol(z)),
+              "rcli_warning_fallback")
+  }
+  out <- aggregate_components(ew, z, levels, spec)
+  out$aggregator <- ew
+  out
+}
+
 #' @rdname cli_composite
 setMethod("aggregate_components", "PrincipalComponent",
           function(aggregator, z, levels, spec) {
   cc <- stats::complete.cases(z)
   if (ncol(z) < 2L || sum(cc) < 3L * ncol(z)) {
-    return(aggregate_components(equal_weight(aggregator@min_coverage), z,
-                                levels, spec))
+    return(factor_fallback(aggregator, z, levels, spec))
   }
   pc <- stats::prcomp(z[cc, , drop = FALSE], center = TRUE, scale. = TRUE)
   load <- pc$rotation[, 1]
@@ -140,8 +155,7 @@ setMethod("aggregate_components", "DynamicFactor",
           function(aggregator, z, levels, spec) {
   cc <- stats::complete.cases(z)
   if (ncol(z) < 2L || sum(cc) < 3L * ncol(z)) {
-    return(aggregate_components(equal_weight(aggregator@min_coverage), z,
-                                levels, spec))
+    return(factor_fallback(aggregator, z, levels, spec))
   }
   fit <- dfm_two_step(z)
   comp <- fit$factor
@@ -244,12 +258,18 @@ cli_composite <- function(cycles, components, spec, reference = NULL,
     rcli_abort("`components` must name at least one element of `cycles`.",
                "rcli_error_argument")
   }
+  if (!is.null(reference) && !is(reference, "CycleSeries")) {
+    rcli_abort("`reference` must be the reference CycleSeries, e.g. `cyc$ref`.",
+               "rcli_error_argument")
+  }
   template <- cycles[[components[1]]]@normalised
   z <- vapply(components, function(nm) as.numeric(cycles[[nm]]@normalised),
               numeric(length(template)))
   z <- matrix(z, ncol = length(components),
               dimnames = list(NULL, components))
-  levels <- vapply(components, function(nm) as.numeric(cycles[[nm]]@original),
+  # levels after seasonal adjustment and outlier treatment (the original
+  # series would bring both back into the Conference Board changes)
+  levels <- vapply(components, function(nm) cycle_level(cycles[[nm]]),
                    numeric(length(template)))
   levels <- matrix(levels, ncol = length(components))
   attr(levels, "sign") <- vapply(components, function(nm) {
@@ -269,7 +289,10 @@ cli_composite <- function(cycles, components, spec, reference = NULL,
   index <- if (is.null(agg$index)) 100 + cyc * amp else agg$index
   new("CompositeIndex", index = as_ts_like(index, template),
       cycle = as_ts_like(cyc, template), components = components,
-      weights = agg$weights, aggregator = spec@aggregator, amplitude = amp,
+      weights = agg$weights,
+      aggregator = if (is.null(agg$aggregator)) spec@aggregator else
+        agg$aggregator,
+      amplitude = amp,
       shifts = shifts)
 }
 

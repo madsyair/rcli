@@ -54,10 +54,20 @@ setMethod("treat_outliers", "TramoOutliers", function(method, x, ...) {
   list(x = as_ts_like(as.numeric(x) - effect, x), n = as.integer(n),
        step = sprintf("outliers (%s): found %s; removed %s", label, found,
                       paste(method@remove, collapse = ", ")),
-       forecast = if (h > 0) utils::head(fit$forecast, h) else numeric(0))
+       forecast = if (h > 0) {
+         clean_forecast(utils::head(fit$forecast, h), fit$effects,
+                        method@remove, fit$tc_rate)
+       } else {
+         numeric(0)
+       })
 })
 
-# Effect matrix of outliers named like "AO (5-2011)" (JDemetra+ style).
+# Decay rate of a transitory change: TRAMO uses 0.7 at every frequency,
+# X-13ARIMA-SEATS uses 0.7^(12/f) (0.343 for quarterly data).
+tc_rate <- function(engine, f) if (engine == "x13") 0.7^(12 / f) else 0.7
+
+# Effect matrix of outliers named like "AO (5-2011)" (JDemetra+ style; the
+# period of quarterly data is a Roman numeral, "AO (IV-2009)").
 outlier_effects <- function(names, coef, x, tc_rate = 0.7) {
   n <- length(x)
   f <- stats::frequency(x)
@@ -65,10 +75,15 @@ outlier_effects <- function(names, coef, x, tc_rate = 0.7) {
   types <- substr(names, 1, 2)
   eff <- matrix(0, n, 3, dimnames = list(NULL, c("AO", "TC", "LS")))
   for (k in seq_along(names)) {
-    p <- as.integer(strsplit(gsub(".*\\((.*)\\).*", "\\1", names[k]),
-                             "-")[[1]])
-    t0 <- (p[2] - st[1]) * f + (p[1] - st[2]) + 1L
-    if (is.na(t0) || t0 < 1L || t0 > n) next
+    p <- strsplit(gsub(".*\\((.*)\\).*", "\\1", names[k]), "-")[[1]]
+    per <- outlier_period(p[1])
+    year <- suppressWarnings(as.integer(p[2]))
+    t0 <- (year - st[1]) * f + (per - st[2]) + 1L
+    if (length(p) != 2L || is.na(t0) || per < 1L || per > f) {
+      rcli_abort(sprintf("Cannot read the date of the outlier '%s'.",
+                         names[k]), "rcli_error_outliers")
+    }
+    if (t0 < 1L || t0 > n) next
     tt <- seq_len(n)
     reg <- switch(types[k],
                   AO = as.numeric(tt == t0),
@@ -77,6 +92,27 @@ outlier_effects <- function(names, coef, x, tc_rate = 0.7) {
     eff[, types[k]] <- eff[, types[k]] + coef[k] * reg
   }
   eff
+}
+
+# Period of an outlier date: a number, or a Roman numeral.
+outlier_period <- function(p) {
+  if (grepl("^[0-9]+$", p)) return(as.integer(p))
+  roman <- c("I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X",
+             "XI", "XII")
+  match(toupper(p), roman)
+}
+
+# Forecasts of the series without the removed outliers: a level shift
+# continues unchanged and a transitory change keeps decaying at `tc_rate`
+# (the rate of the engine, see tc_rate()) beyond the last observation, so
+# the clean series and its forecasts join without a jump.
+clean_forecast <- function(fc, effects, remove, tc_rate = 0.7) {
+  if (length(fc) == 0L) return(fc)
+  n <- nrow(effects)
+  h <- seq_along(fc)
+  ls <- if ("LS" %in% remove) effects[n, "LS"] else 0
+  tc <- if ("TC" %in% remove) effects[n, "TC"] * tc_rate^h else 0
+  fc - ls - tc
 }
 
 count_types <- function(types) {
@@ -104,7 +140,8 @@ regarima_tramo <- function(x, h, critical) {
   coef <- if (length(nm) > 0L) rc[is_out, 1] else numeric(0)
   list(effects = outlier_effects(nm, coef, x),
        types = c("AO", "TC", "LS"), count = count_types(substr(nm, 1, 2)),
-       forecast = as.numeric(m$forecast[, 1]))
+       forecast = as.numeric(m$forecast[, 1]),
+       tc_rate = tc_rate("tramo", stats::frequency(x)))
 }
 
 # When the regARIMA model cannot be estimated: no outliers removed, and
@@ -120,7 +157,7 @@ regarima_failed <- function(x, h) {
   list(effects = matrix(0, length(x), 3,
                         dimnames = list(NULL, c("AO", "TC", "LS"))),
        types = c("AO", "TC", "LS"), count = count_types(character(0)),
-       forecast = fc)
+       forecast = fc, tc_rate = 0.7)
 }
 
 # regARIMA part of X-13ARIMA-SEATS through 'seasonal'.
@@ -158,7 +195,8 @@ regarima_x13 <- function(x, h, critical) {
   types <- toupper(substr(cf[grepl("^(AO|LS|TC)[0-9]", cf)], 1, 2))
   fc <- suppressMessages(seasonal::series(m, "forecast.forecasts"))
   list(effects = eff, types = c("AO", "TC", "LS"),
-       count = count_types(types), forecast = as.numeric(fc[, 1]))
+       count = count_types(types), forecast = as.numeric(fc[, 1]),
+       tc_rate = tc_rate("x13", stats::frequency(x)))
 }
 
 # Log/level test of the regARIMA model (TRAMO or X-13); TRUE for logs.

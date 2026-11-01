@@ -83,9 +83,42 @@ cli_candidates <- function(data, reference, meta = NULL, vintages = list(),
   alignment <- attr(data, "alignment")
   if (!is.data.frame(alignment)) alignment <- data.frame()
   attr(data, "alignment") <- NULL
+  ref <- as.numeric(data[, reference])
+  if (all(is.na(ref)) ||
+      length(unique(ref[!is.na(ref)])) < 2L) {
+    rcli_abort("The reference series is empty or constant.",
+               "rcli_error_argument")
+  }
+  empty <- setdiff(colnames(data)[apply(data, 2, function(v) all(is.na(v)))],
+                   reference)
+  if (length(empty) > 0L) {
+    rcli_warn(sprintf("Candidates without observations were dropped: %s.",
+                      paste(empty, collapse = ", ")),
+              "rcli_warning_dropped")
+    keep <- setdiff(colnames(data), empty)
+    if (length(keep) < 2L) {
+      rcli_abort("`data` needs at least one candidate with observations.",
+                 "rcli_error_argument")
+    }
+    tsp0 <- stats::tsp(data)
+    data <- stats::ts(data[, keep, drop = FALSE], start = tsp0[1],
+                      frequency = tsp0[3])
+    if (!is.null(meta) && is.data.frame(meta) && "name" %in% names(meta)) {
+      meta <- meta[!meta$name %in% empty, , drop = FALSE]
+    }
+    if (nrow(alignment) > 0L) {
+      alignment <- alignment[!alignment$name %in% empty, , drop = FALSE]
+    }
+  }
   meta <- complete_meta(meta, setdiff(colnames(data), reference), alignment)
   if (!is.list(vintages)) {
     rcli_abort("`vintages` must be a list.", "rcli_error_argument")
+  }
+  if (length(empty) > 0L) {
+    vintages <- lapply(vintages, function(v) {
+      if (is.null(colnames(v))) v else v[, !colnames(v) %in% empty,
+                                           drop = FALSE]
+    })
   }
   new("CandidateSet", data = data, reference = reference, meta = meta,
       vintages = vintages, alignment = alignment)
@@ -227,6 +260,15 @@ setMethod("[", "CandidateSet", function(x, i, j, ..., drop = FALSE) {
 #' window(cand, end = c(2015, 12))
 #' @export
 setMethod("window", "CandidateSet", function(x, start = NULL, end = NULL, ...) {
+  tsp0 <- stats::tsp(x@data)
+  as_time <- function(v) {
+    if (length(v) == 2L) v[1] + (v[2] - 1) / tsp0[3] else v[1]
+  }
+  eps <- 1e-8
+  if ((!is.null(end) && as_time(end) < tsp0[1] - eps) ||
+      (!is.null(start) && as_time(start) > tsp0[2] + eps)) {
+    rcli_abort("The window lies outside the data.", "rcli_error_short_series")
+  }
   x@data <- stats::window(x@data, start = start, end = end)
   x
 })

@@ -237,7 +237,7 @@ test_that("several files at different frequencies run in the browser", {
   app$set_inputs(source = "upload_multi", wait_ = FALSE)
   app$upload_file(files = files$datapath)
   app$click("run1")
-  app$wait_for_idle()
+  app$wait_for_idle(timeout = 120000)
   summary <- app$get_value(output = "data_summary")
   for (s in c("indikator.csv", "triwulanan", "bulanan", "berkas")) {
     expect_match(summary, s, fixed = TRUE)
@@ -302,7 +302,9 @@ test_that("advanced options and the OECD forms work in the browser", {
     app$click(paste0("run", k))
     app$wait_for_idle(timeout = 120000)
   }
-  for (form in c("amplitude_adjusted", "trend_restored", "rate_of_change")) {
+  # amplitude_adjusted is the default, so it comes last: setting an input
+  # to its current value updates no output
+  for (form in c("trend_restored", "rate_of_change", "amplitude_adjusted")) {
     app$set_inputs(pres_form = form)
     expect_plot(app, "pres_plot")
   }

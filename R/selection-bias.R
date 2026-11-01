@@ -89,7 +89,10 @@ one_cutoff <- function(candidates, spec, t0, full_cycles, ref, ref_tp,
   for (nm in intersect(comps, train@assessment@inverted)) {
     cycles[[nm]] <- invert_cycle(cycles[[nm]])
   }
-  comp <- cli_composite(cycles, comps, spec, ref)
+  # the composite selected before the cut-off, with its lag shifts
+  shifts <- train@composite@shifts
+  comp <- cli_composite(cycles, comps, spec, ref,
+                        shifts = if (length(shifts) > 0L) shifts)
   comp_cs <- composite_as_cycle(comp)
   comp_tp <- date_turning_points(spec@dater, comp_cs@normalised, name = "CLI")
   e <- resolve_dater(spec@dater, spec@freq)$end_exclusion

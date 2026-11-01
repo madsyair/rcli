@@ -58,8 +58,8 @@
 #' @param granger_dmax Extra unrestricted lags of the Toda-Yamamoto test.
 #' @param max_iter Maximum number of iterations of the selection loop.
 #' @param min_components Smallest number of components of the composite.
-#' @param horizon Horizon of the probability tests; `NA` uses the median lead
-#'   of the composite.
+#' @param horizon Horizon of the probability tests; `NA` uses the lag of the
+#'   cross-correlation peak of the composite (at least 1).
 #' @param oos_cutoffs Optional cut-off dates (decimal time, e.g. `2015`) for
 #'   the selection-bias harness run by [cli_build()].
 #' @param holidays A [holiday_effect()], or a list of them, whose effects
@@ -107,7 +107,7 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
   check_strategy(classifier, "Classifier", "classifier")
   check_strategy(outliers, "OutlierTreatment", "outliers")
   check_strategy(extension, "Extension", "extension")
-  spec <- new(
+  spec <- new_valid(
     "CliSpec",
     freq = as.numeric(freq),
     filter = if (is.null(filter)) hp_double_filter() else filter,
@@ -178,8 +178,21 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
   if (is(spec@outliers, "RobustOutliers")) {
     spec@outlier_threshold <- spec@outliers@threshold
   }
-  validObject(spec)
+  check_valid(spec)
   spec
+}
+
+# validObject() and new() with the error class of the package.
+check_valid <- function(object) {
+  tryCatch(methods::validObject(object), error = invalid_error)
+  invisible(TRUE)
+}
+
+new_valid <- function(...) tryCatch(methods::new(...), error = invalid_error)
+
+invalid_error <- function(e) {
+  rcli_abort(sub("^invalid class .*? object: ", "", conditionMessage(e),
+                 perl = TRUE), "rcli_error_argument")
 }
 
 check_strategy <- function(x, class, name) {
@@ -212,6 +225,12 @@ setValidity("CliSpec", function(object) {
                     "min_components", "horizon", "min_auc")
   for (s in scalar_slots) {
     if (!one(s)) msg <- c(msg, sprintf("`%s` must have length 1.", s))
+  }
+  if (length(msg) > 0L) return(msg)
+  for (s in setdiff(scalar_slots, "horizon")) {
+    if (is.na(slot(object, s))) {
+      msg <- c(msg, sprintf("`%s` must not be NA.", s))
+    }
   }
   if (length(msg) > 0L) return(msg)
   if (!object@freq %in% c(4, 12)) msg <- c(msg, "`freq` must be 4 or 12.")
@@ -251,11 +270,19 @@ setValidity("CliSpec", function(object) {
     msg <- c(msg, "`granger_max_lag` must be >= 1.")
   }
   if (!(object@max_iter >= 1)) msg <- c(msg, "`max_iter` must be >= 1.")
+  for (s in c("max_iter", "min_components", "ccf_lag_max",
+              "granger_max_lag", "granger_dmax", "horizon")) {
+    v <- slot(object, s)
+    if (is.finite(v) && abs(v - round(v)) > 1e-8) {
+      msg <- c(msg, sprintf("`%s` must be a whole number.", s))
+    }
+  }
   if (!(object@min_components >= 1)) {
     msg <- c(msg, "`min_components` must be >= 1.")
   }
-  if (!is.na(object@horizon) && !(object@horizon >= 0)) {
-    msg <- c(msg, "`horizon` must be NA or >= 0.")
+  if (!is.na(object@horizon) &&
+      !(object@horizon >= 0 && is.finite(object@horizon))) {
+    msg <- c(msg, "`horizon` must be NA or a finite number >= 0.")
   }
   hol <- object@holidays
   if (!all(vapply(hol, is, logical(1), "HolidayEffect"))) {
@@ -288,10 +315,14 @@ setMethod("update", "CliSpec", function(object, ...) {
       "rcli_error_argument"
     )
   }
+  types <- methods::getSlots("CliSpec")
   for (nm in names(args)) {
     value <- args[[nm]]
-    if (is.numeric(value)) value <- as.numeric(value)
-    slot(object, nm) <- value
+    if (is.numeric(value) ||
+        (types[[nm]] == "numeric" && is.logical(value) && all(is.na(value)))) {
+      value <- as.numeric(value)
+    }
+    tryCatch(slot(object, nm) <- value, error = invalid_error)
   }
   # keep the outlier shortcut and the outlier treatment in step
   if ("outlier_threshold" %in% names(args) && !"outliers" %in% names(args)) {
@@ -300,7 +331,7 @@ setMethod("update", "CliSpec", function(object, ...) {
   if (is(object@outliers, "RobustOutliers")) {
     object@outlier_threshold <- object@outliers@threshold
   }
-  validObject(object)
+  check_valid(object)
   object
 })
 
@@ -328,8 +359,9 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' Seasonal adjustment, which the OECD applies only to series that are not
 #' already adjusted at the source, uses X-13ARIMA-SEATS (the successor of
 #' X-12-ARIMA, with SEATS) when `seasonal_adjust = TRUE`. Quarterly
-#' components are interpolated linearly by [cli_align()] with
-#' `method = "linear"`, as the OECD does. The selection loop of
+#' candidates are always interpolated linearly by [cli_align()], at the
+#' month the OECD uses (`method` only concerns the reference series). The
+#' selection loop of
 #' [cli_build()] then evaluates composites with the OECD classifier.
 #'
 #' The minimum median lead of the out-of-sample check is set to the
