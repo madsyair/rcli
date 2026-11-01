@@ -28,7 +28,7 @@
 | INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | selesai (G1–G8) |
 | INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | selesai (G1–G8; PR #4) |
 | INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8; PR #5) |
-| INC-11 | Perbaikan cacat hasil kajian menyeluruh (0.5.1) | FR-011 | — | berjalan |
+| INC-11 | Perbaikan cacat hasil kajian menyeluruh (0.5.1) | FR-011 | — | selesai (PR) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -78,6 +78,7 @@
 | 2026-11-01 21:30 | INC-11 | A5 | G4–G5 | R1–R13 ditindaklanjuti (ujung akhir tidak disentuh; laju TC per mesin) | 2/3 | A6 putaran 2 |
 | 2026-11-01 21:42 | INC-11 | A6 | G6 | APPROVE putaran 2 (R14 minor, R15–R17 nit) | 2/3 | A5 R14–R17, gerbang penuh |
 | 2026-11-01 21:45 | INC-11 | A5 | G4–G5 | R14–R17 ditindaklanjuti | 2/3 | gerbang penuh, PR |
+| 2026-11-01 22:30 | INC-11 | A0 | G1–G8 | LOLOS (cakupan 97,3%; check 0/0, 2 catatan) | 2/3 | PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
