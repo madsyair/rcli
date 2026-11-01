@@ -64,3 +64,13 @@ Keputusan FR-010:
 - Isian lanjutan yang kosong berarti bawaan paket; bawaan yang bergantung pada frekuensi tidak diduplikasi di GUI.
 - Opsi lanjutan hanya untuk metode rcli; metode "Persis OECD" tetap paket tetap `oecd_spec()`, kecuali efek Idulfitri yang berlaku untuk keduanya.
 - Seri indikator Chow–Lin dipilih dari seri yang frekuensinya sama dengan frekuensi analisis dan dibentuk di skrip dengan `cli_align(series["x"], freq = ...)[, "x"]`.
+
+## Increment 0.5.1
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-011 | Internal `outlier_period()`, `clean_forecast()`, `cycle_level()`, `check_valid()`, `new_valid()`, `min_overlap()`, `warn_short_tests()`, `factor_fallback()`; perilaku `replace_outliers()`, `window()` CandidateSet, `cli_candidates()`, `cli_composite()`, `cli_validate()`, `one_cutoff()` | `R/outliers.R`, `R/cycles.R`, `R/aggregate.R`, `R/presentation.R`, `R/selection-bias.R`, `R/candidates.R`, `R/spec.R`, `R/assessment.R`, `R/validation.R` |
+
+Keputusan FR-011:
+- Hanya cacat; bawaan metode tidak berubah. Temuan yang menyentuh pengklasifikasi dan kartu skor (G1–G5) ditunda ke 0.6.0 karena memerlukan kalibrasi ulang.
+- Pencilan di ujung seri diperlakukan sebagai lonjakan sampai observasi berikutnya menunjukkan apakah perubahannya bertahan; konsekuensinya nilai terakhir dapat direvisi, sama seperti perlakuan TRAMO di ujung seri.
+- Tumpang tindih minimum korelasi silang dinyatakan dalam tahun (dua tahun) agar bulanan tidak berubah (24) dan triwulanan tidak lagi selalu NA untuk sampel pendek.

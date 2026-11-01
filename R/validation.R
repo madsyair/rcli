@@ -47,6 +47,10 @@ cli_validate <- function(composite, reference, spec) {
     rcli_abort("Supply a CompositeIndex and the reference CycleSeries.",
                "rcli_error_argument")
   }
+  if (!is(spec, "CliSpec")) {
+    rcli_abort("`spec` must be a CliSpec (see cli_spec()).",
+               "rcli_error_argument")
+  }
   comp_cs <- composite_as_cycle(composite)
   ref_tp <- date_turning_points(spec@dater, reference@normalised,
                                 name = reference@name)
@@ -139,7 +143,7 @@ contraction_probability <- function(composite, reference, spec,
   if (is.null(horizon)) {
     cc <- cross_correlation(as.numeric(composite@cycle),
                             as.numeric(reference@normalised),
-                            spec@ccf_lag_max)
+                            spec@ccf_lag_max, min_overlap(spec@freq))
     horizon <- max(1, cc$lag, na.rm = TRUE)
   }
   contraction_fit(as.numeric(composite@cycle), ref_tp, horizon,

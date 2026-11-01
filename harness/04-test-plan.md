@@ -14,6 +14,7 @@
 | Beberapa berkas per indikator: bentuk tanggal, nama seri, format per berkas, sel kosong, kesetaraan dengan berkas lebar, metadata kosong tidak menimpa penyelarasan | FR-009 AC-1 sampai AC-4, AC-6 | `tests/testthat/test-read-series.R` |
 | GUI beberapa berkas: ringkasan, grafik, tipe seri acuan, frekuensi terisi, penolakan tanpa tipe, langkah 3–9, skrip ekspor, indeks sejalan sebagai acuan; unggahan tiga berkas di peramban | FR-009 AC-5 sampai AC-7 | `tests/testthat/test-app-multi.R`, `test-app-e2e.R` |
 | Pilihan paket di GUI: efek Idulfitri, opsi lanjutan langkah 3, penyelarasan langkah 2, bentuk penyajian OECD langkah 7 dan unduhannya, `cli_presentation(composite =)`; objek dari skrip sama dengan objek GUI | FR-010 | `tests/testthat/test-app-options.R`, `test-app-e2e.R` |
+| Perbaikan kajian menyeluruh: pencilan TRAMO triwulanan, prakiraan sesudah LS/TC, pencilan di ujung seri, Conference Board dan penyajian dari seri bersih, geser lag di uji luar sampel, jendela di luar data, kandidat kosong, seri acuan konstan, galat validasi bertipe, sampel triwulanan pendek, peringatan cadangan PCA/DFM, dokumentasi | FR-011 | `tests/testthat/test-fixes-051.R` |
 | Imports tidak bertambah; biaya perpanjangan; kalibrasi dan evaluasi waktu nyata | NFR-001, NFR-002, NFR-003 | `test-end-extension.R`; data dari `data-raw/calibrate_*.R`, `data-raw/realtime_defaults.R` |
 
 ## Bukti merah (G4)
@@ -39,3 +40,6 @@ Bukti merah sesudah review putaran 1 (R1–R10): uji baru gagal 9 kali pada kode
 
 ### Bukti merah 0.5.0 (G4)
 Bukti merah: sebelum implementasi FR-010 (2026-11-01), `test-app-options.R` gagal 34 kali (isian `idulfitri`, opsi lanjutan, penyelarasan, `pres_form` belum ada; `cli_presentation()` tanpa argumen `composite`).
+
+### Bukti merah 0.5.1 (G4)
+Bukti merah: sebelum implementasi FR-011 (2026-11-01), `test-fixes-051.R` gagal 27 kali (fungsi `clean_forecast()` dan `min_overlap()` belum ada; pencilan triwulanan dan di ujung seri tidak terhapus; Conference Board dan penyajian memakai seri asli; uji luar sampel tanpa geser lag; galat tanpa kelas; tanpa peringatan).

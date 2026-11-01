@@ -55,12 +55,15 @@ match_turning_points <- function(ref, cand, window, end_exclusion) {
 
 # ---- statistics --------------------------------------------------------------
 
-cross_correlation <- function(cand, ref, lag_max) {
+# Smallest overlap of a correlation: two years of data.
+min_overlap <- function(freq) as.integer(2L * freq)
+
+cross_correlation <- function(cand, ref, lag_max, min_obs = 24L) {
   lags <- -lag_max:lag_max
   r <- vapply(lags, function(k) {
     a <- shift_vec(cand, k)
     ok <- !is.na(a) & !is.na(ref)
-    if (sum(ok) < 24L) return(NA_real_)
+    if (sum(ok) < min_obs) return(NA_real_)
     if (stats::sd(a[ok]) == 0 || stats::sd(ref[ok]) == 0) return(NA_real_)
     stats::cor(a[ok], ref[ok])
   }, numeric(1))
@@ -169,6 +172,29 @@ toda_yamamoto_p <- function(cand, ref, max_lag, dmax) {
   stats::pf(fstat, p, u$n - u$k, lower.tail = FALSE)
 }
 
+# Name the candidates whose cross-correlation or Granger test could not be
+# computed, instead of letting them fall silently into "rejected".
+warn_short_tests <- function(tab, spec) {
+  no_ccf <- tab$name[is.na(tab$ccf_r)]
+  if (length(no_ccf) > 0L) {
+    rcli_warn(sprintf(paste("No cross-correlation for %s: at least %d",
+                            "overlapping observations of a varying series",
+                            "are needed."),
+                      paste(no_ccf, collapse = ", "),
+                      min_overlap(spec@freq)),
+              "rcli_warning_short_series")
+  }
+  no_gr <- tab$name[is.na(tab$granger_p) & !is.na(tab$ccf_r)]
+  if (length(no_gr) > 0L) {
+    need <- 4L * (spec@granger_max_lag + spec@granger_dmax) + 10L
+    rcli_warn(sprintf(paste("No Granger test for %s: at least %d",
+                            "observations are needed."),
+                      paste(no_gr, collapse = ", "), need),
+              "rcli_warning_short_series")
+  }
+  invisible(NULL)
+}
+
 # ---- one candidate --------------------------------------------------------
 
 assess_pair <- function(ref_cs, ref_tp, cand_cs, cand_tp, spec) {
@@ -179,7 +205,8 @@ assess_pair <- function(ref_cs, ref_tp, cand_cs, cand_tp, spec) {
   n_ref <- nrow(pairs)
   med <- if (length(leads) > 0L) stats::median(leads) else NA_real_
   ccf <- cross_correlation(as.numeric(cand_cs@normalised),
-                           as.numeric(ref_cs@normalised), spec@ccf_lag_max)
+                           as.numeric(ref_cs@normalised), spec@ccf_lag_max,
+                           min_overlap(spec@freq))
   shift <- if (!is.na(med)) med else if (!is.na(ccf$lag)) ccf$lag else 0
   conc <- concordance(cand_tp, ref_tp, shift = shift)
   row <- data.frame(
@@ -391,6 +418,7 @@ cli_assess <- function(candidates, spec, cycles = NULL) {
     matches[[nm]] <- res$pairs
   }
   tab <- do.call(rbind, rows)
+  warn_short_tests(tab, spec)
   meta <- candidates@meta
   tab$rationale <- meta$rationale[match(tab$name, meta$name)]
   first <- c("name", "class", "rationale", "inverted")

@@ -67,7 +67,9 @@ cli_presentation <- function(x, composite = NULL) {
   logged <- is_logged(ref)
   trend <- reference_trend(ref, x@spec)
   trend_level <- if (logged) exp(trend) else trend
-  orig <- as.numeric(ref@original)
+  # the reference as seasonally adjusted and cleaned of outliers, so that
+  # neither seasonality nor spikes enter the comparison
+  orig <- cycle_level(ref)
   if (logged) {
     # percent deviation from trend, as the amplitude of a logged reference
     tr <- trend_level * amp_adj / 100
@@ -92,6 +94,13 @@ cli_presentation <- function(x, composite = NULL) {
 }
 
 is_logged <- function(cs) any(grepl("^log", cs@steps))
+
+# Level of the transformed series of a CycleSeries: seasonally adjusted and
+# cleaned of outliers, in the units of the original data.
+cycle_level <- function(cs) {
+  v <- as.numeric(cs@transformed)
+  if (is_logged(cs)) exp(v) else v
+}
 
 rate_of_change <- function(v, lag) {
   prev <- shift_vec(v, as.integer(lag))

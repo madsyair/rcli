@@ -177,6 +177,8 @@ test_that("F-01 Prop. 7: on contiguous spans the chain is an imputed mean", {
 test_that("FR-001 AC-8: the PCA and DFM fallbacks chain at the ragged edge", {
   z <- cbind(a = c(0, 1, 2), b = c(0, 1, NA), c = c(0, 2, 3))
   for (ag in list(principal_component(), dynamic_factor())) {
-    expect_equal(aggregate_components(ag, z, NULL, spec)$cycle, ew(z))
+    expect_warning(out <- aggregate_components(ag, z, NULL, spec),
+                   class = "rcli_warning_fallback")
+    expect_equal(out$cycle, ew(z))
   }
 })

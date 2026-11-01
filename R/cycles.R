@@ -150,9 +150,19 @@ replace_outliers <- function(x, threshold) {
   # a spike shows as two consecutive extreme changes of opposite sign
   flag <- which(z[-length(z)] > threshold & z[-1] > threshold &
                   sign(d[-length(d)]) != sign(d[-1])) + 1L
-  if (length(flag) == 0L) return(list(x = x, n = 0L))
+  # at the ends only one change is seen: an extreme first or last change
+  # is treated as a spike (until a later observation shows a level shift)
+  m <- length(d)
+  first <- z[1] > threshold && !(m > 1L && z[2] > threshold)
+  last <- z[m] > threshold && !(m > 1L && z[m - 1L] > threshold)
+  n_flag <- length(flag) + first + last
+  if (n_flag == 0L) return(list(x = x, n = 0L))
   v[flag] <- NA
-  list(x = as_ts_like(fill_internal_na(v), x), n = length(flag))
+  v <- fill_internal_na(v)
+  med <- stats::median(d)
+  if (first) v[1] <- v[2] - med
+  if (last) v[m + 1L] <- v[m] + med
+  list(x = as_ts_like(v, x), n = as.integer(n_flag))
 }
 
 seasonal_adjust_x13 <- function(x, holidays = list()) {

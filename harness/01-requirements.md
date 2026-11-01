@@ -111,6 +111,21 @@ Hasil audit (2026-11-01): alur utama sudah tercakup di GUI, tetapi beberapa pili
 - AC-FR-010.7  Isian opsi lanjutan yang kosong berarti nilai bawaan paket (yang dapat bergantung pada frekuensi); hanya isian yang diisi muncul di skrip ekspor. Nilai tak sah (misalnya batas pita terbalik) → pesan galat paket dan langkah 3 tidak selesai.
 - AC-FR-010.8  Spesifikasi (langkah 3) dan penyelarasan (langkah 2) dibentuk dari teks kode yang sama dengan skrip ekspor, sehingga GUI dan skrip tidak dapat berbeda; uji membandingkan objek yang dihasilkan keduanya untuk setiap pilihan.
 
+### FR-011 — Perbaikan cacat hasil kajian menyeluruh (increment rcli 0.5.1)
+Sumber: kajian menyeluruh 1 November 2026 (Project: `claude/kajian-menyeluruh-rcli-0.5.0.md`). Bawaan metode tidak berubah; perubahan pengklasifikasi (G1–G5) ditunda ke 0.6.0 karena memerlukan kalibrasi ulang.
+- AC-FR-011.1 (F1)  Nama pencilan JDemetra+ dengan periode angka Romawi (triwulanan, misalnya `AO (IV-2009)`) maupun angka (bulanan, `AO (5-2011)`) diurai; efeknya dihapus. Nama yang tidak dapat diurai → `rcli_error_outliers`, bukan dilewati diam-diam.
+- AC-FR-011.2 (F2)  Bila LS atau TC dihapus, prakiraan regARIMA dikurangi kelanjutan efeknya: LS tetap, TC meluruh dengan laju 0,7 per periode, sehingga ujung seri bersih tidak meloncat.
+- AC-FR-011.3 (F3)  `robust_outliers()` juga menandai perubahan ekstrem pada observasi pertama dan terakhir (uji satu sisi dengan ambang yang sama) dan menggantinya dengan observasi tetangga ditambah median perubahan. Perilaku di tengah seri tidak berubah.
+- AC-FR-011.4 (G6)  `conference_board()` menghitung perubahan simetris dari level seri yang sudah disesuaikan musim, dibersihkan pencilannya, dan ditransformasi (`@transformed`, dikembalikan ke level bila ber-log), bukan dari seri asli.
+- AC-FR-011.5 (G9)  `cli_presentation()`: kolom seri acuan (`reference`, `reference_amplitude_adjusted`, `reference_rate_of_change`) memakai level seri acuan yang sudah disesuaikan musim dan dibersihkan pencilannya.
+- AC-FR-011.6 (G7/E1)  `cli_selection_bias()` membentuk komposit sesudah titik potong dengan geser lag komposit latih; dengan `lag_shift = TRUE`, `lead_gap` membandingkan komposit yang sama.
+- AC-FR-011.7 (E2)  `window()` pada himpunan kandidat di luar rentang data → `rcli_error_short_series`; `cli_build()` dengan titik potong sebelum awal data selesai, dan baris titik potong itu berisi catatan, bukan galat.
+- AC-FR-011.8 (E3)  `cli_candidates()` membuang kandidat yang seluruhnya kosong dengan peringatan `rcli_warning_dropped`; seri acuan yang seluruhnya kosong atau konstan → `rcli_error_argument`.
+- AC-FR-011.9 (E4)  Pelanggaran validitas `cli_spec()` dan `update()` → `rcli_error_argument`; `max_iter`, `min_components`, `ccf_lag_max`, dan `granger_max_lag` harus bilangan bulat; `cli_validate()` dan `cli_composite()` memeriksa `spec` dan `reference` dengan galat bertipe.
+- AC-FR-011.10 (E8)  Korelasi silang memerlukan tumpang tindih dua tahun (24 bulan atau 8 triwulan). Kandidat yang korelasi silang atau uji Grangernya tidak dapat dihitung karena seri terlalu pendek disebut dalam peringatan `rcli_warning_short_series`.
+- AC-FR-011.11 (E9)  Bila PCA atau DFM kembali ke bobot sama karena baris lengkap terlalu sedikit, muncul peringatan `rcli_warning_fallback`, dan `CompositeIndex@aggregator` mencatat agregator yang benar-benar dipakai.
+- AC-FR-011.12 (F9, G11)  Dokumentasi `?oecd_spec` (interpolasi kandidat triwulanan) dan `?cli_spec` (`horizon` NA memakai lag korelasi silang) sesuai kode.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.

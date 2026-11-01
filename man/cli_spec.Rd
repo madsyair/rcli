@@ -100,8 +100,8 @@ test (default 12 months or 4 quarters); the order is chosen by AIC.}
 
 \item{min_components}{Smallest number of components of the composite.}
 
-\item{horizon}{Horizon of the probability tests; \code{NA} uses the median lead
-of the composite.}
+\item{horizon}{Horizon of the probability tests; \code{NA} uses the lag of the
+cross-correlation peak of the composite (at least 1).}
 
 \item{oos_cutoffs}{Optional cut-off dates (decimal time, e.g. \code{2015}) for
 the selection-bias harness run by \code{\link[=cli_build]{cli_build()}}.}
