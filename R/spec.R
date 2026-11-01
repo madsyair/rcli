@@ -280,8 +280,9 @@ setValidity("CliSpec", function(object) {
   if (!(object@min_components >= 1)) {
     msg <- c(msg, "`min_components` must be >= 1.")
   }
-  if (!is.na(object@horizon) && !(object@horizon >= 0)) {
-    msg <- c(msg, "`horizon` must be NA or >= 0.")
+  if (!is.na(object@horizon) &&
+      !(object@horizon >= 0 && is.finite(object@horizon))) {
+    msg <- c(msg, "`horizon` must be NA or a finite number >= 0.")
   }
   hol <- object@holidays
   if (!all(vapply(hol, is, logical(1), "HolidayEffect"))) {
@@ -314,10 +315,14 @@ setMethod("update", "CliSpec", function(object, ...) {
       "rcli_error_argument"
     )
   }
+  types <- methods::getSlots("CliSpec")
   for (nm in names(args)) {
     value <- args[[nm]]
-    if (is.numeric(value)) value <- as.numeric(value)
-    slot(object, nm) <- value
+    if (is.numeric(value) ||
+        (types[[nm]] == "numeric" && is.logical(value) && all(is.na(value)))) {
+      value <- as.numeric(value)
+    }
+    tryCatch(slot(object, nm) <- value, error = invalid_error)
   }
   # keep the outlier shortcut and the outlier treatment in step
   if ("outlier_threshold" %in% names(args) && !"outliers" %in% names(args)) {

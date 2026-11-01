@@ -241,6 +241,13 @@ test_that("AC-FR-011.9 (E4): invalid specifications give classed errors", {
   expect_error(cli_spec(12, ccf_lag_max = NA), "must not be NA",
                class = "rcli_error_argument")
   expect_s4_class(cli_spec(12, horizon = NA), "CliSpec")
+  expect_error(cli_spec(12, horizon = Inf), class = "rcli_error_argument")
+  # update(): NA where documented, classed errors for wrong types
+  expect_true(is.na(update(cli_spec(12, horizon = 3), horizon = NA)@horizon))
+  expect_error(update(cli_spec(12), alpha = NA), "must not be NA",
+               class = "rcli_error_argument")
+  expect_error(update(cli_spec(12), max_iter = "3"),
+               class = "rcli_error_argument")
   cand <- sim_cand()
   spec <- cli_spec(12)
   cyc <- cli_cycles(cand, spec)

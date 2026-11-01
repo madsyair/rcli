@@ -74,6 +74,10 @@
 | 2026-11-01 10:40 | INC-10 | A0 | G1–G8 | LOLOS (cakupan 97,4%; check 0/0); uji peramban 168 lolos | 3/3 | PR |
 | 2026-11-01 19:05 | — | A6 ×4 | — | kajian menyeluruh (teori, kode, pedoman); Project `claude/kajian-menyeluruh-rcli-0.5.0.md` | — | 0.5.1 |
 | 2026-11-01 19:25 | INC-11 | A1, A4, A5 | G1, G4, G5 | merah 27 kegagalan → hijau | 1/3 | A6 |
+| 2026-11-01 21:20 | INC-11 | A6 | G6 | CHANGES-REQUESTED (R1 uji G7 tidak merah; R2 laju TC X-13 triwulanan; R3 aturan ujung akhir) | 1/3 | A5 perbaiki |
+| 2026-11-01 21:30 | INC-11 | A5 | G4–G5 | R1–R13 ditindaklanjuti (ujung akhir tidak disentuh; laju TC per mesin) | 2/3 | A6 putaran 2 |
+| 2026-11-01 21:42 | INC-11 | A6 | G6 | APPROVE putaran 2 (R14 minor, R15–R17 nit) | 2/3 | A5 R14–R17, gerbang penuh |
+| 2026-11-01 21:45 | INC-11 | A5 | G4–G5 | R14–R17 ditindaklanjuti | 2/3 | gerbang penuh, PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

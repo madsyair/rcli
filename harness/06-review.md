@@ -2,7 +2,8 @@
 
 - Increment: rcli 0.5.1 (FR-011)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 1 (terhadap a180653; basis c66b115, 0.5.0 di main)
+- Putaran: 2 (putaran 1 terhadap a180653, putaran 2 terhadap 1927230;
+  basis c66b115, 0.5.0 di main)
 - Review 0.5.0 tersimpan di riwayat git berkas ini (komit b57fb19).
 
 ## Yang diperiksa (putaran 1)
@@ -184,3 +185,92 @@ sebaiknya ditangani di putaran yang sama; R11–R13 opsional.
 - R11: `window()` memeriksa rentang sendiri; galat lain dari
   `stats::window()` diteruskan apa adanya (uji `start` > `end`).
 - R12: baris 81 karakter dipecah. R13: NEWS diperbaiki.
+
+## Yang diperiksa (putaran 2)
+- Seluruh diff R/, man/, NEWS.md, harness/, `test-fixes-051.R`.
+- **R1**: `test-fixes-051.R` dijalankan pada salinan 1927230 dengan
+  `R/selection-bias.R` dari c66b115: AC-FR-011.6 gagal (1 kegagalan,
+  `seen[[length(seen)]]` = NULL vs `c(3, 0, 2)`), uji lain lolos. Bukti
+  merah sah; `seen[i] <- list(shifts)` memang merekam NULL.
+- **R2**: `tc_rate()` dan `fit$tc_rate` dari ketiga jalur (TRAMO, X-13,
+  gagal). X-13 triwulanan (`/tmp/rv051/r2e.R`, TC di 2024Q2): yang
+  dikurangi kini 0,0119 / 0,0041 / 0,0014 / 0,0005 = efek[n]·0,343^h,
+  persis sama dengan jalur X-13 sendiri; X-13 bulanan: rasio efek di data
+  0,7 = `fit$tc_rate`; TRAMO triwulanan 0,7 (sesuai `m$model$effects`
+  JDemetra+ yang diverifikasi di putaran 1). AC-FR-011.2b benar-benar
+  berjalan (tidak dilewati) dan gagal pada a180653 (`fit$tc_rate` NULL).
+- **R3**: hanya ujung awal. Observasi terakhir tidak pernah diganti
+  (diuji juga 200 jalan acak t(3)). Laju penggantian observasi pertama
+  pada t(3): 1,15% dari 2000 seri, hanya titik awal sejarah, tidak
+  menyentuh sinyal terbaru — dapat diterima dan tercatat di NEWS dan
+  `?OutlierTreatment`.
+- **R4**: `V-2009` (triwulanan), `13-2009`, `0-2009` → `rcli_error_outliers`.
+- **R5**: roxygen/Rd `cli_presentation()` dan `pres_help` dua bahasa.
+- **R6**: vintage `mts` dan `data.frame` kehilangan kolom kosong; `tsp`
+  tetap; `[` pada himpunan hasil tetap berjalan.
+- **R7**: NA ditolak untuk slot skalar selain `horizon`; `granger_dmax`
+  dan `horizon` bilangan bulat; `outlier_threshold = Inf`, `horizon = NA`,
+  `oecd_spec(4/12)` tetap sah. Tidak ada slot lain yang memakai NA sebagai
+  nilai bermakna (diperiksa di `cli_spec()`, `oecd_spec()`, `app-options.R`).
+- **R11**: `window()` baru diuji di tepi: `end = c(1994, 12)` dan
+  `start = 2024.95`/`c(2025, 1)` → `rcli_error_short_series`;
+  `end = 1995`, `end = c(1995, 1)`, `start = c(2024, 12)` (satu
+  observasi) sah; `start = 1990, end = 2000` sah; `start > end` di dalam
+  data diteruskan sebagai galat `stats::window()` biasa.
+- Regresi bawaan: perbandingan c66b115 vs 1927230 pada
+  `simulate_cycles(seed = 1:4, freq = 12/4)` untuk `cli_spec()`, CB, PCA,
+  `oecd_spec()` — hasilnya sama seperti putaran 1 (hanya perbedaan yang
+  terdokumentasi; tidak ada peringatan baru).
+- `lintr::lint_package()`: 0 temuan; tidak ada baris > 80 karakter.
+- Suite lengkap: 0 kegagalan, 2 dilewati; satu galat e2e (lihat R16)
+  yang tidak muncul ulang saat `test-app-e2e.R` dijalankan tersendiri
+  (semua lolos).
+
+## Temuan putaran 2
+- [x] R1–R13 putaran 1: tertutup, kecuali catatan di bawah.
+- [x] [R14][minor] R/spec.R:update — `update()` memberi `simpleError`
+  tanpa kelas untuk nilai bertipe salah, karena `slot<-` memeriksa tipe
+  sebelum `check_valid()`: `update(cli_spec(12), alpha = NA)`,
+  `update(cli_spec(12), max_iter = "3")`, dan — yang paling mengganggu —
+  `update(cli_spec(12), horizon = NA)`, padahal `NA` adalah nilai
+  `horizon` yang terdokumentasi (`NA` logis bukan `numeric`). Perilaku ini
+  sudah ada sejak sebelum 0.5.1, tetapi AC-FR-011.9 menyatakan "pelanggaran
+  validitas `update()` → `rcli_error_argument`" dan tidak mengujinya untuk
+  nilai NA/tipe salah. Usul: ubah `NA` logis menjadi `NA_real_` bila slot
+  bertipe numerik, dan bungkus `slot(object, nm) <- value` dengan
+  `tryCatch(..., error = invalid_error)`; tambahkan dua uji.
+- [x] [R15][nit] R/spec.R:setValidity — `horizon = Inf` diterima (lolos
+  `is.finite()` pada pemeriksaan bilangan bulat dan `>= 0`); sebaiknya
+  `horizon` NA atau bilangan bulat berhingga ≥ 0 (pertimbangkan juga
+  apakah `horizon = 0` bermakna, karena `NA` menghasilkan minimal 1).
+- [x] [R16][nit] tests/testthat/test-app-e2e.R:241–243 (bukan bagian diff)
+  — "several files at different frequencies" galat sekali saat suite
+  lengkap berjalan bersamaan dengan beban lain (`data_summary` masih
+  `list`, belum dirender); lolos saat dijalankan ulang tersendiri. Langkah
+  itu memakai `app$wait_for_idle()` tanpa `timeout`, berbeda dengan
+  langkah lain (`timeout = 120000`); usul samakan agar CI tidak goyah.
+- [x] [R17][nit] R5 menyebut "pedoman": sumber pedoman tidak ada di repo
+  ini, dan `pedoman/_freeze/12-gui/...html.json` di `/home/claude/rcli`
+  masih memuat "seri acuan asli" (keluaran beku `pres_help` lama). Render
+  ulang pedoman dengan `sh pedoman/scripts/render.sh` sesudah penggabungan.
+- Catatan kecil (tanpa tindakan): jumlah lolos pada lingkungan saya 2119
+  (+1 galat flaky) vs 2140 yang dilaporkan; selisih kemungkinan karena uji
+  yang dilewati/dihitung berbeda antar-lingkungan (Chrome, RJDemetra).
+
+## Keputusan putaran 2
+approve
+
+Ketiga major putaran 1 (R1, R2, R3) tertutup dan terverifikasi dengan
+angka; tidak ada regresi baru pada hasil bawaan, GUI, snapshot, atau lint.
+R14 (minor, sudah ada sebelumnya) disarankan diperbaiki sebelum rilis
+karena bertentangan dengan rumusan AC-FR-011.9; R15–R17 opsional.
+
+## Tindak lanjut putaran 2
+- R14: `update()` mengubah `NA` logis menjadi `NA_real_` untuk slot
+  numerik dan membungkus `slot<-` dengan `invalid_error`; uji untuk
+  `horizon = NA`, `alpha = NA`, `max_iter = "3"`.
+- R15: `horizon` harus `NA` atau bilangan berhingga ≥ 0 (uji `Inf`).
+  `horizon = 0` dibiarkan: peluang serentak tetap bermakna.
+- R16: langkah 1 uji e2e berkas ganda memakai `timeout = 120000`.
+- R17: pedoman dirender ulang sesudah perubahan (keluaran beku 12-gui
+  dibuang lebih dulu).

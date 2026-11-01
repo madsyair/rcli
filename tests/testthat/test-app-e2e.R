@@ -237,7 +237,7 @@ test_that("several files at different frequencies run in the browser", {
   app$set_inputs(source = "upload_multi", wait_ = FALSE)
   app$upload_file(files = files$datapath)
   app$click("run1")
-  app$wait_for_idle()
+  app$wait_for_idle(timeout = 120000)
   summary <- app$get_value(output = "data_summary")
   for (s in c("indikator.csv", "triwulanan", "bulanan", "berkas")) {
     expect_match(summary, s, fixed = TRUE)
