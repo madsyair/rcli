@@ -1,4 +1,4 @@
-# Gate report — 2026-11-01T05:45:25
+# Gate report — 2026-11-01T10:46:32
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -12,7 +12,7 @@
 | G8 Rilis | LOLOS | 0 |
 
 ## G1 Kebutuhan
-- [x] Ada kebutuhan FR/NFR — 12 ID
+- [x] Ada kebutuhan FR/NFR — 13 ID
 - [x] Setiap FR/NFR punya kriteria penerimaan — lengkap
 - [x] Tidak ada TODO
 - [x] Bagian 'Di luar cakupan' ada
@@ -33,20 +33,20 @@
 - [x] F-02: uji yang diturunkan — 7 butir
 
 ## G3 Desain
-- [x] Setiap FR terpetakan di desain — 9 FR
+- [x] Setiap FR terpetakan di desain — 10 FR
 - [x] Ada ADR — 2 ADR
 - [x] Tidak ada TODO
 
 ## G4 Uji-dulu
 - [x] Ada berkas uji
-- [x] Setiap FR/NFR dilacak ke uji — 12 ID
+- [x] Setiap FR/NFR dilacak ke uji — 13 ID
 - [x] Setiap F-xx dilacak ke uji — 4 formula
 - [x] Bukti merah tercatat — sebelum implementasi (2026-10-23): `devtools::test(filter = "ragged-edge|end-ext
 
 ## G5 Build & uji
-- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 1 | PASS 1883 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=34333 -Dhttp.nonProxyHosts=localhost|127.
+- [x] tests — exit 0:     x |  1. \-app$set_inputs(pres_form = form) at test-app-e2e.R:306:5 |  2.   \-shinytest2:::app_set_inputs(...) | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=43669 -Dhttp.nonPro
 - [x] lint — exit 0: 
-- [x] coverage — exit 0: coverage 97.12329
+- [x] coverage — exit 0: coverage 97.35777
 
 ## G6 Review
 - [x] Tidak ada temuan blocker/major terbuka

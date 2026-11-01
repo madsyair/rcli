@@ -26,7 +26,8 @@
 | INC-06 | GUI: judul berversi, indeks sejalan sebagai acuan (0.3.0) | FR-006 | — | selesai (G1–G8) |
 | INC-07 | Frekuensi asal, acuan semesteran/tahunan (0.3.0) | FR-007 | F-04 | selesai (G1–G8) |
 | INC-08 | GUI: pemisah kolom dan tanda desimal CSV (0.3.1) | FR-008 | — | selesai (G1–G8) |
-| INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | berjalan |
+| INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | selesai (G1–G8; PR #4) |
+| INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -56,12 +57,22 @@
 | 2026-10-31 18:30 | INC-08 | A5 | G4–G5 | R1, R11–R13 ditindaklanjuti | 3/3 | A6 putaran 3 (anggaran terakhir) |
 | 2026-10-31 19:00 | INC-08 | A6 | G6 | APPROVE putaran 3 (R1, R11–R13 tertutup; R14 minor, R15–R16 nit) | 3/3 | A5 R14–R16, PR |
 | 2026-10-31 19:20 | INC-08 | A5 | G4–G5 | R14–R16 ditindaklanjuti | 3/3 | gerbang penuh, PR |
-| 2026-11-01 05:40 | INC-09 | A1, A4, A5 | G1, G4, G5 | merah 6 kegagalan → hijau; uji peramban tiga berkas | 1/3 | A6 |
-| 2026-11-01 06:30 | INC-09 | A6 | G6 | CHANGES-REQUESTED (R1 major, R2–R6 dan R10 minor, R7–R9 nit) | 1/3 | A5 perbaiki |
-| 2026-11-01 07:00 | INC-09 | A5 | G4–G5 | R1–R10 ditindaklanjuti; merah 9 kegagalan pada 0fd867f | 2/3 | A6 putaran 2 |
-| 2026-11-01 07:40 | INC-09 | A6 | G6 | APPROVE putaran 2 (R1–R10 tertutup; R11 minor, R12–R15 nit) | 2/3 | A5 R11–R15, gerbang penuh |
-| 2026-11-01 08:00 | INC-09 | A5 | G4–G5 | R11–R15 ditindaklanjuti; merah 3 kegagalan pada 38984f2 | 2/3 | gerbang penuh, PR |
+| 2026-11-01 05:05 | INC-09 | A1, A4, A5 | G1, G4, G5 | merah 6 kegagalan → hijau; uji peramban tiga berkas | 1/3 | A6 |
+| 2026-11-01 05:15 | INC-09 | A6 | G6 | CHANGES-REQUESTED (R1 major, R2–R6 dan R10 minor, R7–R9 nit) | 1/3 | A5 perbaiki |
+| 2026-11-01 05:25 | INC-09 | A5 | G4–G5 | R1–R10 ditindaklanjuti; merah 9 kegagalan pada 0fd867f | 2/3 | A6 putaran 2 |
+| 2026-11-01 05:35 | INC-09 | A6 | G6 | APPROVE putaran 2 (R1–R10 tertutup; R11 minor, R12–R15 nit) | 2/3 | A5 R11–R15, gerbang penuh |
+| 2026-11-01 05:40 | INC-09 | A5 | G4–G5 | R11–R15 ditindaklanjuti; merah 3 kegagalan pada 38984f2 | 2/3 | gerbang penuh, PR |
+| 2026-11-01 06:00 | INC-09 | A0 | G1–G8 | LOLOS (cakupan 97,1%); CI hijau; PR #4 digabung pengguna | 2/3 | INC-10 |
+| 2026-11-01 06:15 | INC-10 | A1, A4, A5 | G1, G4, G5 | audit GUI; merah 34 kegagalan → hijau | 1/3 | A6 |
+| 2026-11-01 06:25 | INC-10 | A6 | G6 | CHANGES-REQUESTED (R1 blocker: injeksi kode lewat nama seri; R2–R3 major) | 1/3 | A5 perbaiki |
+| 2026-11-01 06:32 | INC-10 | A5 | G4–G5 | R1–R8 ditindaklanjuti; merah 12 kegagalan pada 0db13de | 2/3 | A6 putaran 2 |
+| 2026-11-01 06:40 | INC-10 | A6 | G6 | CHANGES-REQUESTED (R9 blocker: injeksi lewat daftar bernama dari websocket; R10 major) | 2/3 | A5 perbaiki |
+| 2026-11-01 06:45 | INC-10 | A5 | G4–G5 | R9–R13 ditindaklanjuti (validasi isian dan daftar putih kode) | 3/3 | A6 putaran 3 (anggaran terakhir) |
+| 2026-11-01 06:58 | INC-10 | A6 | G6 | APPROVE putaran 3 (R9–R13 tertutup; R14–R15 minor, R16–R18 nit) | 3/3 | A5 R14–R18, gerbang penuh |
+| 2026-11-01 07:00 | INC-10 | A5 | G4–G5 | R14–R18 ditindaklanjuti | 3/3 | gerbang penuh, PR |
+| 2026-11-01 10:40 | INC-10 | A0 | G1–G8 | LOLOS (cakupan 97,4%; check 0/0); uji peramban 168 lolos | 3/3 | PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
 - Di luar increment 0.2.1 (temuan A6): dengan `lag_shift = TRUE` (bawaan `oecd_spec()`), uji bias seleksi membandingkan komposit tergeser di dalam sampel dengan komposit tanpa geser sesudah titik potong, sehingga `lead_gap` (R/selection-bias.R) bias. Ada sejak 0.1.3; diusulkan sebagai isu terpisah.
+- Di luar increment 0.5.0 (temuan A6 putaran 3): pesan websocket buatan dapat mengisi `datapath` isian berkas dengan jalur sembarang, sehingga server membaca CSV yang dapat diakses proses R. Penting bila GUI di-hosting untuk umum; usul: pastikan `datapath` berada di bawah direktori unggahan Shiny.

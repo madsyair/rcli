@@ -18,14 +18,24 @@
 #'   quarterly data), comparable with the year-on-year growth of the
 #'   reference ("growth rate cycle").
 #'
+#' For a reference that is not logged (for instance a balance that crosses
+#' zero), deviations are measured in percent of the mean absolute level, as
+#' in the amplitude of the composite, and the trend is restored by adding
+#' them to the trend rather than by multiplying.
+#'
 #' Peaks and troughs differ between forms: trend restoration moves peaks
 #' later and troughs earlier, and peaks of the rate of change mark
 #' inflection points of the amplitude-adjusted series, so the forms should
 #' not be mixed when reading signals.
 #'
 #' @param x A [CliResult-class] with a composite.
+#' @param composite Optional [CompositeIndex-class] presented instead of the
+#'   composite of `x`, for instance one chosen by hand with
+#'   [cli_composite()] from `cycles(x)`.
 #' @return A data frame with `time` and the columns `amplitude_adjusted`,
-#'   `trend_restored`, `rate_of_change`, `reference`, `reference_trend` and
+#'   `trend_restored`, `rate_of_change`, `reference`,
+#'   `reference_amplitude_adjusted` (the reference without trend, in the
+#'   units of `amplitude_adjusted`), `reference_trend` and
 #'   `reference_rate_of_change`.
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -37,12 +47,20 @@
 #' pr <- cli_presentation(res)
 #' tail(pr)
 #' @export
-cli_presentation <- function(x) {
-  if (!is(x, "CliResult") || is.null(x@composite)) {
+cli_presentation <- function(x, composite = NULL) {
+  if (!is(x, "CliResult")) {
+    rcli_abort("`x` must be a CliResult (see cli_build()).",
+               "rcli_error_argument")
+  }
+  if (!is.null(composite) && !is(composite, "CompositeIndex")) {
+    rcli_abort("`composite` must be a CompositeIndex (see cli_composite()).",
+               "rcli_error_argument")
+  }
+  comp <- if (is.null(composite)) x@composite else composite
+  if (is.null(comp)) {
     rcli_abort("`x` must be a CliResult with a composite (see cli_build()).",
                "rcli_error_argument")
   }
-  comp <- x@composite
   ref <- x@cycles[[x@candidates@reference]]
   f <- stats::frequency(comp@cycle)
   amp_adj <- 100 + as.numeric(comp@cycle) * comp@amplitude
@@ -50,13 +68,24 @@ cli_presentation <- function(x) {
   trend <- reference_trend(ref, x@spec)
   trend_level <- if (logged) exp(trend) else trend
   orig <- as.numeric(ref@original)
-  tr <- trend_level * amp_adj / 100
+  if (logged) {
+    # percent deviation from trend, as the amplitude of a logged reference
+    tr <- trend_level * amp_adj / 100
+    ref_amp <- 100 * orig / trend_level
+  } else {
+    # deviation from trend in percent of the mean level, as the amplitude
+    # of a reference that is not logged (it may cross zero)
+    scale <- mean(abs(as.numeric(ref@transformed)), na.rm = TRUE)
+    tr <- trend_level + (amp_adj - 100) / 100 * scale
+    ref_amp <- 100 + 100 * (orig - trend_level) / scale
+  }
   data.frame(
     time = as.numeric(stats::time(comp@cycle)),
     amplitude_adjusted = amp_adj,
     trend_restored = tr,
     rate_of_change = rate_of_change(tr, f),
     reference = orig,
+    reference_amplitude_adjusted = ref_amp,
     reference_trend = trend_level,
     reference_rate_of_change = rate_of_change(orig, f)
   )

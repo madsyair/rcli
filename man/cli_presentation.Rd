@@ -4,14 +4,20 @@
 \alias{cli_presentation}
 \title{The three OECD forms of a composite leading indicator}
 \usage{
-cli_presentation(x)
+cli_presentation(x, composite = NULL)
 }
 \arguments{
 \item{x}{A \linkS4class{CliResult} with a composite.}
+
+\item{composite}{Optional \linkS4class{CompositeIndex} presented instead of the
+composite of \code{x}, for instance one chosen by hand with
+\code{\link[=cli_composite]{cli_composite()}} from \code{cycles(x)}.}
 }
 \value{
 A data frame with \code{time} and the columns \code{amplitude_adjusted},
-\code{trend_restored}, \code{rate_of_change}, \code{reference}, \code{reference_trend} and
+\code{trend_restored}, \code{rate_of_change}, \code{reference},
+\code{reference_amplitude_adjusted} (the reference without trend, in the
+units of \code{amplitude_adjusted}), \code{reference_trend} and
 \code{reference_rate_of_change}.
 }
 \description{
@@ -35,6 +41,11 @@ extended linearly beyond the last reference observation;
 quarterly data), comparable with the year-on-year growth of the
 reference ("growth rate cycle").
 }
+
+For a reference that is not logged (for instance a balance that crosses
+zero), deviations are measured in percent of the mean absolute level, as
+in the amplitude of the composite, and the trend is restored by adding
+them to the trend rather than by multiplying.
 
 Peaks and troughs differ between forms: trend restoration moves peaks
 later and troughs earlier, and peaks of the rate of change mark

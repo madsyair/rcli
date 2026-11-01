@@ -1,3 +1,53 @@
+# rcli 0.5.0
+
+An audit of the package against the interface found options that only code
+could use. This release brings them into the interface; the exported script
+reproduces each of them.
+
+## Graphical interface
+
+* Step 3: with seasonal adjustment, *Remove the Idulfitri effect* adds
+  `holiday_effect(idulfitri_dates())` to the specification (both methods).
+* Step 3: *Advanced options* for the rcli method: the candidate classifier
+  (rcli or OECD median lead), the outlier treatment (robust z or TRAMO) and
+  the OECD lag shift, each on its own; the parameters of the chosen cycle
+  filter and of the turning-point dating rule (Bry-Boschan or BBQ); the
+  coincident band, the turning-point pairing window, the target lead, the
+  largest cross-correlation and Granger lags, the extra Toda-Yamamoto lags,
+  the horizon of the probability tests, the minimum share of components of
+  the aggregation and the horizon and order of the AR end extension. Empty
+  entries keep the package defaults (which may depend on the frequency) and
+  stay out of the script; invalid entries stop step 3 with the package's
+  message.
+* Step 2 (several files): the disaggregation of the reference series
+  (Denton-Cholette, Chow-Lin with an indicator series of the analysis
+  frequency, which then is not a candidate, or linear interpolation; shown
+  only when the reference is converted), the dates of weekly data (start or
+  end of the week) and the minimum coverage of daily and weekly data.
+* Step 7 shows the three OECD forms of the composite (amplitude adjusted,
+  trend restored, rate of change over a year) next to the matching form of
+  the reference series; step 10 downloads them as CSV.
+* Steps 2 and 3 now run the very code they write into the script, so the
+  interface and the script cannot differ. Series names from file names and
+  column headers are written so that they read back exactly, whatever
+  characters they hold; every input is checked (a single finite number, or
+  one of the offered choices, within limits checked on the server) before
+  it becomes code, and the code is refused unless it names only the
+  functions that step uses and a few operators. The reference series and the components are written the same
+  way in the script. Whole numbers are written without the `L` suffix.
+
+## Presentation
+
+* `cli_presentation()` gains `composite`, to present a composite chosen by
+  hand with `cli_composite()`, and the column
+  `reference_amplitude_adjusted` (the reference without trend, in the units
+  of the amplitude-adjusted CLI).
+* For a reference that is not logged (a balance that may cross zero),
+  `cli_presentation()` now measures deviations in percent of the mean
+  absolute level, as the amplitude of the composite does, and restores the
+  trend by adding them to it; before, it multiplied by a trend that could be
+  near zero or negative, which inverted or blew up the trend-restored form.
+
 # rcli 0.4.0
 
 ## Data input

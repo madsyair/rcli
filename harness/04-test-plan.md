@@ -13,6 +13,7 @@
 | Pemisah kolom dan tanda desimal CSV: pengenalan otomatis, pilihan eksplisit, galat bila sama, skrip ekspor, teks dua bahasa; unggahan `write.csv2()` di peramban | FR-008 | `tests/testthat/test-app-csv.R`, `test-app-e2e.R` |
 | Beberapa berkas per indikator: bentuk tanggal, nama seri, format per berkas, sel kosong, kesetaraan dengan berkas lebar, metadata kosong tidak menimpa penyelarasan | FR-009 AC-1 sampai AC-4, AC-6 | `tests/testthat/test-read-series.R` |
 | GUI beberapa berkas: ringkasan, grafik, tipe seri acuan, frekuensi terisi, penolakan tanpa tipe, langkah 3–9, skrip ekspor, indeks sejalan sebagai acuan; unggahan tiga berkas di peramban | FR-009 AC-5 sampai AC-7 | `tests/testthat/test-app-multi.R`, `test-app-e2e.R` |
+| Pilihan paket di GUI: efek Idulfitri, opsi lanjutan langkah 3, penyelarasan langkah 2, bentuk penyajian OECD langkah 7 dan unduhannya, `cli_presentation(composite =)`; objek dari skrip sama dengan objek GUI | FR-010 | `tests/testthat/test-app-options.R`, `test-app-e2e.R` |
 | Imports tidak bertambah; biaya perpanjangan; kalibrasi dan evaluasi waktu nyata | NFR-001, NFR-002, NFR-003 | `test-end-extension.R`; data dari `data-raw/calibrate_*.R`, `data-raw/realtime_defaults.R` |
 
 ## Bukti merah (G4)
@@ -35,3 +36,6 @@ Bukti merah: sebelum implementasi FR-008 (2026-10-31), `devtools::test(filter = 
 ### Bukti merah 0.4.0 (G4)
 Bukti merah: sebelum implementasi FR-009 (2026-11-01), `test-read-series.R` gagal 4 kali (`read_cli_series()` belum ada) dan `test-app-multi.R` gagal 2 kali (kunci teks `src_upload_multi` dan isian `files` belum ada; langkah 2 tidak selesai). Uji "metadata kosong tidak menimpa penyelarasan" ditambahkan sesudah uji GUI menemukan cacat itu di `complete_meta()`; uji itu gagal pada kode 0.3.1.
 Bukti merah sesudah review putaran 1 (R1–R10): uji baru gagal 9 kali pada kode 0fd867f dan lolos sesudah perbaikan.
+
+### Bukti merah 0.5.0 (G4)
+Bukti merah: sebelum implementasi FR-010 (2026-11-01), `test-app-options.R` gagal 34 kali (isian `idulfitri`, opsi lanjutan, penyelarasan, `pres_form` belum ada; `cli_presentation()` tanpa argumen `composite`).

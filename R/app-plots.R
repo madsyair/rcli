@@ -258,3 +258,42 @@ plot_series_dated <- function(series, reference, tr = function(x) x) {
                    bg = grDevices::adjustcolor("white", 0.8), box.col = NA,
                    cex = 0.8, ncol = 2)
 }
+
+# One of the three OECD forms of the composite (cli_presentation()) next to
+# the matching form of the reference series.
+plot_presentation <- function(pres, form, tr = function(x) x) {
+  cli <- pres[[form]]
+  ref <- switch(form,
+    amplitude_adjusted = pres$reference_amplitude_adjusted,
+    trend_restored = pres$reference,
+    rate_of_change = pres$reference_rate_of_change)
+  ylab <- switch(form,
+    amplitude_adjusted = "index (trend of the reference = 100)",
+    trend_restored = "level of the reference series",
+    rate_of_change = "rate of change over a year (%)")
+  ref_label <- switch(form,
+    amplitude_adjusted = "reference series without trend",
+    trend_restored = "reference series",
+    rate_of_change = "rate of change of the reference series")
+  ylim <- range(cli, ref, na.rm = TRUE)
+  graphics::plot(pres$time, cli, type = "n", ylim = ylim, xlab = "",
+                 ylab = tr(ylab))
+  if (form == "amplitude_adjusted") graphics::abline(h = 100, col = "grey60")
+  if (form == "rate_of_change") graphics::abline(h = 0, col = "grey60")
+  if (form == "trend_restored") {
+    graphics::lines(pres$time, pres$reference_trend, col = "grey55", lty = 2)
+  }
+  graphics::lines(pres$time, ref, lwd = 1.5, col = "black")
+  graphics::lines(pres$time, cli, lwd = 2, col = "firebrick")
+  leg <- c(tr("composite leading indicator"), tr(ref_label))
+  col <- c("firebrick", "black")
+  lty <- c(1, 1)
+  if (form == "trend_restored") {
+    leg <- c(leg, tr("trend of the reference series"))
+    col <- c(col, "grey55")
+    lty <- c(lty, 2)
+  }
+  graphics::legend("topleft", lwd = c(2, 1.5, 1)[seq_along(leg)],
+                   lty = lty, col = col, legend = leg, box.col = NA,
+                   bg = grDevices::adjustcolor("white", 0.85))
+}

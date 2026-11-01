@@ -100,6 +100,17 @@ Fungsi baru `read_cli_series()` dan sumber data baru di GUI langkah 1, "Unggah b
 - AC-FR-009.6  GUI langkah 2 (mode beberapa berkas): isian tipe seri acuan; frekuensi asal setiap kandidat terisi dari hasil pengenalan. "Bentuk himpunan kandidat" menjalankan `cli_align()` lalu `cli_candidates()`. Seri yang frekuensinya harus diubah tetapi tidak bertipe → pesan galat dan langkah 2 tidak selesai.
 - AC-FR-009.7  Skrip R ekspor mereproduksi data GUI dengan `read_cli_series()` dan `cli_align()`, lalu komposit yang sama. Langkah 3–10 dan tombol indeks sejalan sebagai acuan tetap bekerja.
 
+### FR-010 — Pilihan paket yang belum ada di GUI (increment rcli 0.5.0)
+Hasil audit (2026-11-01): alur utama sudah tercakup di GUI, tetapi beberapa pilihan paket hanya dapat dipakai lewat kode. Increment ini menutup butir 1–7 audit; skrip ekspor tetap mereproduksi GUI persis.
+- AC-FR-010.1  Efek Idulfitri: di langkah 3, bila penyesuaian musiman dipilih, kotak centang `idulfitri` menambahkan `holidays = holiday_effect(idulfitri_dates(), name = "idulfitri")` ke spesifikasi, untuk metode rcli maupun OECD. Tanpa penyesuaian musiman, efek tidak dipakai.
+- AC-FR-010.2  Bentuk penyajian OECD: langkah 7 menampilkan grafik tiga bentuk `cli_presentation()` (disesuaikan amplitudonya, dipulihkan trennya, laju perubahan 12 bulan atau 4 triwulan), masing-masing bersama bentuk seri acuan yang sepadan; langkah 10 mengunduhnya sebagai CSV. `cli_presentation()` mendapat argumen `composite` agar komposit pilihan manual (`cli_composite()`) juga dapat disajikan; skrip ekspor memuat pemanggilannya.
+- AC-FR-010.3  Penyelarasan (mode beberapa berkas, langkah 2): pilihan metode disagregasi seri acuan (`denton-cholette`, `chow-lin`, `linear`), seri indikator untuk Chow–Lin (seri berfrekuensi analisis), tanggal data mingguan (`week_date`: awal atau akhir minggu), dan cakupan minimum data harian/mingguan (`min_coverage`). Chow–Lin tanpa paket 'tempdisagg' atau tanpa indikator → pesan galat dan langkah 2 tidak selesai.
+- AC-FR-010.4  Opsi lanjutan metode rcli (langkah 3): pengklasifikasi (`rcli_classifier()` atau `oecd_classifier()`), perlakuan pencilan (`robust_outliers()` atau `tramo_outliers()`), dan penggeseran lag (`lag_shift`) dapat dipilih masing-masing.
+- AC-FR-010.5  Opsi lanjutan: parameter penyaring siklus terpilih (HP ganda: periode tren dan penghalusan; HP: λ; CF/BK: batas pita, K untuk BK; Hamilton: h dan p) dan aturan penanggalan titik balik (jendela, fase minimum, siklus minimum, eksklusi ujung) untuk Bry–Boschan (bulanan) atau BBQ (triwulanan).
+- AC-FR-010.6  Opsi lanjutan: `coincident_band`, `lead_window`, `ccf_lag_max`, `target_lead`, `granger_max_lag`, `granger_dmax`, `horizon`, cakupan minimum agregasi (`min_coverage`), serta `h` dan `order_max` perpanjangan AR.
+- AC-FR-010.7  Isian opsi lanjutan yang kosong berarti nilai bawaan paket (yang dapat bergantung pada frekuensi); hanya isian yang diisi muncul di skrip ekspor. Nilai tak sah (misalnya batas pita terbalik) → pesan galat paket dan langkah 3 tidak selesai.
+- AC-FR-010.8  Spesifikasi (langkah 3) dan penyelarasan (langkah 2) dibentuk dari teks kode yang sama dengan skrip ekspor, sehingga GUI dan skrip tidak dapat berbeda; uji membandingkan objek yang dihasilkan keduanya untuk setiap pilihan.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.
