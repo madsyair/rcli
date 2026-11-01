@@ -26,6 +26,23 @@ call_text <- function(fun, args = list()) {
          ")")
 }
 
+# Server-side limits of numeric inputs: the browser's limits can be
+# bypassed, and a huge horizon or window would exhaust memory.
+input_limits <- list(
+  outlier = c(0, 100), min_lead = c(0, 120), min_median_lead = c(0, 120),
+  min_consistency = c(0, 1), max_missed = c(0, 1), max_extra = c(0, 1),
+  alpha = c(0, 1), min_auc = c(0, 1), min_components = c(1, 100),
+  max_iter = c(1, 100), hp_trend_period = c(2, 1200),
+  hp_smooth_period = c(2, 1200), hp_lambda = c(0, 1e10),
+  band_pl = c(2, 1200), band_pu = c(2, 1200), bk_k = c(1, 240),
+  ham_h = c(1, 240), ham_p = c(1, 60), dater_window = c(1, 120),
+  dater_min_phase = c(1, 120), dater_min_cycle = c(2, 240),
+  dater_end_exclusion = c(0, 120), agg_min_coverage = c(0, 1),
+  ar_h = c(1, 120), ar_order_max = c(1, 60), coincident_band = c(0, 120),
+  ccf_lag_max = c(1, 240), granger_max_lag = c(1, 60),
+  granger_dmax = c(0, 12), horizon = c(0, 120), align_coverage = c(0, 1)
+)
+
 # Code text of a numeric input, or NULL when it is empty. Only a single
 # finite number passes; it is written as a double (the browser sends whole
 # numbers as integers), so the text holds nothing but the number.
@@ -36,6 +53,12 @@ value_text <- function(x, id = "number") {
   if (!is.atomic(x) || length(x) != 1L || is.logical(x)) bad_input(id)
   v <- suppressWarnings(as.numeric(unname(x)))
   if (!is.finite(v)) bad_input(id)
+  lim <- input_limits[[id]]
+  if (!is.null(lim) && (v < lim[1] || v > lim[2])) {
+    rcli_abort(sprintf("The input '%s' must lie between %s and %s.", id,
+                       format(lim[1]), format(lim[2])),
+               "rcli_error_argument")
+  }
   deparse_value(v)
 }
 
@@ -79,7 +102,12 @@ chr_text <- function(x) {
     paste0("stats::setNames(c(", paste(vals, collapse = ", "), "), c(",
            paste(nms, collapse = ", "), "))")
   }
-  # read back with nothing but `c`, `::` and the literals available
+  # read back with nothing but `c`, `::` and the literals available, and
+  # only after checking that the text names nothing else
+  if (length(setdiff(all.names(parse(text = out)),
+                     c("c", "::", "stats", "setNames"))) > 0L) {
+    fail()
+  }
   safe <- list2env(list(c = base::c, `::` = base::`::`), parent = emptyenv())
   back <- tryCatch(eval(parse(text = out), envir = safe),
                    error = function(e) NULL)
@@ -114,20 +142,27 @@ assign_text <- function(name, fun, args, width = 78L) {
   paste(c(lines, cur), collapse = "\n")
 }
 
-# Names the generated code may use besides the exported functions of the
-# package: assignment, vectors, subsetting and `stats::setNames`.
+# Names the generated code may use: assignment, vectors, subsetting and
+# `stats::setNames`, plus the functions each kind of code calls.
 code_names <- c("<-", "(", "c", "::", "stats", "setNames", "[", "!=",
-                "names", "-", "numeric")
+                "names", "-")
+spec_functions <- c(
+  "cli_spec", "oecd_spec", "hp_double_filter", "hp_filter", "cf_filter",
+  "bk_filter", "hamilton_filter", "bry_boschan", "bbq", "equal_weight",
+  "oecd_aggregate", "principal_component", "conference_board",
+  "dynamic_factor", "ar_extension", "no_extension", "tramo_outliers",
+  "oecd_classifier", "holiday_effect", "idulfitri_dates")
+align_functions <- "cli_align"
 
 # Run code text written for the exported script and return one object.
-# `values` are the objects the code refers to (for instance `series`). As a
-# second line of defence, code that names anything else than exported
-# functions, `code_names`, `name` and `values` is refused before it runs.
-eval_code <- function(text, name, values = list()) {
+# `values` are the objects the code refers to (for instance `series`) and
+# `functions` the package functions it may call. As a second line of
+# defence, code that names anything else than `functions`, `code_names`,
+# `name` and `values` is refused before it runs.
+eval_code <- function(text, name, values = list(), functions) {
   exprs <- parse(text = text)
   used <- all.names(exprs)
-  other <- setdiff(used, c(getNamespaceExports("rcli"), code_names, name,
-                           names(values)))
+  other <- setdiff(used, c(functions, code_names, name, names(values)))
   if (length(other) > 0L) {
     rcli_abort(sprintf("The generated code uses unexpected names: %s.",
                        paste(other, collapse = ", ")),
@@ -169,21 +204,21 @@ filter_text <- function(input) {
                                     "hamilton"), "filter")
   switch(key,
     hp_double = call_text("hp_double_filter", list(
-      trend_period = value_text(input$hp_trend_period),
-      smooth_period = value_text(input$hp_smooth_period))),
-    hp = call_text("hp_filter", list(lambda = value_text(input$hp_lambda))),
-    cf = call_text("cf_filter", list(pl = value_text(input$band_pl),
-                                     pu = value_text(input$band_pu))),
-    bk = call_text("bk_filter", list(pl = value_text(input$band_pl),
-                                     pu = value_text(input$band_pu),
-                                     k = value_text(input$bk_k))),
+      trend_period = value_text(input$hp_trend_period, "hp_trend_period"),
+      smooth_period = value_text(input$hp_smooth_period, "hp_smooth_period"))),
+    hp = call_text("hp_filter", list(lambda = value_text(input$hp_lambda, "hp_lambda"))),
+    cf = call_text("cf_filter", list(pl = value_text(input$band_pl, "band_pl"),
+                                     pu = value_text(input$band_pu, "band_pu"))),
+    bk = call_text("bk_filter", list(pl = value_text(input$band_pl, "band_pl"),
+                                     pu = value_text(input$band_pu, "band_pu"),
+                                     k = value_text(input$bk_k, "bk_k"))),
     hamilton = call_text("hamilton_filter", list(
-      h = value_text(input$ham_h), p = value_text(input$ham_p)))
+      h = value_text(input$ham_h, "ham_h"), p = value_text(input$ham_p, "ham_p")))
   )
 }
 
 aggregator_text <- function(input) {
-  cov <- value_text(input$agg_min_coverage)
+  cov <- value_text(input$agg_min_coverage, "agg_min_coverage")
   key <- choice_key(input$aggregator, c("equal", "equal_level", "oecd",
                                         "pca", "cb", "dfm"), "aggregator")
   switch(key,
@@ -199,18 +234,18 @@ aggregator_text <- function(input) {
 
 # The dating rule, only when one of its parameters is given.
 dater_text <- function(input, freq) {
-  args <- list(window = value_text(input$dater_window),
-               min_phase = value_text(input$dater_min_phase),
-               min_cycle = value_text(input$dater_min_cycle),
-               end_exclusion = value_text(input$dater_end_exclusion))
+  args <- list(window = value_text(input$dater_window, "dater_window"),
+               min_phase = value_text(input$dater_min_phase, "dater_min_phase"),
+               min_cycle = value_text(input$dater_min_cycle, "dater_min_cycle"),
+               end_exclusion = value_text(input$dater_end_exclusion, "dater_end_exclusion"))
   if (all(vapply(args, is.null, logical(1)))) return(NULL)
   call_text(if (freq == 12) "bry_boschan" else "bbq", args)
 }
 
 extension_text <- function(input) {
   if (isFALSE(input$extend)) return("no_extension()")
-  call_text("ar_extension", list(h = value_text(input$ar_h),
-                                 order_max = value_text(input$ar_order_max)))
+  call_text("ar_extension", list(h = value_text(input$ar_h, "ar_h"),
+                                 order_max = value_text(input$ar_order_max, "ar_order_max")))
 }
 
 holidays_text <- function(input) {
@@ -221,14 +256,15 @@ holidays_text <- function(input) {
 
 # Code of step 3: `spec <- cli_spec(...)` or `spec <- oecd_spec(...)`.
 spec_call <- function(input, freq) {
-  cut <- deparse_value(parse_cutoffs(input$oos_cutoffs))
+  cuts <- parse_cutoffs(input$oos_cutoffs)
+  cut <- if (length(cuts) > 0L) deparse_value(cuts)
   if (identical(input$method, "oecd")) {
     return(assign_text("spec", "oecd_spec", list(
       freq = freq, seasonal_adjust = deparse_value(isTRUE(input$seasonal)),
-      holidays = holidays_text(input), alpha = value_text(input$alpha),
-      min_auc = value_text(input$min_auc),
-      min_components = value_text(input$min_components),
-      max_iter = value_text(input$max_iter), oos_cutoffs = cut)))
+      holidays = holidays_text(input), alpha = value_text(input$alpha, "alpha"),
+      min_auc = value_text(input$min_auc, "min_auc"),
+      min_components = value_text(input$min_components, "min_components"),
+      max_iter = value_text(input$max_iter, "max_iter"), oos_cutoffs = cut)))
   }
   tramo <- identical(input$outlier_method, "tramo")
   assign_text("spec", "cli_spec", list(
@@ -239,24 +275,24 @@ spec_call <- function(input, freq) {
                                                 "test"), "transform"),
     seasonal_adjust = deparse_value(isTRUE(input$seasonal)),
     holidays = holidays_text(input),
-    outlier_threshold = if (!tramo) value_text(input$outlier),
+    outlier_threshold = if (!tramo) value_text(input$outlier, "outlier"),
     outliers = if (tramo) "tramo_outliers()",
-    min_lead = value_text(input$min_lead),
-    min_median_lead = value_text(input$min_median_lead),
-    min_consistency = value_text(input$min_consistency),
-    max_missed = value_text(input$max_missed),
-    max_extra = value_text(input$max_extra),
-    coincident_band = value_text(input$coincident_band),
-    min_auc = value_text(input$min_auc),
+    min_lead = value_text(input$min_lead, "min_lead"),
+    min_median_lead = value_text(input$min_median_lead, "min_median_lead"),
+    min_consistency = value_text(input$min_consistency, "min_consistency"),
+    max_missed = value_text(input$max_missed, "max_missed"),
+    max_extra = value_text(input$max_extra, "max_extra"),
+    coincident_band = value_text(input$coincident_band, "coincident_band"),
+    min_auc = value_text(input$min_auc, "min_auc"),
     target_lead = pair_text(input$target_lead, "target_lead"),
     lead_window = pair_text(input$lead_window, "lead_window"),
-    ccf_lag_max = value_text(input$ccf_lag_max),
-    alpha = value_text(input$alpha),
-    granger_max_lag = value_text(input$granger_max_lag),
-    granger_dmax = value_text(input$granger_dmax),
-    max_iter = value_text(input$max_iter),
-    min_components = value_text(input$min_components),
-    horizon = value_text(input$horizon),
+    ccf_lag_max = value_text(input$ccf_lag_max, "ccf_lag_max"),
+    alpha = value_text(input$alpha, "alpha"),
+    granger_max_lag = value_text(input$granger_max_lag, "granger_max_lag"),
+    granger_dmax = value_text(input$granger_dmax, "granger_dmax"),
+    max_iter = value_text(input$max_iter, "max_iter"),
+    min_components = value_text(input$min_components, "min_components"),
+    horizon = value_text(input$horizon, "horizon"),
     oos_cutoffs = cut,
     classifier = if (identical(input$classifier, "oecd")) {
       "oecd_classifier()"

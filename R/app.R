@@ -481,6 +481,11 @@ app_ui <- function(language = "id") {
 # ---- helpers used by the server ---------------------------------------
 
 parse_cutoffs <- function(text) {
+  if (is.null(text)) return(numeric(0))
+  if (!is.character(text) || length(text) != 1L) {
+    rcli_abort("Cut-offs must be numbers separated by commas.",
+               "rcli_error_argument")
+  }
   parts <- trimws(strsplit(text, ",")[[1]])
   parts <- parts[nzchar(parts)]
   out <- suppressWarnings(as.numeric(parts))
@@ -632,6 +637,13 @@ multi_lines <- function(state) {
                      chr_text(unname(state$file_name)), fmt))
   if (is.null(state$align)) return(lines)
   c(lines, "# brought to one frequency in step 2", align_text(state$align))
+}
+
+# A single text input, or NA when it is empty or not a single string (a
+# crafted message).
+one_text <- function(v) {
+  if (is.character(v) && length(v) == 1L && !is.na(v) && nzchar(v)) v else
+    NA_character_
 }
 
 # Step 2 of the script: the metadata and the candidate set built from `data`.
@@ -1005,28 +1017,24 @@ app_server <- function(language = "id") {
       meta <- data.frame(
         name = cands,
         rationale = vapply(seq_along(cands), function(i) {
-          v <- input[[paste0("rat_", i)]]
-          if (is.null(v) || !nzchar(v)) NA_character_ else v
+          one_text(input[[paste0("rat_", i)]])
         }, character(1)),
         source = vapply(seq_along(cands), function(i) {
-          v <- input[[paste0("src_", i)]]
-          if (is.null(v) || !nzchar(v)) NA_character_ else v
+          one_text(input[[paste0("src_", i)]])
         }, character(1)),
         type = vapply(seq_along(cands), function(i) {
-          v <- input[[paste0("typ_", i)]]
-          if (is.null(v) || !nzchar(v)) NA_character_ else v
+          one_text(input[[paste0("typ_", i)]])
         }, character(1)),
         frequency = vapply(seq_along(cands), function(i) {
           if (multi()) return(attr(rv$series[[cands[i]]], "frequency"))
-          v <- input[[paste0("frq_", i)]]
-          if (is.null(v) || !nzchar(v)) NA_character_ else v
+          one_text(input[[paste0("frq_", i)]])
         }, character(1)),
         stringsAsFactors = FALSE
       )
       align <- NULL
       data <- rv$data
       if (multi()) {
-        rt <- if (is.null(input$ref_type)) NA_character_ else input$ref_type
+        rt <- one_text(input$ref_type)
         type <- stats::setNames(c(rt, meta$type),
                                 c(input$reference, cands))
         type <- type[!is.na(type) & nzchar(type)]
@@ -1052,7 +1060,8 @@ app_server <- function(language = "id") {
         }
         # the interface runs the code it writes into the script
         data <- safely(eval_code(align_text(align), "data",
-                                 list(series = rv$series)))
+                                 list(series = rv$series),
+                                 functions = align_functions))
       }
       cand <- if (!is.null(data)) {
         safely(cli_candidates(data, input$reference, meta = meta))
@@ -1083,7 +1092,9 @@ app_server <- function(language = "id") {
       freq <- stats::frequency(rv$cand@data)
       # the interface runs the code it writes into the script
       code <- safely(spec_call(input, freq))
-      spec <- if (!is.null(code)) safely(eval_code(code, "spec"))
+      spec <- if (!is.null(code)) {
+        safely(eval_code(code, "spec", functions = spec_functions))
+      }
       if (is.null(spec)) return()
       rv$spec <- spec
       rv$spec_call <- code

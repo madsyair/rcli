@@ -2,8 +2,8 @@
 
 - Increment: rcli 0.5.0 (FR-010)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 2 (putaran 1 terhadap 0db13de, putaran 2 terhadap b7c4820;
-  basis 986d2ea, 0.4.0 di main)
+- Putaran: 3 (putaran 1 terhadap 0db13de, putaran 2 terhadap b7c4820,
+  putaran 3 terhadap 72f7aed; basis 986d2ea, 0.4.0 di main)
 - Review 0.4.0 tersimpan di riwayat git berkas ini (komit 3b87683).
 
 ## Yang diperiksa (putaran 1)
@@ -122,3 +122,44 @@ Perbaikan dua lapis:
 - Bukti merah: uji baru gagal 14 kali pada b7c4820 (termasuk kode yang
   dijalankan lewat daftar bernama dan skrip dengan nama seri acuan
   injeksi); semuanya lolos sesudah perbaikan.
+
+## Review putaran 3 (72f7aed)
+- Uji: `test-app-options` 141, `test-app` 131, `test-app-multi` 51,
+  `test-app-reference` 33, `test-app-csv` 78, `test-app-frequency` 13;
+  tanpa kegagalan; lintr bersih.
+- R9–R13 tertutup. Lapis 1 diserang dengan daftar, daftar bernama,
+  vektor, NULL, NA, Inf, string berkutip dan bergaris miring terbalik,
+  angka sebagai string, dan nilai logika; lapis 2 dengan `stats::system`,
+  `base::system`, `rcli::`, `:::`, `"system"(...)`, `function`, `[[`, dan
+  penimpaan `setNames`: semuanya ditolak, tanpa berkas penanda.
+- Tanpa regresi: isian integer, isian lanjutan kosong, transformasi log,
+  data triwulanan, metode OECD dengan titik potong, Chow–Lin, rantai
+  indeks sejalan sebagai acuan.
+
+### Temuan baru putaran 3
+- [x] [R14][minor] Batas atas isian angka hanya di peramban; `ar_h = 1e9`
+  dari pesan buatan meminta 7,5 GB memori.
+- [x] [R15][minor] Daftar putih `eval_code()` memuat semua fungsi ekspor
+  (termasuk `read_cli_data()`, `run_app()`) dan `numeric`.
+- [x] [R16][nit] Isian langkah 2 yang bukan satu string (pesan buatan)
+  menghentikan sesi.
+- [x] [R17][nit] Lingkungan bolak-balik `chr_text()` masih memuat `::`.
+- [x] [R18][nit] `parse_cutoffs()` memberi `simpleError` untuk NULL atau
+  daftar.
+- Catatan di luar increment: pesan buatan dapat mengisi `datapath` isian
+  berkas dengan jalur sembarang; perlu dipertimbangkan bila aplikasi
+  di-hosting untuk umum.
+
+Putusan: APPROVE
+
+## Tindak lanjut A5 sesudah putaran 3
+- R14: `input_limits` memberi batas sisi server untuk setiap isian angka;
+  di luar batas → `rcli_error_argument`.
+- R15: daftar putih per pemanggil (`spec_functions`, `align_functions`);
+  `numeric` dihapus dari `code_names`; titik potong kosong tidak ditulis.
+- R16: `one_text()` memperlakukan isian yang bukan satu string sebagai
+  kosong.
+- R17: nama dalam teks bolak-balik diperiksa sebelum dievaluasi.
+- R18: `parse_cutoffs()` menerima NULL sebagai kosong dan menolak selain
+  satu string dengan `rcli_error_argument`.
+- Uji "R14/R16/R18" dan tambahan di "R9".

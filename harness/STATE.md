@@ -68,7 +68,10 @@
 | 2026-11-01 06:32 | INC-10 | A5 | G4–G5 | R1–R8 ditindaklanjuti; merah 12 kegagalan pada 0db13de | 2/3 | A6 putaran 2 |
 | 2026-11-01 06:40 | INC-10 | A6 | G6 | CHANGES-REQUESTED (R9 blocker: injeksi lewat daftar bernama dari websocket; R10 major) | 2/3 | A5 perbaiki |
 | 2026-11-01 06:45 | INC-10 | A5 | G4–G5 | R9–R13 ditindaklanjuti (validasi isian dan daftar putih kode) | 3/3 | A6 putaran 3 (anggaran terakhir) |
+| 2026-11-01 06:58 | INC-10 | A6 | G6 | APPROVE putaran 3 (R9–R13 tertutup; R14–R15 minor, R16–R18 nit) | 3/3 | A5 R14–R18, gerbang penuh |
+| 2026-11-01 07:00 | INC-10 | A5 | G4–G5 | R14–R18 ditindaklanjuti | 3/3 | gerbang penuh, PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
 - Di luar increment 0.2.1 (temuan A6): dengan `lag_shift = TRUE` (bawaan `oecd_spec()`), uji bias seleksi membandingkan komposit tergeser di dalam sampel dengan komposit tanpa geser sesudah titik potong, sehingga `lead_gap` (R/selection-bias.R) bias. Ada sejak 0.1.3; diusulkan sebagai isu terpisah.
+- Di luar increment 0.5.0 (temuan A6 putaran 3): pesan websocket buatan dapat mengisi `datapath` isian berkas dengan jalur sembarang, sehingga server membaca CSV yang dapat diakses proses R. Penting bila GUI di-hosting untuk umum; usul: pastikan `datapath` berada di bawah direktori unggahan Shiny.

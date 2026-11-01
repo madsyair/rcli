@@ -361,12 +361,18 @@ test_that("R9: crafted input values cannot run as code", {
     expect_false(file.exists(flag))
   })
   # a second line of defence: unexpected names are refused before running
+  fns <- rcli:::spec_functions
   expect_error(rcli:::eval_code(
     sprintf('spec <- cli_spec(12, min_lead = {writeLines("x", "%s"); 3})',
-            flag), "spec"), class = "rcli_error_argument")
+            flag), "spec", functions = fns), class = "rcli_error_argument")
+  for (bad in c('spec <- stats::system("x")', 'spec <- read_cli_data("x")',
+                'spec <- base::system("x")', 'spec <- numeric(1e9)')) {
+    expect_error(rcli:::eval_code(bad, "spec", functions = fns),
+                 class = "rcli_error_argument", info = bad)
+  }
   expect_false(file.exists(flag))
-  expect_s4_class(rcli:::eval_code("spec <- cli_spec(freq = 12)", "spec"),
-                  "CliSpec")
+  expect_s4_class(rcli:::eval_code("spec <- cli_spec(freq = 12)", "spec",
+                                   functions = fns), "CliSpec")
 })
 
 test_that("R10/R12: odd reference names in the script, ASCII names", {
@@ -404,4 +410,29 @@ test_that("R10/R12: odd reference names in the script, ASCII names", {
   # names outside ASCII are quoted, so the script runs in any locale
   txt <- rcli:::chr_text(stats::setNames("flow", "ekspor_é"))
   expect_match(txt, "stats::setNames(", fixed = TRUE)
+})
+
+test_that("R14/R16/R18: limits, malformed text inputs and cut-offs", {
+  skip_if_not_installed("shiny")
+  # a horizon far beyond the browser's limits is refused on the server
+  with_step3(list(ar_h = 1e9), function(rv, session) {
+    expect_false(3L %in% rv$done)
+  })
+  with_step3(list(max_iter = 1e6), function(rv, session) {
+    expect_false(3L %in% rv$done)
+  })
+  with_step3(list(hp_lambda = 129600, filter = "hp"), function(rv, session) {
+    expect_true(3L %in% rv$done)
+  })
+  # malformed step-2 entries do not end the session
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(source = "example_m", seed = 1, run1 = 1)
+    session$setInputs(reference = "reference")
+    session$setInputs(rat_1 = 3, typ_1 = list("flow"), src_1 = c("a", "b"),
+                      run2 = 1)
+    expect_true(2L %in% rv$done)
+    expect_true(is.na(rv$meta$type[1]))
+  })
+  expect_equal(rcli:::parse_cutoffs(NULL), numeric(0))
+  expect_error(rcli:::parse_cutoffs(list("1")), class = "rcli_error_argument")
 })
