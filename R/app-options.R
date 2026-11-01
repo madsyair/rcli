@@ -62,6 +62,9 @@ value_text <- function(x, id = "number") {
   deparse_value(v)
 }
 
+# Code text of the numeric input `id` of `input`.
+num_in <- function(input, id) value_text(input[[id]], id)
+
 # Code text of a choice input, which must be one of `allowed`.
 choice_text <- function(x, allowed, id = "choice") {
   if (!is.atomic(x) || length(x) != 1L || !is.character(x) ||
@@ -204,21 +207,21 @@ filter_text <- function(input) {
                                     "hamilton"), "filter")
   switch(key,
     hp_double = call_text("hp_double_filter", list(
-      trend_period = value_text(input$hp_trend_period, "hp_trend_period"),
-      smooth_period = value_text(input$hp_smooth_period, "hp_smooth_period"))),
-    hp = call_text("hp_filter", list(lambda = value_text(input$hp_lambda, "hp_lambda"))),
-    cf = call_text("cf_filter", list(pl = value_text(input$band_pl, "band_pl"),
-                                     pu = value_text(input$band_pu, "band_pu"))),
-    bk = call_text("bk_filter", list(pl = value_text(input$band_pl, "band_pl"),
-                                     pu = value_text(input$band_pu, "band_pu"),
-                                     k = value_text(input$bk_k, "bk_k"))),
+      trend_period = num_in(input, "hp_trend_period"),
+      smooth_period = num_in(input, "hp_smooth_period"))),
+    hp = call_text("hp_filter", list(lambda = num_in(input, "hp_lambda"))),
+    cf = call_text("cf_filter", list(pl = num_in(input, "band_pl"),
+                                     pu = num_in(input, "band_pu"))),
+    bk = call_text("bk_filter", list(pl = num_in(input, "band_pl"),
+                                     pu = num_in(input, "band_pu"),
+                                     k = num_in(input, "bk_k"))),
     hamilton = call_text("hamilton_filter", list(
-      h = value_text(input$ham_h, "ham_h"), p = value_text(input$ham_p, "ham_p")))
+      h = num_in(input, "ham_h"), p = num_in(input, "ham_p")))
   )
 }
 
 aggregator_text <- function(input) {
-  cov <- value_text(input$agg_min_coverage, "agg_min_coverage")
+  cov <- num_in(input, "agg_min_coverage")
   key <- choice_key(input$aggregator, c("equal", "equal_level", "oecd",
                                         "pca", "cb", "dfm"), "aggregator")
   switch(key,
@@ -234,18 +237,18 @@ aggregator_text <- function(input) {
 
 # The dating rule, only when one of its parameters is given.
 dater_text <- function(input, freq) {
-  args <- list(window = value_text(input$dater_window, "dater_window"),
-               min_phase = value_text(input$dater_min_phase, "dater_min_phase"),
-               min_cycle = value_text(input$dater_min_cycle, "dater_min_cycle"),
-               end_exclusion = value_text(input$dater_end_exclusion, "dater_end_exclusion"))
+  args <- list(window = num_in(input, "dater_window"),
+               min_phase = num_in(input, "dater_min_phase"),
+               min_cycle = num_in(input, "dater_min_cycle"),
+               end_exclusion = num_in(input, "dater_end_exclusion"))
   if (all(vapply(args, is.null, logical(1)))) return(NULL)
   call_text(if (freq == 12) "bry_boschan" else "bbq", args)
 }
 
 extension_text <- function(input) {
   if (isFALSE(input$extend)) return("no_extension()")
-  call_text("ar_extension", list(h = value_text(input$ar_h, "ar_h"),
-                                 order_max = value_text(input$ar_order_max, "ar_order_max")))
+  call_text("ar_extension", list(h = num_in(input, "ar_h"),
+                                 order_max = num_in(input, "ar_order_max")))
 }
 
 holidays_text <- function(input) {
@@ -261,10 +264,10 @@ spec_call <- function(input, freq) {
   if (identical(input$method, "oecd")) {
     return(assign_text("spec", "oecd_spec", list(
       freq = freq, seasonal_adjust = deparse_value(isTRUE(input$seasonal)),
-      holidays = holidays_text(input), alpha = value_text(input$alpha, "alpha"),
-      min_auc = value_text(input$min_auc, "min_auc"),
-      min_components = value_text(input$min_components, "min_components"),
-      max_iter = value_text(input$max_iter, "max_iter"), oos_cutoffs = cut)))
+      holidays = holidays_text(input), alpha = num_in(input, "alpha"),
+      min_auc = num_in(input, "min_auc"),
+      min_components = num_in(input, "min_components"),
+      max_iter = num_in(input, "max_iter"), oos_cutoffs = cut)))
   }
   tramo <- identical(input$outlier_method, "tramo")
   assign_text("spec", "cli_spec", list(
@@ -275,24 +278,24 @@ spec_call <- function(input, freq) {
                                                 "test"), "transform"),
     seasonal_adjust = deparse_value(isTRUE(input$seasonal)),
     holidays = holidays_text(input),
-    outlier_threshold = if (!tramo) value_text(input$outlier, "outlier"),
+    outlier_threshold = if (!tramo) num_in(input, "outlier"),
     outliers = if (tramo) "tramo_outliers()",
-    min_lead = value_text(input$min_lead, "min_lead"),
-    min_median_lead = value_text(input$min_median_lead, "min_median_lead"),
-    min_consistency = value_text(input$min_consistency, "min_consistency"),
-    max_missed = value_text(input$max_missed, "max_missed"),
-    max_extra = value_text(input$max_extra, "max_extra"),
-    coincident_band = value_text(input$coincident_band, "coincident_band"),
-    min_auc = value_text(input$min_auc, "min_auc"),
+    min_lead = num_in(input, "min_lead"),
+    min_median_lead = num_in(input, "min_median_lead"),
+    min_consistency = num_in(input, "min_consistency"),
+    max_missed = num_in(input, "max_missed"),
+    max_extra = num_in(input, "max_extra"),
+    coincident_band = num_in(input, "coincident_band"),
+    min_auc = num_in(input, "min_auc"),
     target_lead = pair_text(input$target_lead, "target_lead"),
     lead_window = pair_text(input$lead_window, "lead_window"),
-    ccf_lag_max = value_text(input$ccf_lag_max, "ccf_lag_max"),
-    alpha = value_text(input$alpha, "alpha"),
-    granger_max_lag = value_text(input$granger_max_lag, "granger_max_lag"),
-    granger_dmax = value_text(input$granger_dmax, "granger_dmax"),
-    max_iter = value_text(input$max_iter, "max_iter"),
-    min_components = value_text(input$min_components, "min_components"),
-    horizon = value_text(input$horizon, "horizon"),
+    ccf_lag_max = num_in(input, "ccf_lag_max"),
+    alpha = num_in(input, "alpha"),
+    granger_max_lag = num_in(input, "granger_max_lag"),
+    granger_dmax = num_in(input, "granger_dmax"),
+    max_iter = num_in(input, "max_iter"),
+    min_components = num_in(input, "min_components"),
+    horizon = num_in(input, "horizon"),
     oos_cutoffs = cut,
     classifier = if (identical(input$classifier, "oecd")) {
       "oecd_classifier()"
