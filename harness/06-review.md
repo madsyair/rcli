@@ -154,7 +154,7 @@ terbukti; tidak ada regresi pada `cli_spec()` bawaan; GUI dan snapshot
 utuh; tidak ada Imports baru dan tidak ada cabang kelas baru.
 
 ## Keputusan putaran 1
-request changes
+Putusan putaran 1: CHANGES-REQUESTED
 
 Tiga temuan major harus diselesaikan dulu: R1 (uji G7 tidak membuktikan
 apa pun), R2 (laju TC X-13 triwulanan salah pada jalur bawaan
@@ -258,7 +258,7 @@ sebaiknya ditangani di putaran yang sama; R11–R13 opsional.
   yang dilewati/dihitung berbeda antar-lingkungan (Chrome, RJDemetra).
 
 ## Keputusan putaran 2
-approve
+Putusan: APPROVE
 
 Ketiga major putaran 1 (R1, R2, R3) tertutup dan terverifikasi dengan
 angka; tidak ada regresi baru pada hasil bawaan, GUI, snapshot, atau lint.
