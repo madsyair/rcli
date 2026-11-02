@@ -478,9 +478,9 @@ invert_cycle <- function(cs) {
 #' the series is not inverted. The column `sign_source` records where the
 #' direction came from: `"meta"`, `"data"` or `"none"` (not readable).
 #' `inverted` means inverted relative to the original series, also when the
-#' cycles passed in were inverted already. The lead of the cross-correlation is then the peak
-#' of the oriented correlation within half a reference cycle (and
-#' `ccf_lag_max`), since the same phase recurs a cycle later.
+#' cycles passed in were inverted already. The lead of the cross-correlation
+#' is then the peak of the oriented correlation within half a reference
+#' cycle (and `ccf_lag_max`), since the same phase recurs a cycle later.
 #'
 #' The rule is the [Classifier-class] of the specification. With the default
 #' [rcli_classifier()], a candidate is **leading** when it has at least

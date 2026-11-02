@@ -1,6 +1,34 @@
 {
-  "generated": "2026-11-02T05:38:22",
+  "generated": "2026-11-02T10:58:51",
   "gates": [
+    {
+      "gate": "G1",
+      "title": "Kebutuhan",
+      "checks": [
+        {
+          "name": "Ada kebutuhan FR/NFR",
+          "ok": true,
+          "detail": "15 ID"
+        },
+        {
+          "name": "Setiap FR/NFR punya kriteria penerimaan",
+          "ok": true,
+          "detail": "lengkap"
+        },
+        {
+          "name": "Tidak ada TODO",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Bagian 'Di luar cakupan' ada",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "skipped": false,
+      "passed": true
+    },
     {
       "gate": "G2",
       "title": "Verifikasi matematis",
@@ -128,6 +156,134 @@
       ],
       "skipped": false,
       "passed": true
+    },
+    {
+      "gate": "G3",
+      "title": "Desain",
+      "checks": [
+        {
+          "name": "Setiap FR terpetakan di desain",
+          "ok": true,
+          "detail": "12 FR"
+        },
+        {
+          "name": "Ada ADR",
+          "ok": true,
+          "detail": "2 ADR"
+        },
+        {
+          "name": "Tidak ada TODO",
+          "ok": true,
+          "detail": ""
+        }
+      ],
+      "skipped": false,
+      "passed": true
+    },
+    {
+      "gate": "G4",
+      "title": "Uji-dulu",
+      "checks": [
+        {
+          "name": "Ada berkas uji",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Setiap FR/NFR dilacak ke uji",
+          "ok": true,
+          "detail": "15 ID"
+        },
+        {
+          "name": "Setiap F-xx dilacak ke uji",
+          "ok": true,
+          "detail": "7 formula"
+        },
+        {
+          "name": "Bukti merah tercatat",
+          "ok": true,
+          "detail": "sebelum implementasi (2026-10-23): `devtools::test(filter = \"ragged-edge|end-ext"
+        }
+      ],
+      "skipped": false,
+      "passed": true
+    },
+    {
+      "gate": "G5",
+      "title": "Build & uji",
+      "checks": [
+        {
+          "name": "tests",
+          "ok": true,
+          "detail": "exit 0: [ FAIL 0 | WARN 0 | SKIP 2 | PASS 2226 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41987 -Dhttp.nonProxyHosts=localhost|127."
+        },
+        {
+          "name": "lint",
+          "ok": false,
+          "detail": "exit 1: R/assessment.R:481:81: style: [line_length_linter] Lines should not be more than 80 characters. This line is 93 characters. | #' cycles passed in were inverted already. The lead of the cross-correlation is then the peak | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~"
+        },
+        {
+          "name": "coverage",
+          "ok": true,
+          "detail": "exit 0: coverage 97.00322"
+        }
+      ],
+      "skipped": false,
+      "passed": false
+    },
+    {
+      "gate": "G6",
+      "title": "Review",
+      "checks": [
+        {
+          "name": "Tidak ada temuan blocker/major terbuka",
+          "ok": true,
+          "detail": ""
+        },
+        {
+          "name": "Putusan APPROVE",
+          "ok": true,
+          "detail": "APPROVE"
+        }
+      ],
+      "skipped": false,
+      "passed": true
+    },
+    {
+      "gate": "G7",
+      "title": "Dokumentasi",
+      "checks": [
+        {
+          "name": "document",
+          "ok": true,
+          "detail": "exit 0: ℹ Updating rcli documentation | ℹ Loading rcli"
+        },
+        {
+          "name": "examples",
+          "ok": true,
+          "detail": "exit 0: ℹ Updating rcli documentation | ℹ Loading rcli | ℹ Loading rcli | ℹ Loading rcli"
+        }
+      ],
+      "skipped": false,
+      "passed": true
+    },
+    {
+      "gate": "G8",
+      "title": "Rilis",
+      "checks": [
+        {
+          "name": "Gerbang G1–G7 lolos",
+          "ok": false,
+          "detail": "gagal: G5"
+        },
+        {
+          "name": "check-as-cran",
+          "ok": true,
+          "detail": "exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli"
+        }
+      ],
+      "skipped": false,
+      "passed": false
     }
   ]
 }
