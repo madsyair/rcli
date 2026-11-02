@@ -11,7 +11,7 @@
             lag_3    lagging   -3   -3.0 0.06   1/18     4 0.87   1.4e-01
        counter_4*    leading    4    4.5 0.89   0/18     0 0.88   6.8e-18
          noise_1*   rejected    7    2.5 0.56   0/18     7 0.64   2.9e-01
-          noise_2   rejected  -24    2.0 0.44   3/18    10 0.53   1.0e-01
+         noise_2*   rejected   -8    1.0 0.50   1/18     8 0.48   1.0e-01
       lead: cross-correlation lead; median: median lead at turning points;
       led: share of reference turning points led; conc: concordance
       * inverted (counter-cyclical)

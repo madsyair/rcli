@@ -26,7 +26,8 @@ test_that("AC-FR-009.5/6/7: several files run through the ten steps", {
     html <- as.character(output$meta_ui$html)
     expect_match(html, "ref_type", fixed = TRUE)
     # R5: the detected frequency is shown, not chosen
-    row <- regmatches(html, regexpr("counter.*?frq_text_[0-9]+[^<]*<", html))
+    row <- regmatches(html, regexpr(
+      "<strong>counter</strong>.*?frq_text_[0-9]+[^<]*<", html))
     expect_match(row, ">Quarterly<", fixed = TRUE)
     expect_false(grepl('id="frq_1"', html, fixed = TRUE))
     session$setInputs(rat_1 = "early_stage", rat_2 = "early_stage",

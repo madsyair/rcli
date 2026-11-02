@@ -27,17 +27,20 @@ current contraction state (horizon 0).
 composite must meet every leading criterion of the specification, the same
 ones used to classify candidates (see \code{\link[=cli_assess]{cli_assess()}}).
 
-\strong{Prediction}:
+\strong{Prediction}, from the out-of-sample forecasts of \code{\link[=cli_validate]{cli_validate()}} at
+the horizon fixed in advance:
 \itemize{
-\item the area under the ROC curve of the contraction probability is at least
-\code{min_auc} (0.7 is "acceptable discrimination", Hosmer and Lemeshow 2000;
-Berge and Jordà 2011 use the ROC curve to score business-cycle
-classifiers);
-\item the quadratic probability score beats the naive forecast, a constant
-probability equal to the share of contraction periods (Diebold and
-Rudebusch 1989);
-\item the Pesaran and Timmermann (1992) test rejects that the composite's
-direction is unrelated to the later direction of the reference.
+\item at least 20 out-of-sample forecasts of the contraction probability;
+\item their area under the ROC curve is at least \code{min_auc} (0.7 is
+"acceptable discrimination", Hosmer and Lemeshow 2000; Berge and Jordà
+2011 use the ROC curve to score business-cycle classifiers);
+\item their quadratic probability score beats the naive forecast, the share
+of contraction periods in the same past data (Diebold and Rudebusch
+1989);
+\item the regression form of the Pesaran and Timmermann (2009) test, with a
+fixed-b variance, rejects that the composite's direction is unrelated
+to the later direction of the reference. Its p-value is reported down
+to 1e-4, the end of the fixed-b table (see \code{\link[=concordance]{concordance()}}).
 }
 
 \strong{Out of sample} (only when \code{\link[=cli_selection_bias]{cli_selection_bias()}} has been run, for

@@ -205,6 +205,14 @@ choice_key <- function(x, allowed, id) {
   x
 }
 
+# The classifier of the rcli method; NULL for the package rule.
+classifier_text <- function(x) {
+  if (is.null(x)) return(NULL)
+  switch(choice_key(x, c("rcli", "oecd", "oecd_median"), "classifier"),
+         oecd = "oecd_classifier()",
+         oecd_median = "oecd_classifier(conformity = FALSE)")
+}
+
 filter_text <- function(input) {
   key <- choice_key(input$filter, c("hp_double", "hp", "cf", "bk",
                                     "hamilton"), "filter")
@@ -270,7 +278,10 @@ spec_call <- function(input, freq) {
       holidays = holidays_text(input), alpha = num_in(input, "alpha"),
       min_auc = num_in(input, "min_auc"),
       min_components = num_in(input, "min_components"),
-      max_iter = num_in(input, "max_iter"), oos_cutoffs = cut)))
+      max_iter = num_in(input, "max_iter"), oos_cutoffs = cut,
+      classifier = if (isFALSE(input$oecd_conformity)) {
+        "oecd_classifier(conformity = FALSE)"
+      })))
   }
   tramo <- identical(input$outlier_method, "tramo")
   assign_text("spec", "cli_spec", list(
@@ -300,9 +311,7 @@ spec_call <- function(input, freq) {
     min_components = num_in(input, "min_components"),
     horizon = num_in(input, "horizon"),
     oos_cutoffs = cut,
-    classifier = if (identical(input$classifier, "oecd")) {
-      "oecd_classifier()"
-    },
+    classifier = classifier_text(input$classifier),
     lag_shift = if (isTRUE(input$lag_shift)) "TRUE",
     extension = extension_text(input)))
 }
@@ -321,7 +330,8 @@ advanced_ui <- function(t) {
     shiny::fluidRow(
       shiny::column(4,
         shiny::selectInput("classifier", t("classifier"), stats::setNames(
-          c("rcli", "oecd"), c(t("cls_rcli"), t("cls_oecd")))),
+          c("rcli", "oecd", "oecd_median"),
+          c(t("cls_rcli"), t("cls_oecd"), t("cls_oecd_median")))),
         shiny::selectInput("outlier_method", t("outlier_method"),
                            stats::setNames(c("robust", "tramo"),
                                            c(t("out_robust"),

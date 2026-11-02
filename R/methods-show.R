@@ -111,7 +111,14 @@ setMethod("classifier_lines", "OecdClassifier", function(classifier, spec) {
          classifier@coincident, " months (OECD rule)\n",
          "               coincident within +/- ", classifier@coincident,
          ", lagging <= -", classifier@coincident, ", >= ",
-         classifier@min_matched, " matched\n")
+         classifier@min_matched, " matched\n",
+         if (oecd_conformity(classifier)) {
+           paste0("               and cyclical conformity: positive ",
+                  "cross-correlation,\n",
+                  "               missed and extra <= ",
+                  spec@max_missed * 100, "% and ", spec@max_extra * 100,
+                  "%, concordance significant at ", spec@alpha, "\n")
+         })
 })
 
 #' @rdname show-methods
@@ -177,8 +184,12 @@ setMethod("show", "LeadAssessment", function(object) {
                                       "rejected")))
   cat("<LeadAssessment> ", paste(names(counts), counts, sep = ": ",
                                  collapse = ", "), "\n", sep = "")
+  declared <- sign_sources(tab) == "meta"
+  unknown <- sign_sources(tab) == "none"
   out <- data.frame(
-    name = paste0(tab$name, ifelse(tab$inverted, "*", "")), class = tab$class,
+    name = paste0(tab$name, ifelse(tab$inverted, "*", ""),
+                  ifelse(declared, "^", ""), ifelse(unknown, "?", "")),
+    class = tab$class,
     lead = tab$ccf_lag, median = tab$median_lead,
     led = round(tab$pct_led, 2),
     missed = paste0(tab$missed, "/", tab$n_ref),
@@ -189,7 +200,10 @@ setMethod("show", "LeadAssessment", function(object) {
   print(out, row.names = FALSE)
   cat("lead: cross-correlation lead; median: median lead at turning points;\n",
       "led: share of reference turning points led; conc: concordance\n",
-      if (any(tab$inverted)) "* inverted (counter-cyclical)\n", sep = "")
+      if (any(tab$inverted)) "* inverted (counter-cyclical)\n",
+      if (any(declared)) "^ direction declared in `meta$sign`\n",
+      if (any(unknown)) "? direction not readable from the data\n",
+      sep = "")
   invisible(object)
 })
 
@@ -238,9 +252,14 @@ setMethod("show", "CliValidation", function(object) {
   }
   cat("  turning points: ", tp$missed, " missed, ", tp$extra, " extra of ",
       tp$n_ref, "; concordance ", fmt_num(tp$concordance), "\n", sep = "")
-  cat("  horizon ", pr$horizon, ": QPS ", fmt_num(pr$qps, 3), ", AUC ",
-      fmt_num(pr$auc, 3), ", Pesaran-Timmermann p ", fmt_num(pr$pt_p, 3),
-      "\n", sep = "")
+  n_fc <- if ("n_forecasts" %in% names(pr)) {
+    sprintf(" (%d out-of-sample forecasts)", as.integer(pr$n_forecasts))
+  } else {
+    ""
+  }
+  cat("  horizon ", pr$horizon, n_fc, ": QPS ", fmt_num(pr$qps, 3),
+      ", AUC ", fmt_num(pr$auc, 3), ",\n    Pesaran-Timmermann p ",
+      fmt_num(pr$pt_p, 3), "\n", sep = "")
   if (is(object@quality, "CliQuality")) {
     cat("  quality verdict: ", object@quality@verdict, " (see cli_quality())\n",
         sep = "")

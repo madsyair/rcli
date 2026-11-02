@@ -27,17 +27,27 @@ cross-correlation, concordance); \code{passed} is \code{TRUE} when it meets ever
 leading criterion of the specification;
 \item \strong{probability of contraction}: a logit model of the reference
 contraction state at time \eqn{t} on the change of the composite over
-the quarter ending at \eqn{t - h} (3 months or 1 quarter) gives the
-quadratic probability score (QPS, Diebold and Rudebusch 1989) and the
-area under the ROC curve (Berge and Jordà 2011);
-\item \strong{direction}: the Pesaran and Timmermann (1992) test that the sign of
-the composite's change predicts the sign of the reference change
-\eqn{h} periods later.
+the quarter ending at \eqn{t - h} (3 months or 1 quarter), estimated
+recursively out of sample (Estrella and Mishkin 1998): the probability
+for \eqn{t} comes from a model fitted to the periods up to
+\eqn{t - h} only, starting after 40 percent of the sample. Its
+quadratic probability score (QPS, Diebold and Rudebusch 1989) is
+compared with the naive forecast, the share of contraction periods up to
+\eqn{t - h}, and its area under the ROC curve (Berge and Jordà 2011)
+is computed from the same forecasts (\code{n_forecasts} of them). Fitted in
+sample, a logit always beats the naive forecast and says nothing;
+\item \strong{direction}: the regression form of the Pesaran and Timmermann
+(2009) test that the sign of the composite's change predicts the sign
+of the reference change \eqn{h} periods later, with the fixed-b HAC
+variance of \code{\link[=concordance]{concordance()}}, which allows for the strong persistence of
+the signs of cyclical changes.
 }
 
-The horizon \eqn{h} is \code{spec@horizon} or, when that is \code{NA}, the lead of
-the composite's cross-correlation peak (at least 1). These are in-sample
-measures; use \code{\link[=cli_selection_bias]{cli_selection_bias()}} for the out-of-sample check.
+The horizon \eqn{h} is \code{spec@horizon} or, when that is \code{NA}, the lower
+end of \code{spec@target_lead} (6 months or 2 quarters by default), fixed in
+advance: a horizon taken from the composite's own cross-correlation would
+be chosen from the data being tested. Use \code{\link[=cli_selection_bias]{cli_selection_bias()}} for the
+check of the selection itself.
 }
 \examples{
 sim <- simulate_cycles(seed = 1)
@@ -55,7 +65,11 @@ Journal: Macroeconomics}, 3(2), 246--277.
 Diebold, F. X. and Rudebusch, G. D. (1989). Scoring the leading
 indicators. \emph{Journal of Business}, 62(3), 369--391.
 
-Pesaran, M. H. and Timmermann, A. (1992). A simple nonparametric test of
-predictive performance. \emph{Journal of Business and Economic Statistics},
-10(4), 461--465.
+Estrella, A. and Mishkin, F. S. (1998). Predicting U.S. recessions:
+financial variables as leading indicators. \emph{Review of Economics and
+Statistics}, 80(1), 45--61.
+
+Pesaran, M. H. and Timmermann, A. (2009). Testing dependence among
+serially correlated multicategory variables. \emph{Journal of the American
+Statistical Association}, 104(485), 325--337.
 }

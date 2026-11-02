@@ -8,7 +8,7 @@ test_that("AUC and Pesaran-Timmermann behave on known cases", {
   x <- as.numeric(sine_ts(shift = -6))
   y <- as.numeric(sine_ts())
   pt <- rcli:::pesaran_timmermann(x, y, 6)
-  expect_lt(pt$p_value, 1e-6)
+  expect_equal(pt$p_value, min(rcli:::fixed_b_null$upper))
   expect_true(is.na(rcli:::pesaran_timmermann(1:5, 1:5, 1)$stat))
 })
 
@@ -21,7 +21,8 @@ test_that("validation of a good composite passes", {
   expect_true(v@probability$qps >= 0 && v@probability$qps <= 2)
   expect_gt(v@probability$auc, 0.8)
   expect_lt(v@probability$pt_p, 0.01)
-  expect_equal(v@probability$horizon, v@turning_points$ccf_lag)
+  # fixed in advance: the lower end of the target lead
+  expect_equal(v@probability$horizon, spec@target_lead[1])
   df <- as.data.frame(v)
   expect_true(all(c("qps", "auc", "passed") %in% names(df)))
 })

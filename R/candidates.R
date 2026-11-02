@@ -31,10 +31,14 @@ oecd_rationales <- c(
 #' @param meta Optional data frame with a `name` column and any of
 #'   `rationale` (one of `names(oecd_rationales)`), `source`,
 #'   `release_lag` (publication delay in periods), `type` (one of
-#'   `names(series_types)`) and `frequency`, the source frequency (one of
+#'   `names(series_types)`), `frequency`, the source frequency (one of
 #'   `names(series_frequencies)`; a candidate cannot be semiannual or
-#'   annual). When `data` comes from [cli_align()], the types, source
-#'   frequencies and conversion steps recorded there are kept as well, and a
+#'   annual), and `sign`, the expected direction of the candidate from its
+#'   economic rationale: 1 (procyclical), -1 (countercyclical, inverted
+#'   before aggregation) or `NA` (decided from the data by
+#'   [cli_assess()]). When `data` comes from [cli_align()], the types,
+#'   source frequencies and conversion steps recorded there are kept as
+#'   well, and a
 #'   source frequency in `meta` must agree with the recorded one. (The
 #'   `frequency` column of `meta` is the source frequency of a candidate; the
 #'   argument `frequency` below is the number of periods a year of `data`.)
@@ -128,7 +132,7 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
   base <- data.frame(name = names, rationale = NA_character_,
                      source = NA_character_, release_lag = NA_real_,
                      type = NA_character_, frequency = NA_character_,
-                     stringsAsFactors = FALSE)
+                     sign = NA_real_, stringsAsFactors = FALSE)
   hit <- match(names, alignment$name)
   detected <- rep(NA_character_, length(names))
   if ("from" %in% names(alignment)) {
@@ -152,11 +156,21 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
     # a missing entry keeps what cli_align() recorded
     at <- match(meta$name, names)
     for (col in intersect(c("rationale", "source", "release_lag", "type",
-                            "frequency"), names(meta))) {
-      given <- !is.na(meta[[col]])
-      base[[col]][at[given]] <- meta[[col]][given]
+                            "frequency", "sign"), names(meta))) {
+      v <- meta[[col]]
+      if (is.factor(v)) v <- as.character(v)
+      given <- !is.na(v)
+      base[[col]][at[given]] <- v[given]
     }
   }
+  sg <- base$sign
+  if (is.factor(sg)) sg <- as.character(sg)
+  sg <- suppressWarnings(as.numeric(sg))
+  if (any(!is.na(base$sign) & (is.na(sg) | !sg %in% c(-1, 1)))) {
+    rcli_abort(paste("`meta$sign` must be 1 (procyclical), -1",
+                     "(countercyclical) or NA."), "rcli_error_argument")
+  }
+  base$sign <- sg
   bad_type <- !is.na(base$type) & !base$type %in% names(series_types)
   if (any(bad_type)) {
     rcli_abort(
