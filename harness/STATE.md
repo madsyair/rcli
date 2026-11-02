@@ -86,7 +86,7 @@
 | 2026-11-02 10:40 | INC-12 | A5 | G4–G5 | R1–R18 ditindaklanjuti | 2/3 | A6 putaran 2 |
 | 2026-11-02 11:05 | INC-12 | A6 | G6 | APPROVE putaran 2 (R19 minor, R20–R25 nit) | 2/3 | A5 R19–R25, gerbang penuh |
 | 2026-11-02 11:15 | INC-12 | A5 | G4–G5 | R19–R25 ditindaklanjuti | 2/3 | gerbang penuh, PR |
-| 2026-11-02 12:30 | INC-12 | A0 | G1–G8 | LOLOS (cakupan 97,0%; check 0/0) | 2/3 | PR |
+| 2026-11-02 11:25 | INC-12 | A0 | G1–G8 | LOLOS (cakupan 97,0%; check 0/0) | 2/3 | PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
