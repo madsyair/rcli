@@ -84,6 +84,8 @@
 | 2026-11-02 06:10 | INC-12 | A1, A4, A5 | G1, G4, G5 | merah 6 blok → hijau; kalibrasi diulang | 1/3 | A6 |
 | 2026-11-02 10:01 | INC-12 | A6 | G6 | CHANGES-REQUESTED (R1 tata letak, R2 kinerja, R3 AC .8) | 1/3 | A5 perbaiki |
 | 2026-11-02 10:40 | INC-12 | A5 | G4–G5 | R1–R18 ditindaklanjuti | 2/3 | A6 putaran 2 |
+| 2026-11-02 11:05 | INC-12 | A6 | G6 | APPROVE putaran 2 (R19 minor, R20–R25 nit) | 2/3 | A5 R19–R25, gerbang penuh |
+| 2026-11-02 11:15 | INC-12 | A5 | G4–G5 | R19–R25 ditindaklanjuti | 2/3 | gerbang penuh, PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

@@ -37,7 +37,9 @@ correlates almost as strongly, with opposite sign, at a lag of 18 months.
 Leads beyond a quarter of the cycle cannot be told apart from inversion by
 the data, so declare the sign for such series. When no sign can be read
 the series is not inverted. The column \code{sign_source} records where the
-direction came from. The lead of the cross-correlation is then the peak
+direction came from: \code{"meta"}, \code{"data"} or \code{"none"} (not readable).
+\code{inverted} means inverted relative to the original series, also when the
+cycles passed in were inverted already. The lead of the cross-correlation is then the peak
 of the oriented correlation within half a reference cycle (and
 \code{ccf_lag_max}), since the same phase recurs a cycle later.
 

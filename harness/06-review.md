@@ -2,7 +2,8 @@
 
 - Increment: rcli 0.6.0 (FR-012)
 - Reviewer: A6 (konteks bersih: ya)
-- Putaran: 1 (terhadap 8d45ba7; basis c950f03, 0.5.1 di main)
+- Putaran: 2 (putaran 1 terhadap 8d45ba7, putaran 2 terhadap a38aba0;
+  basis c950f03, 0.5.1 di main)
 - Review 0.5.1 tersimpan di riwayat git berkas ini (komit dddd20c).
 
 ## Yang diperiksa (putaran 1)
@@ -277,3 +278,177 @@ dalam keadaan baik.
 - R16: kotak centang kesesuaian hanya tampil untuk metode OECD; pilihan untuk metode rcli ada di opsi lanjutan. Diterima apa adanya.
 - R17: tidak diubah (biaya kecil).
 - R18: label horizon kini "Horizon uji peluang dan arah"; arsiran jendela pada grafik ditunda.
+
+## Yang diperiksa (putaran 2)
+
+- **R1 (tata letak langkah 2).** Paket dari a38aba0 dipasang ke
+  `/tmp/rv060/lib2`, lalu langkah 2 dipotret di Chrome *headless* (id dan en,
+  1400 dan 1024 px): `/tmp/rv060/r2-step2-{id,en}-{1400,1024}.png`.
+  - Pemilih arah kini berada di bawah rasional, dan lebar kolom kembali
+    2, 3, 2, 2, 3 (jumlah 12; terverifikasi juga dari HTML `testServer`).
+  - Pada 1400 px semua teks terbaca, termasuk "Arah: otomatis" dan
+    "(belum diisi)". Sisa kecil pada 1024 px ada di R24.
+- **R2 (kinerja dan kesetaraan hasil).**
+  - `/tmp/rv060/same.R` membandingkan 8d45ba7 dengan a38aba0 pada 3 seed,
+    termasuk `oos_cutoffs = c(2012, 2016)` dan `cci_build()`. Hasilnya
+    identik (`all.equal` TRUE) untuk `audit_log`, `validation@probability`,
+    `turning_points`, `out_of_sample`, kartu skor (di luar baris baru), serta
+    `probability` dan audit CCI.
+  - Loop memakai `passed` dan `score`, yang tidak bergantung pada kelompok
+    prediksi.
+  - Jalur `cci_build(select = FALSE)` dan jalur tanpa komponen juga benar:
+    validasi diganti `cci_validate()` hanya bila ada komposit, dan
+    `select_components()` keluar lebih awal bila tidak ada pendahulu.
+  - Konsumen lain tidak memakai `probability` dari loop: `one_cutoff()` hanya
+    membaca `turning_points`, dan mode manual GUI memanggil `cli_validate()`
+    langsung.
+  - Waktu (`perf3.R`, loop 9 pendahulu yang gagal):
+
+    | Versi | Waktu |
+    |---|---|
+    | 0.5.1 | 1,28 detik |
+    | 8d45ba7 | 7,2 detik |
+    | a38aba0 | 1,45 detik |
+
+    `cli_build` bulanan naik dari 0,22 menjadi 0,39 detik (+1 validasi
+    penuh), dan dengan dua titik potong dari 0,66 menjadi 0,98 detik.
+- **R3.** AC-FR-012.8 yang dirumuskan ulang dicocokkan dengan
+  `oecd-classification.csv`.
+  - Penurunan deteksi pendahulu sejati 0 dan 0,3 poin persen pada bising 0,2,
+    dan paling besar 10,3 poin persen di bising lebih tinggi. Batas AC
+    (≤ 1 dan ≤ 12 poin persen) terpenuhi.
+  - Label palsu kalibrasi turun dari 18,5–23% menjadi 2,5–7,5% (≤ separuh).
+  - `accuracy.csv` paling besar 1,3% (batas ≤ 1,5%).
+  - Uji baru "AC-FR-012.5 and .8" memeriksa angka-angka ini. Vinyet dan NEWS
+    kini jujur ("2 to 10 percentage points fewer in noisy data").
+- **R5.** `/tmp/rv060/r2-dbl.R`: `cli_assess(cand, spec, cycles(res))` dengan
+  `sign = -1` kini idempoten (leading, ccf_lag 4, r 0,95 sama dengan hasil
+  pertama), begitu pula tanpa arah dinyatakan. Logika paritas
+  `is_inverted()` diperiksa untuk keempat kombinasi (dinyatakan ±1, siklus
+  sudah dibalik atau belum) dan benar.
+- **R7.** Baris "out-of-sample forecasts" (≥ 20) muncul di kartu skor.
+  - Sampel 8 tahun dengan 8 prakiraan memberi status "fail", dan
+    `horizon = 340` di uji baru juga memberi "fail".
+  - Validasi lama tanpa `n_forecasts` tidak memunculkan baris itu dan tetap
+    dapat dicetak (`/tmp/rv060/r2-compat.R`).
+  - `print(CliValidation)` menampilkan jumlah prakiraan.
+- **R4, R6, R8–R15.** Diperiksa pada diff:
+  - `print(oecd_spec())` kini menyebut kesesuaian; untuk pengklasifikasi
+    lama tanpa slot, baris itu tidak muncul.
+  - Faktor `sign` dibaca dari labelnya.
+  - `_problems/` sudah dihapus dan diabaikan.
+  - Teks vonis dalam dua bahasa sudah benar.
+  - `?CliValidation` dan NEWS menjelaskan `pt_stat`.
+- **GUI `testServer`** (`/tmp/rv060/test-zz-review.R` pada a38aba0):
+  15 PASS. Arah tetap per nama kandidat sesudah acuan diganti, unggahan
+  banyak berkas membawa `sign`, dan skrip OECD dengan kesesuaian tidak
+  dicentang mereproduksi kelas dan komponen.
+- **Kasus batas** (`/tmp/rv060/r2-edge.R`, `/tmp/rv060/sep.R`,
+  `/tmp/rv060/sep2.R`); hasilnya di R19.
+- **Uji, *lint*, dan gaya.**
+  - Seluruh rangkaian dengan `NOT_CRAN=true`: 0 gagal, 0 galat, 2 dilewati
+    (`/tmp/rv060/r2-fulltest.log`). Uji e2e di rangkaian ini memakai paket
+    yang terpasang di *site-library*; hasil 168 PASS dari koordinator tidak
+    saya ulang secara terpisah.
+  - `lintr` bersih pada semua berkas R dan uji yang berubah; tidak ada baris
+    di atas 80 karakter.
+- **Catatan di luar cakupan.** `/home/claude/rcli-gh` saat ini memiliki
+  perubahan belum di-*commit* pada `R/methods-show.R` (3+, 2−) yang bukan
+  bagian dari a38aba0 dan bukan dari peninjau. Perubahan itu tidak diperiksa.
+
+## Temuan putaran 2
+
+Temuan putaran 1:
+
+- [x] [R1] Selesai pada 1400 px (sisa kecil pada 1024 px di R24).
+- [x] [R2] Selesai: hasil identik, waktu loop setara dengan 0.5.1.
+- [x] [R3] Selesai: AC dirumuskan ulang dengan alasan, data memenuhinya, dan
+  uji ditambahkan.
+- [x] [R4], [R5], [R6], [R7], [R9], [R10], [R11], [R12], [R15] Selesai.
+- [x] [R8] Dikerjakan, tetapi caranya menimbulkan R19.
+- [x] [R13] Dikerjakan; sisa dokumentasi di R21.
+- [x] [R14] Dikerjakan sebagian; lihat R20.
+- [x] [R16], [R17] Diterima apa adanya.
+- [x] [R18] Diterima apa adanya (arsiran jendela ditunda).
+
+Temuan baru:
+
+- [x] [R19][minor] R/validation.R:recursive_logit — Prakiraan dari fit yang
+  tidak konvergen kini dibuang (`!isTRUE(fit$converged)`).
+  - Pada sampel pendek, ketidakkonvergenan hampir selalu berarti separasi
+    (kuasi-)sempurna di sampel latih awal. Prakiraannya ekstrem (≈ 0 atau 1)
+    dan sering salah, sehingga membuangnya memilih titik evaluasi
+    berdasarkan keadaan model. Akibatnya penilaian menjadi optimistis.
+  - Bukti, dari `sep.R` (aturan lama dibanding dengan filter konvergensi):
+
+    | Sampel | n | QPS | AUC |
+    |---|---|---|---|
+    | 8 tahun seed 3, CLI h = 6 | 52 → 45 | 0,455 → 0,259 | 0,729 → 0,901 |
+    | 8 tahun seed 6, CLI h = 6 | 52 → 47 | 0,51 → 0,35 | 0,68 → 0,84 |
+    | 8 tahun seed 3, CCI h = 0 | 55 → 39 | | |
+
+  - `sep2.R`: sekitar 16% sampel bulanan 8 tahun terkena; tidak ada yang
+    terkena pada 15–20 tahun, baik bulanan maupun triwulanan. Dampaknya
+    terbatas pada sampel pendek, tetapi justru di sana kartu skor paling
+    perlu jujur.
+  - Usul: pakai prakiraan selama berhingga, walau tidak konvergen (prakiraan
+    ekstrem tetap prakiraan yang sah dari prosedur itu). Pilihan lain:
+    gantikan dengan prakiraan naif atau fit berpenalti, lalu catat jumlah
+    fit yang tidak konvergen sebagai informasi. Sesuaikan F-07 §5.
+    (Saran "periksa `fit$converged`" di R8 putaran 1 memang mengundang
+    perubahan ini; maksudnya mencatat, bukan membuang.)
+- [x] [R20][nit] R/assessment.R:concordance (roxygen) — Tindak lanjut R14
+  menyebut batas 1e-4 dicantumkan di `?concordance`. Kenyataannya batas itu
+  hanya ada di `?cli_quality` dan NEWS (`grep "1e-4"` pada `R/` dan `man/`).
+  Tambahkan satu kalimat di `@return` `concordance()`.
+- [x] [R21][nit] harness/01-requirements.md:AC-FR-012.1, R/assessment.R:cli_assess,
+  R/methods-show.R — Dokumentasi nilai "none" belum lengkap.
+  - AC-FR-012.1 masih menulis `sign_source` bernilai "meta" atau "data";
+    nilai "none" baru disebut di AC .2.
+  - `?cli_assess` tidak menyebut ketiga nilainya.
+  - `print(LeadAssessment)` tidak menandai arah yang tidak tentu.
+- [x] [R22][nit] R/methods-show.R:classifier_lines("OecdClassifier") — Baris
+  kesesuaian yang dicetak panjangnya sekitar 118 karakter, sehingga terlipat
+  di konsol 80 kolom. Pecah menjadi dua baris seperti pada
+  `RcliClassifier`.
+- [x] [R23][nit] tests/testthat/test-evaluation-060.R — AC-FR-012.8 kini
+  menyatakan label palsu pada siklus independen terpangkas paling sedikit
+  separuh. Namun uji hanya memeriksa `lead-window.csv` `false_leading ≤ 0,1`
+  tanpa pembanding 0.5.1. Pembandingnya tersedia di kolom
+  `noise_called_leading` `oecd-classification.csv` (0,04–0,065 dibanding
+  0,265–0,44); tambahkan asersi separuhnya.
+- [x] [R24][nit] R/app.R (langkah 2, 1024 px) — Pemilih tipe dan frekuensi
+  (lebar 2, sama dengan 0.5.1) masih memotong "(belum diisi)" atau
+  "(not given)", dan panah "Direction: automatic" menumpuk huruf terakhir
+  (`r2-step2-en-1024.png`). Ini bukan regresi dan masih dapat dipakai.
+- [x] [R25][nit] R/assessment.R:cli_assess — Dengan `is_inverted()`, siklus
+  yang sudah dibalik kini masuk ke `@inverted` dan bertanda
+  `inverted = TRUE`, juga di jalur data. Di 0.5.1 tidak demikian.
+  - Pemanggil yang memakai pola `for (nm in a@inverted) invert_cycle()` atas
+    siklus yang sama akan membalik dua kali.
+  - Semua pemanggil di paket memakai siklus segar (`build.R`,
+    `coincident.R`, `selection-bias.R`, `app.R`), jadi saat ini tidak ada
+    kesalahan.
+  - Usul: sebut di dokumentasi `LeadAssessment` bahwa `inverted` berarti
+    "dibalik relatif terhadap seri asli".
+
+## Keputusan putaran 2
+
+Semua temuan major putaran 1 (R1, R2, dan R3) selesai dan terverifikasi.
+Hasil `cli_build()` dan `cci_build()` identik dengan 8d45ba7, sedangkan waktu
+loop kembali setara dengan 0.5.1. Tidak ada temuan blocker atau major baru.
+R19 sebaiknya diperbaiki sebelum rilis karena memengaruhi kejujuran kartu
+skor pada sampel pendek. Perbaikannya kecil dan tidak mengubah hasil pada
+sampel 15 tahun ke atas. R20–R25 bersifat kosmetik atau dokumentasi.
+
+Putusan: APPROVE
+
+## Tindak lanjut putaran 2
+- R19: prakiraan berhingga dari fit yang tidak konvergen tetap dipakai (F-07 §5 diperbarui).
+- R20: batas 1e-4 di `@return` `concordance()`.
+- R21: nilai "none" di AC-FR-012.1 dan `?cli_assess`; `print()` menandai arah tak terbaca dengan `?`.
+- R22: baris kesesuaian di `print()` spesifikasi dipecah dua (juga baris horizon di `print()` validasi).
+- R23: uji AC .8 membandingkan `noise_called_leading` dengan aturan median saja (paling banyak separuh).
+- R24: bukan regresi; dibiarkan.
+- R25: `?LeadAssessment`: `inverted` relatif terhadap seri asli.
+

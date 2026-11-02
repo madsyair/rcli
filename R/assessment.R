@@ -183,7 +183,8 @@ fixed_b_p <- function(t) {
 #' @param shift Periods by which `x` is moved forward before comparing (use
 #'   the lead of `x`).
 #' @return A list with `index`, `expected` (value under independence) and
-#'   `p_value` (one-sided: more concordant than under independence).
+#'   `p_value` (one-sided: more concordant than under independence; reported
+#'   down to 1e-4, the end of the fixed-b table).
 #' @references
 #' Harding, D. and Pagan, A. (2006). Synchronization of cycles. *Journal of
 #' Econometrics*, 132(1), 59--79.
@@ -475,7 +476,9 @@ invert_cycle <- function(cs) {
 #' Leads beyond a quarter of the cycle cannot be told apart from inversion by
 #' the data, so declare the sign for such series. When no sign can be read
 #' the series is not inverted. The column `sign_source` records where the
-#' direction came from. The lead of the cross-correlation is then the peak
+#' direction came from: `"meta"`, `"data"` or `"none"` (not readable).
+#' `inverted` means inverted relative to the original series, also when the
+#' cycles passed in were inverted already. The lead of the cross-correlation is then the peak
 #' of the oriented correlation within half a reference cycle (and
 #' `ccf_lag_max`), since the same phase recurs a cycle later.
 #'

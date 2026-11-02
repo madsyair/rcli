@@ -14,7 +14,8 @@ the lead of \code{x}).}
 }
 \value{
 A list with \code{index}, \code{expected} (value under independence) and
-\code{p_value} (one-sided: more concordant than under independence).
+\code{p_value} (one-sided: more concordant than under independence; reported
+down to 1e-4, the end of the fixed-b table).
 }
 \description{
 Harding and Pagan (2002) concordance: the share of periods in which the

@@ -308,6 +308,8 @@ test_that("AC-FR-012.5 and .8: calibration evidence of 0.6.0", {
   drop <- med$leading_found - conf$leading_found
   expect_true(all(drop[conf$noise_sd == 0.2] <= 0.01))
   expect_true(all(drop <= 0.12))
+  expect_true(all(conf$noise_called_leading <=
+                    med$noise_called_leading / 2))
   oe <- lw[lw$classifier == "oecd" & lw$window == "asymmetric", ]
   expect_true(all(oe$false_leading <= 0.1))
 })

@@ -172,8 +172,10 @@ recursive_logit <- function(y, x, h, start = 0.4) {
     fit <- suppressWarnings(stats::glm.fit(cbind(1, x[train]), y[train],
                                            family = stats::binomial()))
     pt <- stats::plogis(sum(fit$coefficients * c(1, x[t])))
-    # a forecast and its naive counterpart, or neither (F-07)
-    if (!isTRUE(fit$converged) || !is.finite(pt)) next
+    # a forecast and its naive counterpart, or neither (F-07); an extreme
+    # forecast from a fit that did not converge (separation in a short
+    # sample) is still the forecast of the procedure and is kept
+    if (!is.finite(pt)) next
     p[t] <- pt
     naive[t] <- mean(y[train])
   }

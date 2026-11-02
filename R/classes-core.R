@@ -107,7 +107,8 @@ setClass("CycleSeries", representation(
 #'   reasons.
 #' @slot matches Named list of data frames pairing reference and candidate
 #'   turning points.
-#' @slot inverted Names of counter-cyclical candidates that were inverted.
+#' @slot inverted Names of counter-cyclical candidates, inverted relative to
+#'   their original series.
 #' @seealso [cli_assess()]
 #' @exportClass LeadAssessment
 setClass("LeadAssessment", representation(
