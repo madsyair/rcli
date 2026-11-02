@@ -549,9 +549,10 @@ assessment_display <- function(tab, p = function(x) x) {
   out <- data.frame(
     candidate = paste0(tab$name, ifelse(tab$inverted, " *", "")),
     class = tab$class,
-    direction = paste0(ifelse(tab$inverted, "countercyclical", "procyclical"),
-                       ifelse(sign_sources(tab) == "meta", " (declared)",
-                              "")),
+    direction = ifelse(
+      sign_sources(tab) == "none", "undetermined",
+      paste0(ifelse(tab$inverted, "countercyclical", "procyclical"),
+             ifelse(sign_sources(tab) == "meta", " (declared)", ""))),
     rationale = ifelse(is.na(tab$rationale), "", tab$rationale),
     lead = tab$ccf_lag,
     median = tab$median_lead,
@@ -990,18 +991,19 @@ app_server <- function(language = "id") {
         shiny::fluidRow(
           shiny::column(2, shiny::tags$p(shiny::strong(cands[i]),
                                          style = "margin-top: 8px;")),
+          # the direction sits under the rationale it follows from
           shiny::column(3, shiny::selectInput(
             paste0("rat_", i), NULL, choices,
             selected = keep(paste0("rat_", i),
-                            if (example) "early_stage" else ""))),
-          shiny::column(2, shiny::selectInput(
-            paste0("sgn_", i), NULL, sign_choices,
-            selected = keep(paste0("sgn_", i), ""))),
+                            if (example) "early_stage" else "")),
+            shiny::selectInput(
+              paste0("sgn_", i), NULL, sign_choices,
+              selected = keep(paste0("sgn_", i), ""))),
           shiny::column(2, shiny::selectInput(
             paste0("typ_", i), NULL, type_choices,
             selected = keep(paste0("typ_", i), ""))),
-          shiny::column(1, frq_cell(i)),
-          shiny::column(2, shiny::textInput(
+          shiny::column(2, frq_cell(i)),
+          shiny::column(3, shiny::textInput(
             paste0("src_", i), NULL, keep(paste0("src_", i), ""),
             placeholder = t("data_source")))
         )
@@ -1033,11 +1035,10 @@ app_server <- function(language = "id") {
         ref_row,
         shiny::helpText(t("sign_help")),
         shiny::fluidRow(shiny::column(2, shiny::strong("")),
-                        shiny::column(3, shiny::strong(t("rationale"))),
-                        shiny::column(2, shiny::strong(t("sign"))),
+                        shiny::column(3, shiny::strong(t("rationale_sign"))),
                         shiny::column(2, shiny::strong(t("var_type"))),
-                        shiny::column(1, shiny::strong(t("var_freq"))),
-                        shiny::column(2, shiny::strong(t("data_source")))),
+                        shiny::column(2, shiny::strong(t("var_freq"))),
+                        shiny::column(3, shiny::strong(t("data_source")))),
         rows
       )
     })

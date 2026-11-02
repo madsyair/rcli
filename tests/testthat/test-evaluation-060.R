@@ -286,3 +286,54 @@ test_that("AC-FR-012.9: the interface sets the sign and the OECD rule", {
     expect_true(rv$spec@classifier@conformity)
   })
 })
+
+test_that("AC-FR-012.5 and .8: calibration evidence of 0.6.0", {
+  read_cal <- function(f) {
+    utils::read.csv(system.file("calibration", f, package = "rcli"))
+  }
+  lw <- read_cal("lead-window.csv")
+  expect_setequal(unique(lw$window), c("asymmetric", "symmetric"))
+  # the default window is the asymmetric one of the study
+  expect_equal(cli_spec(12)@lead_window, c(12, 24))
+  expect_equal(cli_spec(4)@lead_window, c(4, 8))
+  acc <- read_cal("accuracy.csv")
+  expect_lte(max(acc$false_leading), 0.015)
+  cmp <- read_cal("oecd-classification.csv")
+  key <- paste(cmp$freq, cmp$noise_sd)
+  conf <- cmp[cmp$rule == "OECD (min 3 matched)", ]
+  med <- cmp[cmp$rule == "OECD (median lead only)", ]
+  med <- med[match(paste(conf$freq, conf$noise_sd),
+                   paste(med$freq, med$noise_sd)), ]
+  expect_true(all(conf$false_leading <= med$false_leading / 2))
+  drop <- med$leading_found - conf$leading_found
+  expect_true(all(drop[conf$noise_sd == 0.2] <= 0.01))
+  expect_true(all(drop <= 0.12))
+  oe <- lw[lw$classifier == "oecd" & lw$window == "asymmetric", ]
+  expect_true(all(oe$false_leading <= 0.1))
+})
+
+test_that("review 0.6.0: declared signs, idempotence, short forecasts", {
+  sim <- simulate_cycles(seed = 1)
+  meta <- meta_for(sim, sign = c(NA, NA, NA, NA, -1, NA, NA))
+  cand <- cli_candidates(sim, "reference", meta = meta)
+  res <- cli_build(cand)
+  again <- cli_assess(cand, res@spec, cycles(res))@table
+  first <- assessment(res)@table
+  expect_equal(again$class, first$class)
+  expect_equal(again$ccf_lag, first$ccf_lag)
+  # factor signs keep their values
+  meta$sign <- factor(meta$sign)
+  expect_equal(cli_candidates(sim, "reference", meta = meta)@meta$sign,
+               c(NA, NA, NA, NA, -1, NA, NA))
+  # the scorecard counts the out-of-sample forecasts
+  q <- cli_quality(res)@table
+  expect_true("out-of-sample forecasts" %in% q$criterion)
+  spec_far <- update(res@spec, horizon = 340)
+  v <- cli_validate(res@composite, cycles(res)$reference, spec_far)
+  row <- v@quality@table[v@quality@table$criterion ==
+                           "out-of-sample forecasts", ]
+  expect_false(row$passed)
+  # the selection loop does not compute the prediction group, the result
+  # does
+  expect_false(is.na(validation(res)@probability$auc))
+})

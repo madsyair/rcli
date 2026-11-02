@@ -80,6 +80,10 @@
 | 2026-11-01 21:42 | INC-11 | A6 | G6 | APPROVE putaran 2 (R14 minor, R15–R17 nit) | 2/3 | A5 R14–R17, gerbang penuh |
 | 2026-11-01 21:45 | INC-11 | A5 | G4–G5 | R14–R17 ditindaklanjuti | 2/3 | gerbang penuh, PR |
 | 2026-11-01 22:30 | INC-11 | A0 | G1–G8 | LOLOS (cakupan 97,3%; check 0/0, 2 catatan) | 2/3 | PR |
+| 2026-11-02 05:20 | INC-12 | A2c | G2 | F-05, F-06: REVISE putaran 1 → ACCEPT putaran 2 | — | A4/A5 |
+| 2026-11-02 06:10 | INC-12 | A1, A4, A5 | G1, G4, G5 | merah 6 blok → hijau; kalibrasi diulang | 1/3 | A6 |
+| 2026-11-02 10:01 | INC-12 | A6 | G6 | CHANGES-REQUESTED (R1 tata letak, R2 kinerja, R3 AC .8) | 1/3 | A5 perbaiki |
+| 2026-11-02 10:40 | INC-12 | A5 | G4–G5 | R1–R18 ditindaklanjuti | 2/3 | A6 putaran 2 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

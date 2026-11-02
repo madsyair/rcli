@@ -27,19 +27,22 @@ in `data-raw/evaluation_060.R` and `inst/calibration/test-size.csv`.
 * The concordance test uses a Bartlett HAC variance with a fixed bandwidth
   of 30 percent of the sample and the fixed-b critical values of Kiefer and
   Vogelsang (2005). The Newey-West bandwidth of earlier versions rejected
-  independent cycles 19 to 37 percent of the time at the 5 percent level;
-  the new test 6 to 18 percent (the upper end when the shift is the median
+  independent cycles 11 to 37 percent of the time at the 5 percent level;
+  the new test 6 to 18 percent (the upper ends when the shift is the median
   lead chosen from the same data). `concordance()` reports a one-sided
-  p-value.
+  p-value, down to 1e-4, the end of the fixed-b table.
 * The Pesaran-Timmermann test of `cli_validate()` and `cci_validate()` uses
   the regression form of Pesaran and Timmermann (2009) with the same
-  variance.
+  variance. Its `pt_stat` is now the share of agreeing signs minus its value
+  under independence, no longer the z statistic of the 1992 test.
 * The probability of contraction of `cli_validate()` comes from a recursive
   out-of-sample logit (Estrella and Mishkin 1998): the QPS is compared with
   a naive forecast from the same past data, and the AUC is computed from
-  the forecasts (`n_forecasts`). In sample, a logit always beat the naive
-  forecast. `contraction_probability(recursive = FALSE)` gives the old
-  in-sample fit.
+  the forecasts (`n_forecasts`, at least 20 in the scorecard). In sample, a
+  logit always beat the naive forecast. `contraction_probability(recursive
+  = FALSE)` gives the old in-sample fit. The selection loop of
+  `cli_build()` and `cci_build()` skips this group, which only the chosen
+  composite needs, so a build is about as fast as before.
 * `horizon = NA` now means the lower end of `target_lead` (6 months or 2
   quarters), fixed in advance, instead of the lag of the composite's own
   cross-correlation peak.
@@ -68,7 +71,9 @@ in `data-raw/evaluation_060.R` and `inst/calibration/test-size.csv`.
   7 percent).
 * With the conformity criteria, `oecd_classifier()` labels 2 to 8 percent of
   the non-leading calibration candidates leading, against 19 to 23 percent
-  with the median lead alone (`inst/calibration/oecd-classification.csv`).
+  with the median lead alone, and finds as many true leaders with little
+  noise but 2 to 10 percentage points fewer in noisy data
+  (`inst/calibration/oecd-classification.csv`).
 
 ## Documentation
 

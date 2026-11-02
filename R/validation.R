@@ -65,19 +65,21 @@ cli_validate <- function(composite, reference, spec) {
     rcli_abort("`spec` must be a CliSpec (see cli_spec()).",
                "rcli_error_argument")
   }
+  validate_leading(composite, reference, spec, prediction = TRUE)
+}
+
+# The validation of cli_validate(); the selection loop of cli_build() needs
+# only the turning-point criteria and its score, so it skips the prediction
+# group (recursive logit), which is computed once for the chosen composite.
+validate_leading <- function(composite, reference, spec, prediction) {
   comp_cs <- composite_as_cycle(composite)
   ref_tp <- date_turning_points(spec@dater, reference@normalised,
                                 name = reference@name)
   comp_tp <- date_turning_points(spec@dater, comp_cs@normalised, name = "CLI")
   row <- assess_pair(reference, ref_tp, comp_cs, comp_tp, spec)$row
   chk <- leading_checks(row, spec)
-  h <- validation_horizon(spec)
-  prob <- probability_scores(as.numeric(composite@cycle), ref_tp, h,
-                             span = max(1, spec@freq / 4))
-  pt <- pesaran_timmermann(as.numeric(composite@cycle),
-                           as.numeric(reference@normalised), h)
-  prob$pt_stat <- pt$stat
-  prob$pt_p <- pt$p_value
+  prob <- prediction_group(composite, reference, ref_tp, spec,
+                           validation_horizon(spec), prediction)
   row$name <- NULL
   val <- new("CliValidation", turning_points = row, probability = prob,
              out_of_sample = data.frame(), passed = all(chk),
@@ -90,6 +92,24 @@ composite_as_cycle <- function(composite) {
   new("CycleSeries", name = "CLI", original = composite@index,
       transformed = composite@index, cycle = composite@cycle,
       normalised = composite@cycle, steps = "composite")
+}
+
+# Prediction group of a validation: out-of-sample probability scores and the
+# direction test at horizon h; all NA when `prediction` is FALSE.
+prediction_group <- function(composite, reference, ref_tp, spec, h,
+                             prediction = TRUE) {
+  if (!prediction) {
+    return(data.frame(horizon = h, qps = NA_real_, qps_naive = NA_real_,
+                      auc = NA_real_, n_forecasts = 0L, pt_stat = NA_real_,
+                      pt_p = NA_real_))
+  }
+  prob <- probability_scores(as.numeric(composite@cycle), ref_tp, h,
+                             span = max(1, spec@freq / 4))
+  pt <- pesaran_timmermann(as.numeric(composite@cycle),
+                           as.numeric(reference@normalised), h)
+  prob$pt_stat <- pt$stat
+  prob$pt_p <- pt$p_value
+  prob
 }
 
 # Horizon of the prediction tests: fixed in advance, never taken from the
@@ -151,7 +171,10 @@ recursive_logit <- function(y, x, h, start = 0.4) {
     if (length(train) < 10L || length(unique(y[train])) < 2L) next
     fit <- suppressWarnings(stats::glm.fit(cbind(1, x[train]), y[train],
                                            family = stats::binomial()))
-    p[t] <- stats::plogis(sum(fit$coefficients * c(1, x[t])))
+    pt <- stats::plogis(sum(fit$coefficients * c(1, x[t])))
+    # a forecast and its naive counterpart, or neither (F-07)
+    if (!isTRUE(fit$converged) || !is.finite(pt)) next
+    p[t] <- pt
     naive[t] <- mean(y[train])
   }
   list(probability = p, naive = naive)

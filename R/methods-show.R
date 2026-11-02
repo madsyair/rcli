@@ -111,7 +111,13 @@ setMethod("classifier_lines", "OecdClassifier", function(classifier, spec) {
          classifier@coincident, " months (OECD rule)\n",
          "               coincident within +/- ", classifier@coincident,
          ", lagging <= -", classifier@coincident, ", >= ",
-         classifier@min_matched, " matched\n")
+         classifier@min_matched, " matched\n",
+         if (oecd_conformity(classifier)) {
+           paste0("               and cyclical conformity: positive ",
+                  "cross-correlation, missed and extra <= ",
+                  spec@max_missed * 100, "% and ", spec@max_extra * 100,
+                  "%, concordance significant at ", spec@alpha, "\n")
+         })
 })
 
 #' @rdname show-methods
@@ -242,9 +248,14 @@ setMethod("show", "CliValidation", function(object) {
   }
   cat("  turning points: ", tp$missed, " missed, ", tp$extra, " extra of ",
       tp$n_ref, "; concordance ", fmt_num(tp$concordance), "\n", sep = "")
-  cat("  horizon ", pr$horizon, ": QPS ", fmt_num(pr$qps, 3), ", AUC ",
-      fmt_num(pr$auc, 3), ", Pesaran-Timmermann p ", fmt_num(pr$pt_p, 3),
-      "\n", sep = "")
+  n_fc <- if ("n_forecasts" %in% names(pr)) {
+    sprintf(" (%d out-of-sample forecasts)", as.integer(pr$n_forecasts))
+  } else {
+    ""
+  }
+  cat("  horizon ", pr$horizon, n_fc, ": QPS ", fmt_num(pr$qps, 3),
+      ", AUC ", fmt_num(pr$auc, 3), ", Pesaran-Timmermann p ",
+      fmt_num(pr$pt_p, 3), "\n", sep = "")
   if (is(object@quality, "CliQuality")) {
     cat("  quality verdict: ", object@quality@verdict, " (see cli_quality())\n",
         sep = "")

@@ -4,7 +4,7 @@
       cli_quality(cli_build(cand))
     Output
       <CliQuality> verdict: ACCEPTABLE
-        In-sample criteria are met; run the out-of-sample check (oos_cutoffs) before relying on the lead.
+        Turning-point and prediction criteria are met; run the out-of-sample check of the selection (oos_cutoffs) before relying on the lead.
       
         turning points
          criterion                      value   threshold         status
@@ -19,6 +19,7 @@
       
         prediction
          criterion                   value threshold       status
+         out-of-sample forecasts      210  >= 20           pass  
          area under the ROC curve    0.86  >= 0.7          pass  
          quadratic probability score  0.3  < 0.526 (naive) pass  
          Pesaran-Timmermann p-value  1e-04 < 0.05          pass  

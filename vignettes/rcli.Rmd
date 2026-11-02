@@ -136,7 +136,7 @@ more often (up to about 15 percent), which does no harm to the composite.
 
 The tests behind the criteria allow for the persistence of cycles. Phases
 last years, so the usual Newey-West variance made the concordance test reject
-independent cycles 19 to 37 percent of the time at the 5 percent level; with
+independent cycles 11 to 37 percent of the time at the 5 percent level; with
 the fixed-b variance of Kiefer and Vogelsang (2005) it rejects 6 to 18
 percent (`inst/calibration/test-size.csv`, which also records the size of
 the Pesaran-Timmermann test and of the prediction criteria).
@@ -283,8 +283,9 @@ cmp[cmp$rule != "OECD (min 1 matched)", ]
 The median lead alone (the rule of rcli 0.5.1, `oecd_classifier(conformity
 = FALSE)`) labels a fifth of the non-leading candidates (and up to almost
 half of the pure-noise series) leading. With the conformity criteria, the
-default since 0.6.0, the OECD rule finds as many true leaders and labels
-only 2 to 8 percent of the others leading; the default rule of the package
+default since 0.6.0, the OECD rule labels only 2 to 8 percent of the others
+leading; it finds as many true leaders with little noise, but 2 to 10
+percentage points fewer in noisy data. The default rule of the package
 stays at about 1 percent or less, but finds fewer leaders in very noisy
 data. The aggregation experiment points the other way at the end of the
 sample:

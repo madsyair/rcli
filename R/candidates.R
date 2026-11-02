@@ -157,11 +157,15 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
     at <- match(meta$name, names)
     for (col in intersect(c("rationale", "source", "release_lag", "type",
                             "frequency", "sign"), names(meta))) {
-      given <- !is.na(meta[[col]])
-      base[[col]][at[given]] <- meta[[col]][given]
+      v <- meta[[col]]
+      if (is.factor(v)) v <- as.character(v)
+      given <- !is.na(v)
+      base[[col]][at[given]] <- v[given]
     }
   }
-  sg <- suppressWarnings(as.numeric(base$sign))
+  sg <- base$sign
+  if (is.factor(sg)) sg <- as.character(sg)
+  sg <- suppressWarnings(as.numeric(sg))
   if (any(!is.na(base$sign) & (is.na(sg) | !sg %in% c(-1, 1)))) {
     rcli_abort(paste("`meta$sign` must be 1 (procyclical), -1",
                      "(countercyclical) or NA."), "rcli_error_argument")

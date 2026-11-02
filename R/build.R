@@ -99,11 +99,14 @@ select_components <- function(cycles, assessment, spec, reference) {
   evaluate <- function(cs) {
     sh <- if (shift_on) lag_shifts(cs, assessment) else NULL
     comp <- cli_composite(cycles, cs, spec, ref, shifts = sh)
-    val <- cli_validate(comp, ref, spec)
+    val <- validate_leading(comp, ref, spec, prediction = FALSE)
     list(composite = comp, validation = val, score = composite_score(val, spec))
   }
-  elimination_loop(comps, evaluate, spec,
-                   "initial composite of all leading candidates")
+  sel <- elimination_loop(comps, evaluate, spec,
+                          "initial composite of all leading candidates")
+  # the prediction group only for the chosen composite
+  sel$validation <- cli_validate(sel$composite, ref, spec)
+  sel
 }
 
 # Backward elimination shared by the leading and coincident composites:

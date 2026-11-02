@@ -443,6 +443,10 @@ declared_signs <- function(candidates) {
   stats::setNames(as.list(s), nms)
 }
 
+is_inverted <- function(cs) {
+  sum(cs@steps == "inverted (counter-cyclical)") %% 2L == 1L
+}
+
 invert_cycle <- function(cs) {
   cs@cycle <- -cs@cycle
   cs@normalised <- -cs@normalised
@@ -540,17 +544,22 @@ cli_assess <- function(candidates, spec, cycles = NULL) {
     cs <- cycles[[nm]]
     s <- declared[[nm]]
     source <- "meta"
+    if (!is.na(s) && is_inverted(cs)) {
+      # cycles that are already inverted (e.g. cycles(res)) keep their
+      # orientation when it is the declared one
+      s <- -s
+    }
     if (is.na(s)) {
       source <- "data"
       cc <- cross_correlation(as.numeric(cs@normalised), ref_v,
                               spec@ccf_lag_max, min_overlap(spec@freq))
       s <- orient_sign(cc$all, cc$lags, k_sign)
+      if (is.na(s)) source <- "none"
     }
     is_inv <- isTRUE(s < 0)
-    if (is_inv) {
-      cs <- invert_cycle(cs)
-      inverted <- c(inverted, nm)
-    }
+    if (is_inv) cs <- invert_cycle(cs)
+    if (is_inverted(cs)) inverted <- c(inverted, nm)
+    is_inv <- is_inverted(cs)
     tp <- date_turning_points(spec@dater, cs@normalised, name = nm)
     res <- assess_pair(ref_cs, ref_tp, cs, tp, spec)
     cls <- classify_row(res$row, spec)
