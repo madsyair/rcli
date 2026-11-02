@@ -29,7 +29,7 @@
 | INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | selesai (G1–G8; PR #4) |
 | INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8; PR #5) |
 | INC-11 | Perbaikan cacat hasil kajian menyeluruh (0.5.1) | FR-011 | — | selesai (PR #6, digabung) |
-| INC-12 | Evaluasi kandidat dan validasi yang lebih jujur (0.6.0) | FR-012 | F-05, F-06, F-07 | berjalan |
+| INC-12 | Evaluasi kandidat dan validasi yang lebih jujur (0.6.0) | FR-012 | F-05, F-06, F-07 | selesai (PR) |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -86,6 +86,7 @@
 | 2026-11-02 10:40 | INC-12 | A5 | G4–G5 | R1–R18 ditindaklanjuti | 2/3 | A6 putaran 2 |
 | 2026-11-02 11:05 | INC-12 | A6 | G6 | APPROVE putaran 2 (R19 minor, R20–R25 nit) | 2/3 | A5 R19–R25, gerbang penuh |
 | 2026-11-02 11:15 | INC-12 | A5 | G4–G5 | R19–R25 ditindaklanjuti | 2/3 | gerbang penuh, PR |
+| 2026-11-02 12:30 | INC-12 | A0 | G1–G8 | LOLOS (cakupan 97,0%; check 0/0) | 2/3 | PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

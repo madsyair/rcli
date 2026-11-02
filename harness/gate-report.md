@@ -1,4 +1,4 @@
-# Gate report — 2026-11-02T10:58:51
+# Gate report — 2026-11-02T11:26:05
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -6,10 +6,10 @@
 | G2 Verifikasi matematis | LOLOS | 0 |
 | G3 Desain | LOLOS | 0 |
 | G4 Uji-dulu | LOLOS | 0 |
-| G5 Build & uji | GAGAL | 1 |
+| G5 Build & uji | LOLOS | 0 |
 | G6 Review | LOLOS | 0 |
 | G7 Dokumentasi | LOLOS | 0 |
-| G8 Rilis | GAGAL | 1 |
+| G8 Rilis | LOLOS | 0 |
 
 ## G1 Kebutuhan
 - [x] Ada kebutuhan FR/NFR — 15 ID
@@ -56,7 +56,7 @@
 
 ## G5 Build & uji
 - [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 2 | PASS 2226 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41987 -Dhttp.nonProxyHosts=localhost|127.
-- [ ] lint — exit 1: R/assessment.R:481:81: style: [line_length_linter] Lines should not be more than 80 characters. This line is 93 characters. | #' cycles passed in were inverted already. The lead of the cross-correlation is then the peak | ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+- [x] lint — exit 0: 
 - [x] coverage — exit 0: coverage 97.00322
 
 ## G6 Review
@@ -68,5 +68,5 @@
 - [x] examples — exit 0: ℹ Updating rcli documentation | ℹ Loading rcli | ℹ Loading rcli | ℹ Loading rcli
 
 ## G8 Rilis
-- [ ] Gerbang G1–G7 lolos — gagal: G5
+- [x] Gerbang G1–G7 lolos
 - [x] check-as-cran — exit 0:  | 0 errors ✔ | 0 warnings ✔ | 2 notes ✖ | ℹ Updating rcli documentation | ℹ Loading rcli
