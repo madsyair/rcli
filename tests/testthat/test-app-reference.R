@@ -40,8 +40,9 @@ test_that("the coincident index becomes the reference of a new analysis", {
     session$setInputs(reference = "cci")
     expect_equal(rv$done, 1:2)
     html <- as.character(output$meta_ui$html)
-    row_lead3 <- regmatches(html, regexpr("lead_3.*?</select>.*?</select>",
-                                          html))
+    # rationale, direction, then type
+    row_lead3 <- regmatches(html, regexpr(
+      "lead_3.*?</select>.*?</select>.*?</select>", html))
     expect_match(row_lead3, 'value="flow" selected', fixed = TRUE)
     # steps 3 to 7 run against the index
     session$setInputs(run3 = 2)

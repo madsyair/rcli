@@ -1,7 +1,7 @@
 Package: rcli
 Type: Package
 Title: Composite Leading and Coincident Indicators
-Version: 0.5.1
+Version: 0.6.0
 Authors@R: c(
     person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
            role = c("aut", "cre"))

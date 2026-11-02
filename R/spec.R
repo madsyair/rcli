@@ -46,7 +46,8 @@
 #' @param min_auc Minimum area under the ROC curve for a good composite
 #'   (default 0.7, "acceptable discrimination" in Hosmer and Lemeshow 2000).
 #' @param target_lead Lead range the OECD aims at, reported in the quality
-#'   scorecard for information (default 6 to 9 months or 2 to 3 quarters).
+#'   scorecard for information (default 6 to 9 months or 2 to 3 quarters);
+#'   its lower end is the default horizon of the prediction tests.
 #' @param lead_window Turning points are paired when the candidate turns at
 #'   most `lead_window[1]` periods after and `lead_window[2]` periods before
 #'   the reference (default `c(12, 24)` months or `c(4, 8)` quarters).
@@ -58,8 +59,10 @@
 #' @param granger_dmax Extra unrestricted lags of the Toda-Yamamoto test.
 #' @param max_iter Maximum number of iterations of the selection loop.
 #' @param min_components Smallest number of components of the composite.
-#' @param horizon Horizon of the probability tests; `NA` uses the lag of the
-#'   cross-correlation peak of the composite (at least 1).
+#' @param horizon Horizon of the probability and direction tests of
+#'   [cli_validate()]; `NA` uses the lower end of `target_lead`, fixed in
+#'   advance (until rcli 0.5.1 it was the lag of the composite's own
+#'   cross-correlation peak, a choice made from the data being tested).
 #' @param oos_cutoffs Optional cut-off dates (decimal time, e.g. `2015`) for
 #'   the selection-bias harness run by [cli_build()].
 #' @param holidays A [holiday_effect()], or a list of them, whose effects
@@ -348,8 +351,10 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' * cycle: double Hodrick-Prescott filter, 12 to 120 months
 #'   ([hp_double_filter()]);
 #' * turning points: simplified Bry-Boschan ([bry_boschan()]);
-#' * classification: median lead, coincident within +/- 2 months
-#'   ([oecd_classifier()]);
+#' * classification: median lead, coincident within +/- 2 months, with
+#'   cyclical conformity and few missed or extra cycles
+#'   ([oecd_classifier()]; `classifier = oecd_classifier(conformity =
+#'   FALSE)` for the median lead alone, as in rcli 0.5.1);
 #' * lag-shifting: the leads of the components aligned (`lag_shift = TRUE`);
 #' * aggregation: chained average growth with the 60 percent rule
 #'   ([oecd_aggregate()]);
@@ -371,6 +376,8 @@ setMethod("update", "CliSpec", function(object, ...) {
 #'   quarterly data the month thresholds are converted to quarters.
 #' @param seasonal_adjust,holidays See [cli_spec()].
 #' @param engine Engine of [tramo_outliers()] and of the log/level test.
+#' @param classifier An OECD [Classifier-class], by default
+#'   [oecd_classifier()].
 #' @param ... Further arguments of [cli_spec()].
 #' @return A [CliSpec-class].
 #' @references
@@ -391,10 +398,15 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' }
 #' @export
 oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
-                      engine = c("auto", "tramo", "x13"), ...) {
+                      engine = c("auto", "tramo", "x13"),
+                      classifier = oecd_classifier(), ...) {
   check_frequency(freq)
   engine <- match.arg(engine)
-  cls <- oecd_classifier()
+  if (!is(classifier, "OecdClassifier")) {
+    rcli_abort("`classifier` must be an oecd_classifier().",
+               "rcli_error_argument")
+  }
+  cls <- classifier
   cli_spec(freq = freq, filter = hp_double_filter(), dater = NULL,
            aggregator = oecd_aggregate(), transform = "test",
            seasonal_adjust = seasonal_adjust, holidays = holidays,

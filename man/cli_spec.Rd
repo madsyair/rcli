@@ -80,7 +80,8 @@ of a coincident series (default 1 month or 0 quarters).}
 (default 0.7, "acceptable discrimination" in Hosmer and Lemeshow 2000).}
 
 \item{target_lead}{Lead range the OECD aims at, reported in the quality
-scorecard for information (default 6 to 9 months or 2 to 3 quarters).}
+scorecard for information (default 6 to 9 months or 2 to 3 quarters);
+its lower end is the default horizon of the prediction tests.}
 
 \item{lead_window}{Turning points are paired when the candidate turns at
 most \code{lead_window[1]} periods after and \code{lead_window[2]} periods before
@@ -100,8 +101,10 @@ test (default 12 months or 4 quarters); the order is chosen by AIC.}
 
 \item{min_components}{Smallest number of components of the composite.}
 
-\item{horizon}{Horizon of the probability tests; \code{NA} uses the lag of the
-cross-correlation peak of the composite (at least 1).}
+\item{horizon}{Horizon of the probability and direction tests of
+\code{\link[=cli_validate]{cli_validate()}}; \code{NA} uses the lower end of \code{target_lead}, fixed in
+advance (until rcli 0.5.1 it was the lag of the composite's own
+cross-correlation peak, a choice made from the data being tested).}
 
 \item{oos_cutoffs}{Optional cut-off dates (decimal time, e.g. \code{2015}) for
 the selection-bias harness run by \code{\link[=cli_build]{cli_build()}}.}

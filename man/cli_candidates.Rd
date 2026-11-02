@@ -25,10 +25,14 @@ together with \code{start} and \code{frequency}.}
 \item{meta}{Optional data frame with a \code{name} column and any of
 \code{rationale} (one of \code{names(oecd_rationales)}), \code{source},
 \code{release_lag} (publication delay in periods), \code{type} (one of
-\code{names(series_types)}) and \code{frequency}, the source frequency (one of
+\code{names(series_types)}), \code{frequency}, the source frequency (one of
 \code{names(series_frequencies)}; a candidate cannot be semiannual or
-annual). When \code{data} comes from \code{\link[=cli_align]{cli_align()}}, the types, source
-frequencies and conversion steps recorded there are kept as well, and a
+annual), and \code{sign}, the expected direction of the candidate from its
+economic rationale: 1 (procyclical), -1 (countercyclical, inverted
+before aggregation) or \code{NA} (decided from the data by
+\code{\link[=cli_assess]{cli_assess()}}). When \code{data} comes from \code{\link[=cli_align]{cli_align()}}, the types,
+source frequencies and conversion steps recorded there are kept as
+well, and a
 source frequency in \code{meta} must agree with the recorded one. (The
 \code{frequency} column of \code{meta} is the source frequency of a candidate; the
 argument \code{frequency} below is the number of periods a year of \code{data}.)}

@@ -273,7 +273,7 @@ cli_composite <- function(cycles, components, spec, reference = NULL,
                    numeric(length(template)))
   levels <- matrix(levels, ncol = length(components))
   attr(levels, "sign") <- vapply(components, function(nm) {
-    if ("inverted (counter-cyclical)" %in% cycles[[nm]]@steps) -1 else 1
+    if (is_inverted(cycles[[nm]])) -1 else 1
   }, numeric(1))
   attr(levels, "tsp") <- stats::tsp(template)
   shifts <- check_shifts(shifts, components)

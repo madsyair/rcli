@@ -108,12 +108,16 @@ plot_leads <- function(assessment, spec, tr = function(x) x) {
                    col = class_colours, pch = 19, bty = "n", cex = 0.8)
 }
 
-# Cross-correlations of a candidate with the reference at every lead.
-plot_ccf <- function(cycles, reference, name, lag_max, tr = function(x) x) {
+# Cross-correlations of a candidate with the reference at every lead; the
+# highlighted bar is `peak`, the lead reported by cli_assess() (read within
+# half a reference cycle), or else the highest correlation.
+plot_ccf <- function(cycles, reference, name, lag_max, tr = function(x) x,
+                     peak = NULL) {
   cc <- cross_correlation(as.numeric(cycles[[name]]@normalised),
                           as.numeric(cycles[[reference]]@normalised),
                           lag_max)
-  cols <- ifelse(cc$lags == cc$lag, "firebrick", "grey60")
+  if (is.null(peak)) peak <- cc$lag
+  cols <- ifelse(cc$lags %in% peak, "firebrick", "grey60")
   graphics::barplot(cc$all, names.arg = cc$lags, col = cols, border = NA,
                     ylim = c(-1, 1), xlab = tr("lead (periods; > 0: leads)"),
                     ylab = tr("correlation"), main = name)

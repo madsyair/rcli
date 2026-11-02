@@ -72,5 +72,18 @@ Keputusan FR-010:
 
 Keputusan FR-011:
 - Hanya cacat; bawaan metode tidak berubah. Temuan yang menyentuh pengklasifikasi dan kartu skor (G1–G5) ditunda ke 0.6.0 karena memerlukan kalibrasi ulang.
-- Pencilan di ujung seri diperlakukan sebagai lonjakan sampai observasi berikutnya menunjukkan apakah perubahannya bertahan; konsekuensinya nilai terakhir dapat direvisi, sama seperti perlakuan TRAMO di ujung seri.
+- Hanya perubahan ekstrem pada observasi pertama yang diganti; observasi terakhir tidak disentuh karena merupakan sinyal terbaru (review 0.5.1, R3).
 - Tumpang tindih minimum korelasi silang dinyatakan dalam tahun (dua tahun) agar bulanan tidak berubah (24) dan triwulanan tidak lagi selalu NA untuk sampel pendek.
+
+## Increment 0.6.0
+| FR | Elemen API | Berkas |
+|---|---|---|
+| FR-012 | Kolom `meta$sign`; kolom `sign_source` di tabel penilaian; internal `orient_sign()` (F-05), `fixed_b_p()` dan tabel `fixed_b_null` di `R/sysdata.rda` (F-06), `recursive_logit()` (F-07); argumen `oecd_classifier(conformity = )` dan `contraction_probability(recursive = )`; perilaku `cross_correlation()`, `concordance()`, `pesaran_timmermann()`, `cli_validate()`, `horizon = NA` | `R/assessment.R`, `R/candidates.R`, `R/classes-classifier.R`, `R/validation.R`, `R/spec.R`, `R/app*.R`, `data-raw/fixed_b_table.R`, `data-raw/evaluation_060.R` |
+
+Keputusan FR-012 (bukti: simulasi 2 November 2026, diringkas di `inst/calibration/test-size.csv`):
+- Arah seri (G1): korelasi silang terbesar pada |k| ≤ ⌊P̂/4⌋ benar untuk siklus teratur bila *lead* < P/4; pada *lead* ≥ P/4 arah memang tidak teridentifikasi (*lead* P/2 sama dengan inversi), sehingga pengguna dapat menyatakannya di `meta$sign`, sesuai praktik OECD yang menetapkan arah dari alasan ekonomi. Pemasangan titik balik sebagai penentu arah ditolak: salah 35–45% untuk *lead* 12 pada siklus AR(2).
+- Uji konkordansi (G3): uji rotasi sirkular dengan jarak geser minimum ditolak karena ukurannya mendekati g/n (7–13%); uji geser Harris (2020) berukuran benar tetapi dayanya 14%. HAC *fixed-b* memberi ukuran 6–8% pada status Markov (n = 360) dan 6–10% pada siklus tersimulasi dengan geser tetap, dengan daya ≥ 0,97. Inflasi karena geser dipilih dari data (18% bulanan, 11% triwulanan) tidak dikoreksi dan didokumentasikan.
+- Horizon uji prediksi: batas bawah `target_lead`, karena horizon dari lag korelasi silang adalah pilihan dari data dan menaikkan ukuran uji PT dari 5% ke 13%.
+- Kesesuaian siklus OECD (G2): Gyomai dan Guidetti (2012, p. 8) menilai *lead*, kesesuaian siklus (korelasi silang), dan siklus terlewat atau ekstra; `oecd_classifier()` 0.5.1 hanya memakai median *lead*. Jendela simetris saja tidak menghilangkan bias median *lead* pada pasangan independen (pemasangan berurutan menghasilkan bias negatif), sehingga syarat kesesuaian yang menjadi perbaikan utamanya.
+- Peluang kontraksi (G5): logit rekursif luar sampel, sesuai Estrella dan Mishkin (1998); QPS dalam sampel selalu mengalahkan prakiraan konstan sehingga tidak informatif.
+

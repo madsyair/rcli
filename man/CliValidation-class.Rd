@@ -12,9 +12,13 @@ Validation of a composite index
 \describe{
 \item{\code{turning_points}}{One-row data frame of turning-point statistics.}
 
-\item{\code{probability}}{One-row data frame with the horizon, quadratic
-probability score, area under the ROC curve and the Pesaran-Timmermann
-directional test.}
+\item{\code{probability}}{One-row data frame with the \code{horizon}, the quadratic
+probability score \code{qps} and its naive counterpart \code{qps_naive}, the area
+under the ROC curve \code{auc}, the number of out-of-sample forecasts
+\code{n_forecasts}, and the Pesaran-Timmermann directional test: \code{pt_stat},
+the share of agreeing signs minus its value under independence (since
+0.6.0; earlier the z statistic of the 1992 test), and its one-sided
+fixed-b p-value \code{pt_p}.}
 
 \item{\code{out_of_sample}}{Results of \code{\link[=cli_selection_bias]{cli_selection_bias()}} (may be empty).}
 

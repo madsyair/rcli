@@ -1,0 +1,149 @@
+"study","setting","series","statistic","value","reps"
+"sign","regular P=36","l3","error_A",0.5,20
+"sign","regular P=36","l3","error_F05",0,20
+"sign","regular P=36","l3","error_C",0,20
+"sign","regular P=36","l6","error_A",0.8,20
+"sign","regular P=36","l6","error_F05",0,20
+"sign","regular P=36","l6","error_C",0,20
+"sign","regular P=36","l9","error_A",0.55,20
+"sign","regular P=36","l9","error_F05",0.55,20
+"sign","regular P=36","l9","error_C",0.05,20
+"sign","regular P=36","l12","error_A",0.3,20
+"sign","regular P=36","l12","error_F05",1,20
+"sign","regular P=36","l12","error_C",0.7,20
+"sign","regular P=36","c4","error_A",0.5,20
+"sign","regular P=36","c4","error_F05",0,20
+"sign","regular P=36","c4","error_C",0,20
+"sign","regular P=36","c9","error_A",0.45,20
+"sign","regular P=36","c9","error_F05",0.4,20
+"sign","regular P=36","c9","error_C",0.1,20
+"sign","regular P=48","l3","error_A",0.3,20
+"sign","regular P=48","l3","error_F05",0,20
+"sign","regular P=48","l3","error_C",0,20
+"sign","regular P=48","l6","error_A",0.75,20
+"sign","regular P=48","l6","error_F05",0,20
+"sign","regular P=48","l6","error_C",0,20
+"sign","regular P=48","l9","error_A",0.45,20
+"sign","regular P=48","l9","error_F05",0,20
+"sign","regular P=48","l9","error_C",0,20
+"sign","regular P=48","l12","error_A",0.65,20
+"sign","regular P=48","l12","error_F05",0.65,20
+"sign","regular P=48","l12","error_C",0,20
+"sign","regular P=48","c4","error_A",0.3,20
+"sign","regular P=48","c4","error_F05",0,20
+"sign","regular P=48","c4","error_C",0,20
+"sign","regular P=48","c9","error_A",0.55,20
+"sign","regular P=48","c9","error_F05",0,20
+"sign","regular P=48","c9","error_C",0,20
+"sign","regular P=72","l3","error_A",0,20
+"sign","regular P=72","l3","error_F05",0,20
+"sign","regular P=72","l3","error_C",0,20
+"sign","regular P=72","l6","error_A",0,20
+"sign","regular P=72","l6","error_F05",0,20
+"sign","regular P=72","l6","error_C",0,20
+"sign","regular P=72","l9","error_A",0.05,20
+"sign","regular P=72","l9","error_F05",0,20
+"sign","regular P=72","l9","error_C",0.05,20
+"sign","regular P=72","l12","error_A",0.35,20
+"sign","regular P=72","l12","error_F05",0,20
+"sign","regular P=72","l12","error_C",0.05,20
+"sign","regular P=72","c4","error_A",0,20
+"sign","regular P=72","c4","error_F05",0,20
+"sign","regular P=72","c4","error_C",0,20
+"sign","regular P=72","c9","error_A",0.05,20
+"sign","regular P=72","c9","error_F05",0,20
+"sign","regular P=72","c9","error_C",0,20
+"sign","AR(2) 4 years noise=0.4","l3","error_A",0,20
+"sign","AR(2) 4 years noise=0.4","l3","error_F05",0,20
+"sign","AR(2) 4 years noise=0.4","l3","error_C",0,20
+"sign","AR(2) 4 years noise=0.4","l6","error_A",0,20
+"sign","AR(2) 4 years noise=0.4","l6","error_F05",0,20
+"sign","AR(2) 4 years noise=0.4","l6","error_C",0.05,20
+"sign","AR(2) 4 years noise=0.4","l9","error_A",0,20
+"sign","AR(2) 4 years noise=0.4","l9","error_F05",0,20
+"sign","AR(2) 4 years noise=0.4","l9","error_C",0.1,20
+"sign","AR(2) 4 years noise=0.4","l12","error_A",0,20
+"sign","AR(2) 4 years noise=0.4","l12","error_F05",0.05,20
+"sign","AR(2) 4 years noise=0.4","l12","error_C",0.35,20
+"sign","AR(2) 4 years noise=0.4","c4","error_A",0,20
+"sign","AR(2) 4 years noise=0.4","c4","error_F05",0,20
+"sign","AR(2) 4 years noise=0.4","c4","error_C",0,20
+"sign","AR(2) 4 years noise=0.4","c9","error_A",0,20
+"sign","AR(2) 4 years noise=0.4","c9","error_F05",0,20
+"sign","AR(2) 4 years noise=0.4","c9","error_C",0.05,20
+"sign","AR(2) 4 years noise=0.8","l3","error_A",0,20
+"sign","AR(2) 4 years noise=0.8","l3","error_F05",0,20
+"sign","AR(2) 4 years noise=0.8","l3","error_C",0,20
+"sign","AR(2) 4 years noise=0.8","l6","error_A",0,20
+"sign","AR(2) 4 years noise=0.8","l6","error_F05",0,20
+"sign","AR(2) 4 years noise=0.8","l6","error_C",0,20
+"sign","AR(2) 4 years noise=0.8","l9","error_A",0,20
+"sign","AR(2) 4 years noise=0.8","l9","error_F05",0,20
+"sign","AR(2) 4 years noise=0.8","l9","error_C",0.1,20
+"sign","AR(2) 4 years noise=0.8","l12","error_A",0,20
+"sign","AR(2) 4 years noise=0.8","l12","error_F05",0.05,20
+"sign","AR(2) 4 years noise=0.8","l12","error_C",0.45,20
+"sign","AR(2) 4 years noise=0.8","c4","error_A",0,20
+"sign","AR(2) 4 years noise=0.8","c4","error_F05",0,20
+"sign","AR(2) 4 years noise=0.8","c4","error_C",0.05,20
+"sign","AR(2) 4 years noise=0.8","c9","error_A",0,20
+"sign","AR(2) 4 years noise=0.8","c9","error_F05",0,20
+"sign","AR(2) 4 years noise=0.8","c9","error_C",0.05,20
+"size-markov","n=120 switch=1/12","independent","reject_fixedb_table",0.085,2000
+"size-markov","n=120 switch=1/12","independent","reject_kv_b0.1",0.1,2000
+"size-markov","n=120 switch=1/12","independent","reject_kv_b0.2",0.089,2000
+"size-markov","n=120 switch=1/12","independent","reject_kv_b0.3",0.083,2000
+"size-markov","n=120 switch=1/12","independent","reject_kv_b0.5",0.08,2000
+"size-markov","n=120 switch=1/24","independent","reject_fixedb_table",0.113,2000
+"size-markov","n=120 switch=1/24","independent","reject_kv_b0.1",0.1415,2000
+"size-markov","n=120 switch=1/24","independent","reject_kv_b0.2",0.1175,2000
+"size-markov","n=120 switch=1/24","independent","reject_kv_b0.3",0.11,2000
+"size-markov","n=120 switch=1/24","independent","reject_kv_b0.5",0.107,2000
+"size-markov","n=360 switch=1/12","independent","reject_fixedb_table",0.067,2000
+"size-markov","n=360 switch=1/12","independent","reject_kv_b0.1",0.0645,2000
+"size-markov","n=360 switch=1/12","independent","reject_kv_b0.2",0.066,2000
+"size-markov","n=360 switch=1/12","independent","reject_kv_b0.3",0.0655,2000
+"size-markov","n=360 switch=1/12","independent","reject_kv_b0.5",0.0665,2000
+"size-markov","n=360 switch=1/24","independent","reject_fixedb_table",0.078,2000
+"size-markov","n=360 switch=1/24","independent","reject_kv_b0.1",0.079,2000
+"size-markov","n=360 switch=1/24","independent","reject_kv_b0.2",0.0755,2000
+"size-markov","n=360 switch=1/24","independent","reject_kv_b0.3",0.0755,2000
+"size-markov","n=360 switch=1/24","independent","reject_kv_b0.5",0.0775,2000
+"concordance","freq=12","independent","reject_nw_median",0.37,100
+"concordance","freq=12","independent","reject_fixedb_median",0.18,100
+"concordance","freq=12","independent","reject_nw_fixed",0.19,100
+"concordance","freq=12","independent","reject_fixedb_fixed",0.1,100
+"concordance","freq=12","independent","fixedb_p_missing",0,100
+"concordance","freq=12","lead","reject_nw_median",1,100
+"concordance","freq=12","lead","reject_fixedb_median",0.99,100
+"concordance","freq=12","lead","reject_nw_fixed",1,100
+"concordance","freq=12","lead","reject_fixedb_fixed",1,100
+"concordance","freq=12","lead","fixedb_p_missing",0,100
+"concordance","freq=4","independent","reject_nw_median",0.22,100
+"concordance","freq=4","independent","reject_fixedb_median",0.11,100
+"concordance","freq=4","independent","reject_nw_fixed",0.11,100
+"concordance","freq=4","independent","reject_fixedb_fixed",0.06,100
+"concordance","freq=4","independent","fixedb_p_missing",0,100
+"concordance","freq=4","lead","reject_nw_median",0.98,100
+"concordance","freq=4","lead","reject_fixedb_median",0.97,100
+"concordance","freq=4","lead","reject_nw_fixed",1,100
+"concordance","freq=4","lead","reject_fixedb_fixed",1,100
+"concordance","freq=4","lead","fixedb_p_missing",0,100
+"prediction","freq=12","independent","pass_in_auc",0.06,100
+"prediction","freq=12","independent","pass_in_qps",1,100
+"prediction","freq=12","independent","pass_pt92_data_h",0.49,100
+"prediction","freq=12","independent","pass_oos_auc",0.06,100
+"prediction","freq=12","independent","pass_oos_qps",0.3,100
+"prediction","freq=12","independent","pass_pt_fixedb",0.09,100
+"prediction","freq=12","independent","pass_pt_fixedb_data_h",0.22,100
+"prediction","freq=12","independent","pass_in_all",0.05,100
+"prediction","freq=12","independent","pass_oos_all",0.03,100
+"prediction","freq=12","lead","pass_in_auc",1,100
+"prediction","freq=12","lead","pass_in_qps",1,100
+"prediction","freq=12","lead","pass_pt92_data_h",1,100
+"prediction","freq=12","lead","pass_oos_auc",1,100
+"prediction","freq=12","lead","pass_oos_qps",1,100
+"prediction","freq=12","lead","pass_pt_fixedb",1,100
+"prediction","freq=12","lead","pass_pt_fixedb_data_h",1,100
+"prediction","freq=12","lead","pass_in_all",1,100
+"prediction","freq=12","lead","pass_oos_all",1,100

@@ -107,7 +107,8 @@ setClass("CycleSeries", representation(
 #'   reasons.
 #' @slot matches Named list of data frames pairing reference and candidate
 #'   turning points.
-#' @slot inverted Names of counter-cyclical candidates that were inverted.
+#' @slot inverted Names of counter-cyclical candidates, inverted relative to
+#'   their original series.
 #' @seealso [cli_assess()]
 #' @exportClass LeadAssessment
 setClass("LeadAssessment", representation(
@@ -134,9 +135,13 @@ setClass("CompositeIndex", representation(
 #' Validation of a composite index
 #'
 #' @slot turning_points One-row data frame of turning-point statistics.
-#' @slot probability One-row data frame with the horizon, quadratic
-#'   probability score, area under the ROC curve and the Pesaran-Timmermann
-#'   directional test.
+#' @slot probability One-row data frame with the `horizon`, the quadratic
+#'   probability score `qps` and its naive counterpart `qps_naive`, the area
+#'   under the ROC curve `auc`, the number of out-of-sample forecasts
+#'   `n_forecasts`, and the Pesaran-Timmermann directional test: `pt_stat`,
+#'   the share of agreeing signs minus its value under independence (since
+#'   0.6.0; earlier the z statistic of the 1992 test), and its one-sided
+#'   fixed-b p-value `pt_p`.
 #' @slot out_of_sample Results of [cli_selection_bias()] (may be empty).
 #' @slot passed Logical; did the composite meet the leading criteria?
 #' @slot failed Criteria that were not met.

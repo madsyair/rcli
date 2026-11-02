@@ -19,10 +19,19 @@
 #'   converted to quarters for quarterly data. The OECD sets no minimum
 #'   number of turning points; `min_matched` (default 3) is the smallest
 #'   number of matched turning points from which a median lead is computed,
-#'   set it to 1 to follow the OECD table literally. The other statistics
-#'   (mean lead and its standard deviation, cross-correlation peak, missed
-#'   and extra turning points) are reported for judgement, as in the OECD
-#'   evaluation step, but do not enter the class.
+#'   set it to 1 to follow the OECD table literally. With `conformity =
+#'   TRUE` (the default since 0.6.0) the OECD evaluation criteria of cyclical
+#'   conformity and missing or extra cycles (Gyomai and Guidetti 2012, p. 8)
+#'   are required as well: a positive cross-correlation peak, at most
+#'   `max_missed` missed and `max_extra` extra turning points, and a
+#'   concordance significantly above its value under independence. Without
+#'   them the median lead alone labels about half of all independent cycles
+#'   as leading; with them about one in ten (monthly) to one in five
+#'   (quarterly) in the simulations of `inst/calibration/lead-window.csv`,
+#'   since the OECD rule has no test of predictive content such as the
+#'   Granger test of [rcli_classifier()] (0 to 3 percent). `conformity =
+#'   FALSE` gives the rule of rcli 0.5.1; the other statistics are then
+#'   reported for judgement only.
 #'
 #' New rules are added by defining a subclass of `Classifier` and methods
 #' for the generics `classify_candidate()` and `leading_criteria()`.
@@ -31,6 +40,8 @@
 #' @param long Lead, in months, above which a leading series is "longer
 #'   leading" (OECD: 8).
 #' @param min_matched Minimum number of matched turning points.
+#' @param conformity Require cyclical conformity and few missed or extra
+#'   cycles (see above).
 #' @return A `Classifier` object.
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -53,7 +64,7 @@ setClass("RcliClassifier", contains = "Classifier")
 #' @rdname Classifier-class
 setClass("OecdClassifier", contains = "Classifier",
          representation(coincident = "numeric", long = "numeric",
-                        min_matched = "numeric"))
+                        min_matched = "numeric", conformity = "logical"))
 
 #' @rdname Classifier-class
 #' @export
@@ -64,16 +75,33 @@ rcli_classifier <- function() {
 
 #' @rdname Classifier-class
 #' @export
-oecd_classifier <- function(coincident = 2, long = 8, min_matched = 3) {
+oecd_classifier <- function(coincident = 2, long = 8, min_matched = 3,
+                            conformity = TRUE) {
   check_number(coincident, "coincident", lower = 0)
   check_number(long, "long", lower = 0)
   check_number(min_matched, "min_matched", lower = 1)
   if (long < coincident) {
     rcli_abort("`long` must be at least `coincident`.", "rcli_error_argument")
   }
-  new("OecdClassifier", label = "OECD: median lead at turning points",
+  if (!is.logical(conformity) || length(conformity) != 1L ||
+      is.na(conformity)) {
+    rcli_abort("`conformity` must be TRUE or FALSE.", "rcli_error_argument")
+  }
+  label <- if (conformity) {
+    "OECD: median lead at turning points, cyclical conformity"
+  } else {
+    "OECD: median lead at turning points"
+  }
+  new("OecdClassifier", label = label,
       coincident = as.numeric(coincident), long = as.numeric(long),
-      min_matched = as.numeric(min_matched))
+      min_matched = as.numeric(min_matched), conformity = conformity)
+}
+
+# Conformity setting of an OECD classifier; classifiers saved before 0.6.0
+# have none and keep the rule they were created with.
+oecd_conformity <- function(classifier) {
+  methods::.hasSlot(classifier, "conformity") &&
+    isTRUE(classifier@conformity)
 }
 
 #' @rdname Classifier-class
@@ -104,7 +132,10 @@ setMethod("show", "OecdClassifier", function(object) {
   cat("  coincident within +/- ", object@coincident, " months; leading from ",
       object@coincident, " months (longer over ", object@long,
       "); lagging at -", object@coincident, " months or less; at least ",
-      object@min_matched, " matched turning points\n", sep = "")
+      object@min_matched, " matched turning points",
+      if (oecd_conformity(object)) {
+        "; cyclical conformity and few missed or extra cycles"
+      }, "\n", sep = "")
   invisible(object)
 })
 

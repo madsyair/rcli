@@ -1,4 +1,4 @@
-# Gate report — 2026-11-01T22:32:04
+# Gate report — 2026-11-02T11:26:05
 
 | Gerbang | Hasil | Gagal |
 |---|---|---|
@@ -12,7 +12,7 @@
 | G8 Rilis | LOLOS | 0 |
 
 ## G1 Kebutuhan
-- [x] Ada kebutuhan FR/NFR — 14 ID
+- [x] Ada kebutuhan FR/NFR — 15 ID
 - [x] Setiap FR/NFR punya kriteria penerimaan — lengkap
 - [x] Tidak ada TODO
 - [x] Bagian 'Di luar cakupan' ada
@@ -28,25 +28,36 @@
 - [x] F-04: status kelas A — CITED-VERIFIED
 - [x] F-04: skrip verifikasi tersimpan — F-04_numeric.R
 - [x] F-04: uji yang diturunkan — 4 butir
+- [x] F-05: status kelas C — PROVEN
+- [x] F-05: kritikus independen — putusan terakhir: ACCEPT
+- [x] F-05: skrip verifikasi tersimpan — F-05_numeric.R
+- [x] F-05: uji yang diturunkan — 2 butir
+- [x] F-06: status kelas B — CITED-VERIFIED
+- [x] F-06: kritikus independen — putusan terakhir: ACCEPT
+- [x] F-06: skrip verifikasi tersimpan — F-06_numeric.R
+- [x] F-06: uji yang diturunkan — 2 butir
+- [x] F-07: status kelas A — CITED-VERIFIED
+- [x] F-07: skrip verifikasi tersimpan — F-07_numeric.R
+- [x] F-07: uji yang diturunkan — 1 butir
 - [x] F-02: status kelas A — CITED-VERIFIED
 - [x] F-02: skrip verifikasi tersimpan — F-02_numeric.R
 - [x] F-02: uji yang diturunkan — 7 butir
 
 ## G3 Desain
-- [x] Setiap FR terpetakan di desain — 11 FR
+- [x] Setiap FR terpetakan di desain — 12 FR
 - [x] Ada ADR — 2 ADR
 - [x] Tidak ada TODO
 
 ## G4 Uji-dulu
 - [x] Ada berkas uji
-- [x] Setiap FR/NFR dilacak ke uji — 14 ID
-- [x] Setiap F-xx dilacak ke uji — 4 formula
+- [x] Setiap FR/NFR dilacak ke uji — 15 ID
+- [x] Setiap F-xx dilacak ke uji — 7 formula
 - [x] Bukti merah tercatat — sebelum implementasi (2026-10-23): `devtools::test(filter = "ragged-edge|end-ext
 
 ## G5 Build & uji
-- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 2 | PASS 2144 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=38877 -Dhttp.nonProxyHosts=localhost|127.
+- [x] tests — exit 0: [ FAIL 0 | WARN 0 | SKIP 2 | PASS 2226 ] | ℹ Testing rcli | Loading required package: shiny | Picked up JAVA_TOOL_OPTIONS: -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=JKS -Dhttps.proxyHost=127.0.0.1 -Dhttps.proxyPort=41987 -Dhttp.nonProxyHosts=localhost|127.
 - [x] lint — exit 0: 
-- [x] coverage — exit 0: coverage 97.25286
+- [x] coverage — exit 0: coverage 97.00322
 
 ## G6 Review
 - [x] Tidak ada temuan blocker/major terbuka

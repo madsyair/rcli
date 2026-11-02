@@ -191,6 +191,11 @@ cci_validate <- function(composite, reference, spec) {
   if (!is(spec, "CliSpec")) {
     rcli_abort("`spec` must be a CliSpec.", "rcli_error_argument")
   }
+  validate_coincident(composite, reference, spec, prediction = TRUE)
+}
+
+# The validation of cci_validate(); see validate_leading().
+validate_coincident <- function(composite, reference, spec, prediction) {
   comp_cs <- composite_as_cycle(composite)
   comp_cs@name <- "CCI"
   ref_tp <- date_turning_points(spec@dater, reference@normalised,
@@ -198,12 +203,7 @@ cci_validate <- function(composite, reference, spec) {
   comp_tp <- date_turning_points(spec@dater, comp_cs@normalised, name = "CCI")
   row <- assess_pair(reference, ref_tp, comp_cs, comp_tp, spec)$row
   chk <- coincident_criteria(spec_classifier(spec), row, spec)
-  prob <- probability_scores(as.numeric(composite@cycle), ref_tp, 0,
-                             span = max(1, spec@freq / 4))
-  pt <- pesaran_timmermann(as.numeric(composite@cycle),
-                           as.numeric(reference@normalised), 0)
-  prob$pt_stat <- pt$stat
-  prob$pt_p <- pt$p_value
+  prob <- prediction_group(composite, reference, ref_tp, spec, 0, prediction)
   row$name <- NULL
   val <- new("CliValidation", turning_points = row, probability = prob,
              out_of_sample = data.frame(), passed = all(chk),
@@ -287,7 +287,7 @@ cci_build <- function(x, spec = NULL, components = NULL, select = TRUE) {
   } else {
     evaluate <- function(cs) {
       comp <- cli_composite(cycles, cs, spec, ref)
-      val <- cci_validate(comp, ref, spec)
+      val <- validate_coincident(comp, ref, spec, prediction = FALSE)
       list(composite = comp, validation = val,
            score = coincident_score(val, spec))
     }
@@ -303,6 +303,9 @@ cci_build <- function(x, spec = NULL, components = NULL, select = TRUE) {
     }
   }
   validation <- sel$validation
+  if (!is.null(sel$composite)) {
+    validation <- cci_validate(sel$composite, ref, spec)
+  }
   if (!is.null(validation) && length(spec@oos_cutoffs) > 0L) {
     validation@out_of_sample <- cli_selection_bias(
       candidates, spec, spec@oos_cutoffs, role = "coincident")

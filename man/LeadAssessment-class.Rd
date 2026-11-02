@@ -17,7 +17,8 @@ reasons.}
 \item{\code{matches}}{Named list of data frames pairing reference and candidate
 turning points.}
 
-\item{\code{inverted}}{Names of counter-cyclical candidates that were inverted.}
+\item{\code{inverted}}{Names of counter-cyclical candidates, inverted relative to
+their original series.}
 }}
 
 \seealso{

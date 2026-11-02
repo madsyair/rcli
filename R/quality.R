@@ -10,16 +10,19 @@
 #' composite must meet every leading criterion of the specification, the same
 #' ones used to classify candidates (see [cli_assess()]).
 #'
-#' **Prediction**:
-#' * the area under the ROC curve of the contraction probability is at least
-#'   `min_auc` (0.7 is "acceptable discrimination", Hosmer and Lemeshow 2000;
-#'   Berge and Jordà 2011 use the ROC curve to score business-cycle
-#'   classifiers);
-#' * the quadratic probability score beats the naive forecast, a constant
-#'   probability equal to the share of contraction periods (Diebold and
-#'   Rudebusch 1989);
-#' * the Pesaran and Timmermann (1992) test rejects that the composite's
-#'   direction is unrelated to the later direction of the reference.
+#' **Prediction**, from the out-of-sample forecasts of [cli_validate()] at
+#' the horizon fixed in advance:
+#' * at least 20 out-of-sample forecasts of the contraction probability;
+#' * their area under the ROC curve is at least `min_auc` (0.7 is
+#'   "acceptable discrimination", Hosmer and Lemeshow 2000; Berge and Jordà
+#'   2011 use the ROC curve to score business-cycle classifiers);
+#' * their quadratic probability score beats the naive forecast, the share
+#'   of contraction periods in the same past data (Diebold and Rudebusch
+#'   1989);
+#' * the regression form of the Pesaran and Timmermann (2009) test, with a
+#'   fixed-b variance, rejects that the composite's direction is unrelated
+#'   to the later direction of the reference. Its p-value is reported down
+#'   to 1e-4, the end of the fixed-b table (see [concordance()]).
 #'
 #' **Out of sample** (only when [cli_selection_bias()] has been run, for
 #' example through `oos_cutoffs` in [cli_spec()]): over the cut-offs that
@@ -101,8 +104,9 @@ cli_quality <- function(x, spec = NULL) {
     note <- "All turning-point, prediction and out-of-sample criteria are met."
   } else if (tp_ok && pr_ok && !has_oos) {
     verdict <- "acceptable"
-    note <- paste("In-sample criteria are met; run the out-of-sample check",
-                  "(oos_cutoffs) before relying on the",
+    note <- paste("Turning-point and prediction criteria are met; run the",
+                  "out-of-sample check of the selection (oos_cutoffs)",
+                  "before relying on the",
                   if (role == "coincident") "timing." else "lead.")
   } else {
     verdict <- "weak"
@@ -195,7 +199,13 @@ setMethod("quality_criteria", "OecdClassifier", function(classifier, row,
 
 quality_prediction <- function(prob, spec) {
   g <- "prediction"
+  # validations made before 0.6.0 have no count of out-of-sample forecasts
+  n_fc <- if ("n_forecasts" %in% names(prob)) prob$n_forecasts else NA
   rbind(
+    if (!is.na(n_fc)) {
+      q_row(g, "out-of-sample forecasts", n_fc, ">= 20",
+            isTRUE(n_fc >= 20))
+    },
     q_row(g, "area under the ROC curve", prob$auc,
           sprintf(">= %s", spec@min_auc), isTRUE(prob$auc >= spec@min_auc)),
     q_row(g, "quadratic probability score", prob$qps,

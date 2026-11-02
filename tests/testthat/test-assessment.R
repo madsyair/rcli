@@ -10,7 +10,8 @@ test_that("concordance of identical cycles is 1 and significant", {
   tp <- date_turning_points(bry_boschan(), sine_ts())
   conc <- concordance(tp, tp)
   expect_equal(conc$index, 1)
-  expect_lt(conc$p_value, 1e-6)
+  # the smallest p-value of the fixed-b table
+  expect_equal(conc$p_value, min(rcli:::fixed_b_null$upper))
   lead <- date_turning_points(bry_boschan(), sine_ts(shift = -6))
   expect_equal(concordance(lead, tp, shift = 6)$index, 1, tolerance = 0.05)
   short <- date_turning_points(bbq(), ts(1:5, frequency = 4))

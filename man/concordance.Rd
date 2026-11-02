@@ -14,13 +14,23 @@ the lead of \code{x}).}
 }
 \value{
 A list with \code{index}, \code{expected} (value under independence) and
-\code{p_value}.
+\code{p_value} (one-sided: more concordant than under independence; reported
+down to 1e-4, the end of the fixed-b table).
 }
 \description{
 Harding and Pagan (2002) concordance: the share of periods in which the
 two series are in the same phase, compared with its value under
-independence, and a Newey-West test of no synchronisation (Harding and
-Pagan 2006).
+independence, and a one-sided test of no synchronisation. The test is the
+regression of Harding and Pagan (2006) with a Bartlett HAC variance of
+fixed bandwidth (30 percent of the sample) and the fixed-b critical values
+of Kiefer and Vogelsang (2005), which keep the size close to nominal for
+phases lasting years, where the usual Newey-West bandwidth rejects far too
+often. In simulations of independent cycles over 30 years it rejects
+about 6 to 10 percent at the 5 percent level (Newey-West: 11 to 19
+percent); with about 120 observations and phases of two years, about 11
+percent. When \code{shift} is chosen from the same data (for instance the
+median lead), it is more liberal still (11 to 18 percent). See
+\code{inst/calibration/test-size.csv}.
 }
 \examples{
 t <- 1:240
@@ -32,4 +42,8 @@ concordance(date_turning_points(bry_boschan(), a),
 \references{
 Harding, D. and Pagan, A. (2006). Synchronization of cycles. \emph{Journal of
 Econometrics}, 132(1), 59--79.
+
+Kiefer, N. M. and Vogelsang, T. J. (2005). A new asymptotic theory for
+heteroskedasticity-autocorrelation robust tests. \emph{Econometric Theory},
+21(6), 1130--1164.
 }
