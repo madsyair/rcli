@@ -29,7 +29,8 @@
 #' `amplitude_adjusted` and `reference_amplitude_adjusted` are 100 plus the
 #' deviation in percentage points, `trend_restored` and `reference_trend`
 #' are the mean rate of the reference plus that deviation and the mean rate
-#' itself, and the two rate-of-change columns are `NA`.
+#' itself, and the two rate-of-change columns are `NA`. The data frame then
+#' has an attribute `units` (`"growth"` or `"acceleration"`).
 #'
 #' The reference series in the output is the transformed one: seasonally
 #' adjusted and cleaned of outliers as in the specification, in the units
@@ -116,7 +117,7 @@ rate_presentation <- function(comp, ref, amp_adj) {
   orig <- as.numeric(ref@transformed)
   centre <- rep(mean(orig, na.rm = TRUE), length(orig))
   na <- rep(NA_real_, length(orig))
-  data.frame(
+  out <- data.frame(
     time = as.numeric(stats::time(comp@cycle)),
     amplitude_adjusted = amp_adj,
     trend_restored = centre + amp_adj - 100,
@@ -126,6 +127,8 @@ rate_presentation <- function(comp, ref, amp_adj) {
     reference_trend = centre,
     reference_rate_of_change = na
   )
+  attr(out, "units") <- form_units(ref)
+  out
 }
 
 is_logged <- function(cs) {

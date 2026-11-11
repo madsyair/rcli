@@ -417,7 +417,9 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' @param engine Engine of [tramo_outliers()] and of the log/level test.
 #' @param classifier An OECD [Classifier-class], by default
 #'   [oecd_classifier()].
-#' @param ... Further arguments of [cli_spec()].
+#' @param ... Further arguments of [cli_spec()]. With `form =`
+#'   [growth_form()] or [acceleration_form()] (experimental, not part of the
+#'   OECD method) the filter is [hp_smoother()], as in [cli_spec()].
 #' @return A [CliSpec-class].
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -446,7 +448,11 @@ oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
                "rcli_error_argument")
   }
   cls <- classifier
-  cli_spec(freq = freq, filter = hp_double_filter(), dater = NULL,
+  # the OECD double HP filter, or the default filter of another form
+  form <- list(...)$form
+  filt <- if (is.null(form) || !is(form, "CycleForm")) hp_double_filter() else
+    default_filter(form)
+  cli_spec(freq = freq, filter = filt, dater = NULL,
            aggregator = oecd_aggregate(), transform = "test",
            seasonal_adjust = seasonal_adjust, holidays = holidays,
            min_median_lead = cls@coincident * freq / 12,

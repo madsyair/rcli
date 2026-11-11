@@ -1133,15 +1133,20 @@ app_server <- function(language = "id") {
 
     # 3. Specification -------------------------------------------------------
     # growth rate and acceleration forms go with the HP smoother
-    # (only the default filter of the other form is switched; a filter
-    # chosen by hand is kept)
+    # (only when the form moves between the level and a rate, and only the
+    # default filter of the old form is switched; a filter chosen by hand
+    # is kept)
+    was_level <- shiny::reactiveVal(TRUE)
     shiny::observeEvent(input$form, {
       level <- identical(input$form, "level")
-      to <- if (level) "hp_double" else "hp_smoother"
-      from <- if (level) "hp_smoother" else "hp_double"
-      if (identical(input$filter, from)) {
-        shiny::updateSelectInput(session, "filter", selected = to)
+      if (level != was_level()) {
+        to <- if (level) "hp_double" else "hp_smoother"
+        from <- if (level) "hp_smoother" else "hp_double"
+        if (identical(input$filter, from)) {
+          shiny::updateSelectInput(session, "filter", selected = to)
+        }
       }
+      was_level(level)
     }, ignoreInit = TRUE)
     shiny::observeEvent(input$run3, {
       if (!2L %in% rv$done) {

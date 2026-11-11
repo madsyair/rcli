@@ -263,8 +263,8 @@ accelerations (`acceleration_form()`). The rate of a logged series is the
 log growth rate in percent; series in levels (rates, balances) are
 differenced in their own units. The form is applied after seasonal
 adjustment and outlier treatment, so rates are computed from seasonally
-adjusted series. Growth rates have no trend, so these forms are paired with
-`hp_smoother()`, which only smooths:
+adjusted series. Growth rates have little trend, so these forms are paired
+with `hp_smoother()`, which only smooths:
 
 ```{r forms}
 spec_g <- cli_spec(freq = 12, form = growth_form())
@@ -291,7 +291,7 @@ of X-13), the TRAMO log/level test (`transform = "test"`), the median-lead
 classification with the OECD criteria of cyclical conformity and missed or
 extra cycles (`oecd_classifier()`), lag-shifting (`lag_shift = TRUE`) and
 the chained average growth of the components (`oecd_aggregate()`).
-`cli_presentation()` returns the three OECD forms of any composite:
+`cli_presentation()` returns the three OECD forms of a level composite:
 amplitude adjusted, trend restored and its 12-month rate of change.
 
 ```{r oecd, eval = FALSE}

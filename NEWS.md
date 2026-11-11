@@ -54,8 +54,11 @@ whose reference is the year-on-year growth of a national accounts aggregate
 * Step 3 has a **Cycle form** entry (level, growth rate, acceleration) and,
   for the last two, the lag (one year or one period). Choosing a growth or
   acceleration form selects the HP smoother, whose period has its own
-  entry; a filter chosen by hand is kept. The exported script writes `form = growth_form()` and
-  `filter = hp_smoother()` and reproduces the specification.
+  entry; a filter chosen by hand is kept. The exported script writes
+  `form = growth_form()` and `filter = hp_smoother()` and reproduces the
+  specification. The presentation panel shows the composite as a deviation
+  from the mean rate of the reference for these forms.
+* `oecd_spec(form = growth_form())` uses the HP smoother, as `cli_spec()`.
 
 # rcli 0.6.0
 

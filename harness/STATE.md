@@ -32,7 +32,7 @@
 | INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8; PR #5) |
 | INC-11 | Perbaikan cacat hasil kajian menyeluruh (0.5.1) | FR-011 | — | selesai (PR #6, digabung) |
 | INC-12 | Evaluasi kandidat dan validasi yang lebih jujur (0.6.0) | FR-012 | F-05, F-06, F-07 | selesai (PR #7, digabung) |
-| INC-13 | Bentuk siklus laju/percepatan dan `hp_smoother()` (0.7.0, eksperimental) | FR-013 | F-08, F-09 | G1–G8 lolos; menunggu A6 putaran 2 dan PR |
+| INC-13 | Bentuk siklus laju/percepatan dan `hp_smoother()` (0.7.0, eksperimental) | FR-013 | F-08, F-09 | G1–G8 lolos; PR #8 menunggu tinjauan maintainer |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -96,6 +96,9 @@
 | 2026-11-11 14:05 | INC-13 | A0 | kalibrasi | `forms.csv` 60 ulangan: laju ≈ level, percepatan kehilangan daya; pendahulu palsu ≤ 2,5% | — | A7 |
 | 2026-11-11 14:15 | INC-13 | A6 | G6 | CHANGES-REQUESTED (R-13.1 blocker, R-13.2–.3 major, 5 minor, 2 nit) | 1/3 | A5 |
 | 2026-11-11 18:50 | INC-13 | A5, A0 | G4–G8 | R-13.1–.10 ditindaklanjuti; uji hijau, lint 0, cakupan 95,7%, check 0/0/3 catatan | 2/3 | A6 putaran 2, PR |
+| 2026-11-11 19:00 | INC-13 | A0 | — | komit 9d52d14, cabang didorong, PR #8 dibuka | — | A6 putaran 2 |
+| 2026-11-11 19:10 | INC-13 | A6 | G6 | CHANGES-REQUESTED putaran 2 (R-13.11–.12 major, 4 minor/nit) | 2/3 | A5 |
+| 2026-11-11 19:45 | INC-13 | A5, A0 | G4–G8 | R-13.11–.16 ditindaklanjuti; uji mutan baris prakiraan terbunuh; check 0/0/3 catatan, cakupan 95,7%, plot penyajian diperiksa (PNG) | 3/3 | tinjauan maintainer di PR #8 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

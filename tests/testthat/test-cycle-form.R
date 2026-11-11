@@ -272,3 +272,82 @@ test_that("three years must remain after the differences", {
   expect_error(cli_cycles(short, update(spec, form = growth_form(n - 11))),
                class = "rcli_error_short_series")
 })
+
+test_that("round 2: custom forms, mixed cycles, OECD spec, plots", {
+  # a user form needs only apply_form() and default_filter() (R-13.11)
+  setClass("LogDiff3", contains = "CycleForm", where = globalenv())
+  on.exit(removeClass("LogDiff3", where = globalenv()), add = TRUE)
+  setMethod("apply_form", "LogDiff3", function(form, x, logged) {
+    stats::ts(c(rep(NA, 3), diff(as.numeric(x), 3)), start = stats::start(x),
+              frequency = stats::frequency(x))
+  }, where = globalenv())
+  setMethod("default_filter", "LogDiff3", function(form) hp_smoother(),
+            where = globalenv())
+  f3 <- new("LogDiff3", label = "three-period difference")
+  spec <- cli_spec(freq = 4, form = f3, outlier_threshold = Inf)
+  expect_output(show(spec), "three-period difference")
+  cand <- sim_candidates(seed = 11, freq = 4, n_years = 20)
+  ref <- cli_cycles(cand, spec)$reference
+  expect_true(any(ref@steps == "form: three-period difference"))
+  expect_identical(form_units(ref), "growth")
+  # one growth cycle among level cycles is enough to refuse (R-13.14)
+  cg <- cli_cycles(cand, cli_spec(freq = 4, form = growth_form(),
+                                  outlier_threshold = Inf))
+  cl <- cli_cycles(cand, cli_spec(freq = 4, outlier_threshold = Inf))
+  nm <- setdiff(names(cl), cand@reference)[1:2]
+  mixed <- list(a = cl[[nm[1]]], b = cg[[nm[2]]])
+  expect_error(cli_composite(mixed, c("a", "b"),
+                             cli_spec(freq = 4,
+                                      aggregator = conference_board())),
+               class = "rcli_error_argument")
+  # oecd_spec() with a rate form uses the smoother (R-13.15)
+  expect_s4_class(oecd_spec(4, form = growth_form())@filter, "HPSmoother")
+  expect_s4_class(oecd_spec(4)@filter, "HPDoubleFilter")
+  # presentation plots of a rate form (R-13.12)
+  sim <- simulate_cycles(seed = 3, freq = 4)
+  meta <- data.frame(name = colnames(sim)[-1], rationale = "early_stage")
+  res <- suppressWarnings(cli_build(cli_candidates(sim, "reference",
+                                                   meta = meta),
+                                    cli_spec(freq = 4, form = growth_form(),
+                                             outlier_threshold = Inf)))
+  pr <- cli_presentation(res)
+  expect_identical(attr(pr, "units"), "growth")
+  expect_null(attr(cli_presentation(suppressWarnings(
+    cli_build(cli_candidates(sim, "reference", meta = meta),
+              cli_spec(freq = 4)))), "units"))
+  grDevices::pdf(NULL)
+  on.exit(grDevices::dev.off(), add = TRUE)
+  for (f in c("amplitude_adjusted", "trend_restored", "rate_of_change")) {
+    expect_no_error(plot_presentation(pr, f))
+  }
+})
+
+test_that("forecasts of the outlier treatment are put in the form", {
+  # the forecasts enter the filter in the units of the rate: with level
+  # forecasts the end of the smoothed growth rate would jump to the log level
+  skip_if_not_installed("seasonal")
+  cand <- sim_candidates(seed = 12, freq = 4, n_years = 20)
+  spec <- cli_spec(freq = 4, form = growth_form(),
+                   outliers = tramo_outliers(forecast = 4))
+  ref <- cli_cycles(cand, spec)$reference
+  # by hand: log, TRAMO with forecasts, rate of core and forecasts, smoother
+  lv <- log(cand@data[, cand@reference])
+  out <- rcli:::treat_outliers(spec@outliers, lv)
+  whole <- c(as.numeric(out$x), out$forecast)
+  g <- 100 * diff(whole, 4)
+  n <- length(out$x) - 4
+  by_hand <- utils::head(rcli:::hp_trend_core(g, hp_lambda(4)), n)
+  expect_equal(as.numeric(ref@cycle)[-(1:4)], by_hand, tolerance = 1e-8)
+})
+
+test_that("AC-FR-013.6 (monthly): a true leader still leads", {
+  hits <- vapply(1:5, function(s) {
+    cand <- sim_candidates(seed = s, freq = 12, n_years = 25,
+                           leads = c(lead_6 = 6), n_noise = 0,
+                           noise_sd = 0.2)
+    spec <- cli_spec(freq = 12, form = growth_form(), outlier_threshold = Inf)
+    tab <- suppressWarnings(cli_assess(cand, spec))@table
+    isTRUE(abs(tab$median_lead[tab$name == "lead_6"] - 6) <= 2)
+  }, logical(1))
+  expect_gte(mean(hits), 0.8)
+})

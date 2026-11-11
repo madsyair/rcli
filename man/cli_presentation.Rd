@@ -54,7 +54,8 @@ the composite is in percentage points (the units of the rate):
 \code{amplitude_adjusted} and \code{reference_amplitude_adjusted} are 100 plus the
 deviation in percentage points, \code{trend_restored} and \code{reference_trend}
 are the mean rate of the reference plus that deviation and the mean rate
-itself, and the two rate-of-change columns are \code{NA}.
+itself, and the two rate-of-change columns are \code{NA}. The data frame then
+has an attribute \code{units} (\code{"growth"} or \code{"acceleration"}).
 
 The reference series in the output is the transformed one: seasonally
 adjusted and cleaned of outliers as in the specification, in the units

@@ -17,7 +17,8 @@
 #'   (default) means one year (12 months or 4 quarters), the year-on-year
 #'   rate; `lag = 1` gives the period-on-period rate.
 #' * `acceleration_form(lag)`: the change of that growth rate from the
-#'   previous period, \eqn{g_t - g_{t-1}}, in percentage points.
+#'   previous period, \eqn{g_t - g_{t-1}}, in percentage points for a
+#'   logged series (in the units of the series otherwise).
 #'
 #' The first `lag` (growth) or `lag + 1` (acceleration) observations are
 #' missing. Without a `filter`, [cli_spec()] pairs the growth and
@@ -143,6 +144,8 @@ setMethod("default_filter", "LevelForm", function(form) hp_double_filter())
 # Kind of a form: "level", "growth" or "acceleration" (used instead of
 # class tests wherever the units of a cycle matter).
 setGeneric("form_kind", function(form) standardGeneric("form_kind"))
+# a new form defined by the user is treated as a rate (not the level)
+setMethod("form_kind", "CycleForm", function(form) "growth")
 setMethod("form_kind", "LevelForm", function(form) "level")
 setMethod("form_kind", "GrowthForm", function(form) "growth")
 setMethod("form_kind", "AccelerationForm", function(form) "acceleration")
@@ -152,6 +155,9 @@ setMethod("form_kind", "AccelerationForm", function(form) "acceleration")
 # logged are differenced in their own units, and the text says so.
 setGeneric("form_step", function(form, freq, logged = TRUE) {
   standardGeneric("form_step")
+})
+setMethod("form_step", "CycleForm", function(form, freq, logged = TRUE) {
+  paste0("form: ", form@label)
 })
 setMethod("form_step", "LevelForm", function(form, freq, logged = TRUE) {
   character(0)

@@ -496,8 +496,12 @@ test_that("the form switches only a default filter (review R-13.7)", {
   shiny::testServer(rcli:::app_server("en"), {
     session$setInputs(form = "level", filter = "hp_double")
     session$setInputs(form = "growth")
-    session$setInputs(filter = "cf", form = "acceleration")
+    # within the rate forms a hand-picked filter is kept
+    session$setInputs(filter = "hp_double", form = "acceleration")
+    session$setInputs(filter = "cf", form = "level")
+    session$setInputs(filter = "hp_double", form = "growth")
     session$setInputs(filter = "hp_smoother", form = "level")
   })
-  expect_identical(sel, c("filter hp_smoother", "filter hp_double"))
+  expect_identical(sel, c("filter hp_smoother", "filter hp_smoother",
+                          "filter hp_double"))
 })

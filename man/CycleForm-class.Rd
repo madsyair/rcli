@@ -74,7 +74,8 @@ gives the difference \eqn{z_t - z_{t-k}} in its own units. \code{lag = NA}
 (default) means one year (12 months or 4 quarters), the year-on-year
 rate; \code{lag = 1} gives the period-on-period rate.
 \item \code{acceleration_form(lag)}: the change of that growth rate from the
-previous period, \eqn{g_t - g_{t-1}}, in percentage points.
+previous period, \eqn{g_t - g_{t-1}}, in percentage points for a
+logged series (in the units of the series otherwise).
 }
 
 The first \code{lag} (growth) or \code{lag + 1} (acceleration) observations are
