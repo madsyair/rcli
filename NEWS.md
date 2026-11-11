@@ -27,7 +27,8 @@ whose reference is the year-on-year growth of a national accounts aggregate
 * `print()` of a specification shows a growth or acceleration form.
   `update()` moves a filter left at the default of the old form to the
   default of the new one and keeps a filter chosen by hand. The level form
-  with `hp_smoother()` gives a warning, since that filter keeps the trend.
+  with `hp_smoother()` gives a warning, since that filter keeps the trend
+  (intended only for series that are already growth rates).
 * Aggregators that need levels (`conference_board()`) are refused with a
   growth or acceleration form, in `cli_spec()` and in `cli_composite()`.
 * The thresholds of the classifiers were calibrated on level cycles. The

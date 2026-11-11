@@ -203,7 +203,8 @@ check_form_filter <- function(spec) {
   if (form_kind(spec_form(spec)) == "level" && !removes_trend(spec@filter)) {
     rcli_warn(paste0("The ", spec@filter@label, " does not remove the ",
                      "trend: with the level form the cycle is the smoothed ",
-                     "series. Use it with growth_form() or ",
+                     "series. That suits series that are already growth ",
+                     "rates; otherwise use growth_form() or ",
                      "acceleration_form()."), "rcli_warning_form_filter")
   }
   invisible(spec)
