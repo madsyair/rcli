@@ -15,6 +15,8 @@
 - 2026-10-23 20:16: pengguna memilih "Kinerja: pilihan b" (penyelesai HP O(n)) dan "iya" untuk menggabungkan PR #1 ke seri 0.2 (versi 0.2.1).
 - Tafsiran: bentuk rantai diubah dari laju pertumbuhan (kajian) ke rata-rata perubahan siklus (aditif) atas temuan A2c C1; dukungan empiris diulang dengan kode paket (selisih ≤ 0,001).
 
+- 2026-11-11 13:14: pengguna menyetujui penghalus di rcli dan GUI ("Iya") atas usulan strategi `CycleForm` + `hp_smoother()`, status eksperimental, lewat PR; 13:21 "Kerjakan repo rcli".
+
 ## Increment
 | ID | Cakupan | FR | F-xx | Status |
 |---|---|---|---|---|
@@ -29,7 +31,8 @@
 | INC-09 | Satu berkas per indikator, unggahan beberapa berkas (0.4.0) | FR-009 | — | selesai (G1–G8; PR #4) |
 | INC-10 | Pilihan paket di GUI (0.5.0) | FR-010 | — | selesai (G1–G8; PR #5) |
 | INC-11 | Perbaikan cacat hasil kajian menyeluruh (0.5.1) | FR-011 | — | selesai (PR #6, digabung) |
-| INC-12 | Evaluasi kandidat dan validasi yang lebih jujur (0.6.0) | FR-012 | F-05, F-06, F-07 | selesai (PR) |
+| INC-12 | Evaluasi kandidat dan validasi yang lebih jujur (0.6.0) | FR-012 | F-05, F-06, F-07 | selesai (PR #7, digabung) |
+| INC-13 | Bentuk siklus laju/percepatan dan `hp_smoother()` (0.7.0, eksperimental) | FR-013 | F-08, F-09 | G1–G8 lolos; menunggu A6 putaran 2 dan PR |
 
 ## Log putaran
 | Waktu | Increment | Agen | Gerbang | Hasil | Putaran | Langkah berikutnya |
@@ -87,6 +90,12 @@
 | 2026-11-02 11:05 | INC-12 | A6 | G6 | APPROVE putaran 2 (R19 minor, R20–R25 nit) | 2/3 | A5 R19–R25, gerbang penuh |
 | 2026-11-02 11:15 | INC-12 | A5 | G4–G5 | R19–R25 ditindaklanjuti | 2/3 | gerbang penuh, PR |
 | 2026-11-02 11:25 | INC-12 | A0 | G1–G8 | LOLOS (cakupan 97,0%; check 0/0) | 2/3 | PR |
+| 2026-11-11 12:40 | INC-13 | A1–A3 | G1–G3 | FR-013, F-08, F-09, ADR-003 | 1/3 | A4 |
+| 2026-11-11 12:55 | INC-13 | A4 | G4 | merah terbukti (6 gagal: `form` belum ada) | 1/3 | A5 |
+| 2026-11-11 13:40 | INC-13 | A5 | G5 (uji bentuk, GUI, lint) | LOLOS; 2 uji GUI diperbaiki (huruf besar, `transform =`) | 1/3 | kalibrasi, A7, A6 |
+| 2026-11-11 14:05 | INC-13 | A0 | kalibrasi | `forms.csv` 60 ulangan: laju ≈ level, percepatan kehilangan daya; pendahulu palsu ≤ 2,5% | — | A7 |
+| 2026-11-11 14:15 | INC-13 | A6 | G6 | CHANGES-REQUESTED (R-13.1 blocker, R-13.2–.3 major, 5 minor, 2 nit) | 1/3 | A5 |
+| 2026-11-11 18:50 | INC-13 | A5, A0 | G4–G8 | R-13.1–.10 ditindaklanjuti; uji hijau, lint 0, cakupan 95,7%, check 0/0/3 catatan | 2/3 | A6 putaran 2, PR |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

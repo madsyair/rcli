@@ -75,6 +75,9 @@ align before aggregation (OECD lag-shifting)?}
 
 \item{\code{extension}}{An \linkS4class{Extension}: forecasts appended to each series
 before the cycle filter.}
+
+\item{\code{form}}{A \linkS4class{CycleForm}: the cycle of the level, the growth rate
+or the acceleration of each series.}
 }}
 
 \seealso{

@@ -1,3 +1,284 @@
+# Review INC-13 (0.7.0), putaran 1
+
+- Increment: rcli 0.7.0 (FR-013; F-08, F-09; ADR-003)
+- Reviewer: A6 (konteks bersih: ya)
+- Basis: 285b331 (0.6.0 di main), cabang `rcli-0.7.0`, pohon kerja belum
+  dikomit (diff + berkas baru `R/classes-form.R`,
+  `tests/testthat/test-cycle-form.R`, `data-raw/calibrate_forms.R`,
+  `harness/02-math/F-08.md`, `F-09.md`, `harness/adr/ADR-003.md`,
+  `inst/calibration/forms.csv`). Selama review, `vignettes/rcli.Rmd` ikut
+  berubah di pohon kerja; bagian vinyet di bawah dinilai pada keadaan
+  terakhir yang terbaca.
+- Skrip probe: di direktori scratchpad sesi (`compat.R`, `probe1.R` sampai
+  `probe5.R`), tidak di repo.
+
+## Yang diperiksa
+
+- **F-08 terhadap kode, baris demi baris.** `growth_rate()` memberi
+  100 (z_t − z_{t−k}) untuk seri ber-log dan z_t − z_{t−k} untuk seri tanpa
+  log, dengan NA pada t ≤ k. Percepatan adalah `growth_rate(g, 1, FALSE)`,
+  dengan NA pada t ≤ k + 1. `lag = NA` menjadi frekuensi. Penanda `logged`
+  dibaca dari `steps` ("log" dan "log (regARIMA log/level test)" cocok;
+  "levels ..." tidak). Hasilnya sesuai F-08. Identitas pergeseran fase
+  (butir 4) dan gain ½ F-09 diperiksa ulang dan benar.
+- **`cycle_one()`.** Urutannya SA → transformasi → pencilan → bentuk →
+  perpanjangan → filter. Prakiraan TRAMO dibentuk bersama inti, sehingga
+  laju di ujung memakai nilai inti; ini diperiksa dengan `oecd_spec(form =)`
+  dan `tramo_outliers()`. `drop` menghitung NA awal, lalu `span[1]` digeser.
+  Probe (`probe2.R`) memakai acuan penuh, kandidat yang mulai terlambat
+  30 bulan, kandidat dengan ujung kasar 6 bulan, dan kandidat dengan celah
+  di tengah 4 bulan. Pola NA `transformed` dan `cycle` sama persis dengan
+  perhitungan tangan, dan selisih maksimumnya 0. Seri tanpa log yang
+  melintasi nol memberi selisih biasa. Batasnya juga benar: 4 tahun dengan
+  laju tahunan lolos (36 observasi); `growth_form(200)` gagal dengan
+  `rcli_error_short_series`.
+- **Kompatibilitas mundur** (`compat.R`, dibandingkan dengan salinan HEAD
+  0.6.0). Untuk spesifikasi bawaan, siklus `cli_cycles()` dan indeks komposit
+  `cli_build()` *identik* dengan 0.6.0, dan jalur TRAMO juga identik. Objek
+  `CliSpec` 0.6.0 tanpa slot `form` memberi siklus yang identik;
+  `update()` mengisi `level_form()`, sedangkan `show` dan `cli_presentation()`
+  tetap berjalan.
+- **Penolakan Conference Board.** `cli_spec(form = acceleration_form(),
+  aggregator = conference_board())` dan `update()` keduanya memberi
+  `rcli_error_argument`; lihat R-13.5 untuk celahnya.
+- **Seluruh alur** (`probe4.R`): `cli_build()`, validasi, `cci_build()`, dan
+  `cli_presentation()` dijalankan untuk laju tahunan, percepatan, dan laju
+  antarperiode, bulanan dan triwulanan. Semuanya berjalan tanpa galat.
+  (Laju m-to-m bulanan tidak menghasilkan komposit pada seed 5; ini sesuai
+  label eksperimental dan bukan cacat.)
+- **AC-FR-013.6 bulanan** (`probe5.R`, tidak ada di uji). Pada 10 ulangan,
+  lead_6 berada dalam ±1 bulan pada bentuk laju 10/10 dan percepatan 8/10.
+- **GUI.** `choice_key()` menjaga `form` dan `growth_lag`. `form_text()`
+  hanya menulis `growth_form()`/`acceleration_form(lag = 1)`; keduanya sudah
+  masuk daftar putih `spec_functions`, dan `level_form` tidak perlu masuk.
+  Kunci teks baru ada di kedua bahasa. Uji pemalsuan `"growth; system('x')"`
+  ditolak.
+- **Gaya dan paket.** Tidak ada baris > 80 karakter; `lintr::lint()` bersih
+  untuk semua berkas yang berubah; Imports tidak bertambah; `roxygenise()`
+  pada salinan tidak mengubah `man/` dan `NAMESPACE`.
+- **Uji.** `test-cycle-form.R` 61 PASS dan `test-app-options.R` semua PASS.
+  `R CMD check` tidak dijalankan reviewer; itu tugas gerbang A0.
+
+## Temuan
+
+### R-13.1 — blocker — `cli_presentation()` salah satuan pada bentuk laju dan percepatan
+- [ ] Lokasi: `R/presentation.R:83-98` (cabang tanpa log),
+  `R/aggregate.R:350`, `R/app-plots.R:268-290`.
+- Uraian: `is_logged()` kini FALSE untuk bentuk laju/percepatan, sehingga
+  presentasi masuk ke cabang "seri tanpa log". Cabang itu menganggap
+  amplitudo komposit dinyatakan dalam *persen dari rata-rata level*
+  (`100 * mad / mean|level|`). Padahal untuk bentuk baru
+  `reference_amplitude()` mengembalikan amplitudo dalam *poin persen*
+  (`mad` saja). Akibatnya ada dua kolom yang skalanya keliru:
+  - `trend_restored = tren + (amp_adj − 100)/100 × scale` mengecil dengan
+    faktor `scale/100`;
+  - `reference_amplitude_adjusted = 100 + 100 (orig − tren)/scale` membesar
+    dengan faktor `100/scale`.
+- Skenario (`probe1.R`, `simulate_cycles(seed = 1)`, `growth_form()`):
+  - simpangan baku `amplitude_adjusted − 100` = 5,61, sedangkan
+    `reference_amplitude_adjusted − 100` = 105,8 (skalanya beda 19 kali);
+  - `trend_restored − reference_trend` = 0,30, sedangkan
+    `reference − reference_trend` = 5,62.
+  - Kedua seri dalam satu panel GUI "Bentuk penyajian OECD" dan CSV unduhan
+    tidak dapat dibandingkan.
+  - Selain itu, `rate_of_change` dan `reference_rate_of_change` menjadi
+    "laju dari laju". Bila semua laju positif (misalnya PDB ≈ 5%),
+    `rate_of_change()` menghitung `100 (g_t/g_{t−12} − 1)`, yaitu perubahan
+    persen dari laju, yang tidak bermakna. Label plot ("level of the
+    reference series", "rate of change over a year (%)") juga keliru.
+  - Uji AC-FR-013.5 hanya memeriksa nama kolom (`test-cycle-form.R:145`),
+    sehingga cacat ini lolos.
+- Saran (pilih satu):
+  1. Untuk `form_units(ref) != "level"`, tolak `cli_presentation()` dengan
+     `rcli_error_argument` ("bentuk penyajian OECD didefinisikan untuk
+     siklus pertumbuhan"), lalu sembunyikan atau nonaktifkan panel penyajian
+     di GUI.
+  2. Definisikan presentasi aditif dalam poin persen: `tr = tren + (amp_adj
+     − 100)`, `ref_amp = 100 + (orig − tren)`, dan `rate_of_change = NA`
+     (atau hapus kolomnya). Label plot juga perlu disesuaikan.
+
+  Pilihan mana pun perlu uji numerik, misalnya simpangan baku kedua kolom
+  amplitudo sebanding.
+
+### R-13.2 — major — Bentuk nilai dengan `hp_smoother()` diterima tanpa peringatan; `update()` menghasilkan kombinasi itu
+- [ ] Lokasi: `R/spec.R:327-351` (`update`), `R/spec.R:124`, `R/app.R:232`
+  (pilihan filter), `R/app.R:1136-1139` (observer).
+- Uraian: `hp_smoother()` tidak membuang tren. Bila dipasangkan dengan
+  `level_form()`, "siklus" yang dihasilkan adalah log level yang dihaluskan.
+- Skenario:
+  - `cli_cycles(cand, cli_spec(filter = hp_smoother()))$reference@cycle`
+    berada di rentang 4,58–5,27, yaitu tren log (`probe3.R`).
+  - Bry-Boschan lalu menanggali tren, normalisasi membagi tren, dan
+    klasifikasi memakai siklus yang tidak bermakna, tanpa satu pun
+    peringatan.
+  - Jalan termudah ke kombinasi ini:
+    `update(cli_spec(form = growth_form()), form = level_form())`. Filter
+    tetap `hp_smoother()` (diverifikasi: label "HP smoother").
+  - Di GUI, pengguna dapat memilih "HP smoother" pada bentuk nilai.
+  - Dokumentasi `@param form` memang menyuruh memberi `filter` saat
+    `update()`, tetapi kegagalan diam seperti ini termasuk kasus tepi yang
+    tidak ditangani.
+- Saran:
+  - Di `cli_spec()`/`update()`, keluarkan `rcli_warn()` (kelas
+    `rcli_warning_form_filter`) bila bentuknya `LevelForm` dan filternya
+    tidak membuang tren. Pemeriksaan ini sebaiknya lewat generic, misalnya
+    `detrends(filter)` atau `check_filter(form, filter)`, bukan cabang
+    kelas.
+  - Selain itu, di `update()`, bila `form` diganti tanpa `filter` dan filter
+    lama sama dengan `default_filter(form lama)`, ganti filter dengan
+    `default_filter(form baru)`. Perilaku ini perlu didokumentasikan.
+
+### R-13.3 — major — AC-FR-013.8 belum terpenuhi: NEWS memuat placeholder, dan beberapa dokumen menyesatkan
+- [ ] Lokasi: `NEWS.md:29` (`RESULTS_PLACEHOLDER`), `R/cycles.R:3-9`
+  (`?cli_cycles`), `R/classes-core.R:93-94` (`@slot transformed`),
+  `R/presentation.R:1-50` (`?cli_presentation`), `vignettes/rcli.Rmd`
+  (§8: "`cli_presentation()` returns the three OECD forms of any composite").
+- Uraian:
+  - NEWS akan terbit dengan teks `RESULTS_PLACEHOLDER`.
+  - `?cli_cycles` masih menyebut urutan langkah tanpa langkah bentuk.
+  - `?CycleSeries-class` menyebut `transformed` sebagai "Series after
+    transformation ...", padahal pada bentuk baru slot itu berisi laju atau
+    percepatan, dengan NA tambahan di awal.
+  - `?cli_presentation` dan vinyet menyatakan bahwa presentasi berlaku untuk
+    komposit apa pun (lihat R-13.1).
+  - Pedoman (`pedoman/`) tidak ada di repo ini, sehingga bagian AC-FR-013.8
+    itu tidak dapat diverifikasi.
+  - `inst/calibration/forms.csv` dibaca vinyet tetapi belum terlacak git.
+    Bila lupa dikomit, vinyet gagal dibangun.
+- Saran: isi ringkasan hasil simulasi di NEWS dan perbarui
+  `?cli_cycles`, `@slot transformed`, dan `?cli_presentation` (sesuai
+  keputusan R-13.1). Komit `forms.csv` dan catat status pedoman di STATE.
+
+### R-13.4 — minor — `show(CliSpec)` tidak menampilkan bentuk siklus
+- [ ] Lokasi: `R/methods-show.R:56-90`.
+- Skenario: `print(cli_spec(form = acceleration_form()))` hanya menampilkan
+  "filter: HP smoother". Bentuk, lag, dan status eksperimental tidak terlihat.
+  `oecd_spec(form = growth_form())` tercetak persis seperti `oecd_spec()`,
+  padahal siklusnya laju (dan dipasangkan dengan HP ganda, karena
+  `oecd_spec()` mengunci filter). Spesifikasi yang disimpan lalu dicetak
+  ulang menyembunyikan pilihan yang paling menentukan satuan hasil.
+- Saran: tambahkan baris `form:` saat bentuknya bukan nilai, misalnya
+  `"  form:        annual growth rate (experimental)"`, lewat generic
+  (`form_step()`/label) dan snapshot di `_snaps/`.
+
+### R-13.5 — minor — Penolakan Conference Board berupa cabang kelas di inti dan dapat dilewati
+- [ ] Lokasi: `R/spec.R:256-262`, `R/aggregate.R:286`.
+- Uraian: validitas `CliSpec` memakai `!is(form, "LevelForm") &&
+  is(aggregator, "ConferenceBoard")`. Ini cabang kelas di inti, yang
+  bertentangan dengan semangat aturan proyek "Never add `if (class == ...)`
+  branches in the core". Selain itu, penjaga hanya memeriksa spesifikasi,
+  bukan siklus. Skenario (`probe3.R`):
+  `cli_composite(cli_cycles(cand, cli_spec(form = growth_form())),
+  c("lead_6", "lead_3"), cli_spec(aggregator = conference_board()), ...)`
+  berjalan dan menghitung perubahan simetris dari laju pertumbuhan.
+  `form_units()` juga menurunkan satuan dari teks `steps` lewat regex, yang
+  rapuh bila teks langkah berubah.
+- Saran: tambahkan generic `supports_form(aggregator, form)` (bawaan TRUE,
+  FALSE untuk `ConferenceBoard` × bukan nilai) yang dipanggil di validitas.
+  Di metode `aggregate_components()` Conference Board, periksa satuan
+  komponen (misalnya atribut `"units"` pada `levels` yang diisi
+  `cli_composite()` dari `form_units()`).
+
+### R-13.6 — minor — Celah uji (mutasi yang tidak tertangkap)
+- [ ] Lokasi: `tests/testthat/test-cycle-form.R`.
+  - (a) Baris 88-91: AC-FR-013.3 meminta hasil "sama persis dengan 0.6.0",
+    tetapi uji membandingkan dua jalur 0.7.0 (`form = NULL` dan
+    `level_form()`). Regresi pada jalur nilai, misalnya `window()` yang
+    mengubah `tsp`, tidak akan tertangkap. Reviewer sudah memverifikasi
+    keidentikan secara manual. Saran: berkas golden siklus 0.6.0 (RDS di
+    `tests/testthat/fixtures`, dibuat dari tag 0.6.0).
+  - (b) Baris 143-147: presentasi hanya diperiksa nama kolomnya (lihat
+    R-13.1).
+  - (c) Jalur prakiraan TRAMO + bentuk tidak diuji. Mutasi yang menghapus
+    `fc <- utils::tail(as.numeric(whole), length(fc))` (`R/cycles.R:94`)
+    akan menyambung laju dengan prakiraan log level dan tidak tertangkap.
+  - (d) Batas `keep < 3L * spec@freq` (`R/cycles.R:87`) tidak diuji tepat di
+    3f dan 3f − 1; mutasi `<` → `<=` lolos.
+  - (e) Observer GUI yang mengganti filter (`R/app.R:1136`) tidak diuji.
+  - (f) AC-FR-013.6 menyebut bulanan dan triwulanan, tetapi uji hanya
+    triwulanan. Hasil probe bulanan lolos (lihat di atas).
+- Saran: tambahkan uji (a)–(f). Untuk (e), bila `testServer` tidak dapat
+  mengamati `updateSelectInput`, pindahkan logikanya ke fungsi murni
+  (`filter_for_form(form)`) dan uji fungsi itu.
+
+### R-13.7 — minor — Teks GUI: "Penghalus HP" tidak ada di daftar filter; observer menimpa pilihan pengguna
+- [ ] Lokasi: `R/app-text.R:99-101`, `R/app.R:232-237`, `R/app.R:1136-1139`.
+- Uraian:
+  - Bantuan berbahasa Indonesia meminta "pilih Penghalus HP sebagai
+    penyaring", padahal daftar filter hanya berlabel Inggris "HP smoother
+    (no detrending)". AC-FR-013.7 menyebut filter "Penghalus HP".
+  - Observer juga mengganti filter pada *setiap* perubahan bentuk, termasuk
+    laju → percepatan, sehingga pilihan filter pengguna (misalnya CF)
+    tertimpa diam-diam.
+- Saran: buat label filter mengikuti bahasa (atau samakan teks bantuan
+  dengan label daftar). Observer cukup mengganti filter saat melintasi batas
+  nilai ↔ bukan nilai, atau saat filter yang sedang dipakai adalah
+  `default_filter` bentuk sebelumnya.
+
+### R-13.8 — minor — Simulasi menunjukkan pangsa pendahulu palsu di atas 1,5% untuk bentuk baru, tetapi tidak disebut di dokumen
+- [ ] Lokasi: `inst/calibration/forms.csv`, `R/classes-form.R:29-33`.
+- Uraian: `false_leading` = 0,025 (percepatan, bulanan, bising 0,8) dan
+  0,017 (laju, triwulanan, bising 0,8). Keduanya di atas sasaran 1,5% yang
+  dipakai untuk bawaan (AC-NFR-003.1). Label eksperimental memang ada,
+  tetapi angka ini adalah alasan konkretnya.
+- Saran: sebutkan angka itu di NEWS (pengganti placeholder) dan di
+  `?CycleForm-class`.
+
+### R-13.9 — nit — Nilai λ(12) di F-09 salah
+- [ ] Lokasi: `harness/02-math/F-09.md:9`.
+- Uraian: tertulis λ(12) ≈ 10,4, padahal `hp_lambda(12)` =
+  [4(1 − cos(π/6))²]⁻¹ = 13,93. Kodenya benar; hanya catatan MVR yang
+  salah.
+- Saran: ganti dengan 13,93.
+
+### R-13.10 — nit — Label satuan untuk seri tanpa log
+- [ ] Lokasi: `R/classes-form.R:19-20`, `R/classes-form.R:147-159`.
+- Uraian: dokumentasi menyebut percepatan "in percentage points", dan
+  `steps` mencatat "annual growth rate" juga untuk seri tanpa log. Padahal
+  hasilnya selisih dalam satuan asli (misalnya poin indeks), bukan laju.
+- Saran: tulis "percentage points for logged series, otherwise the units of
+  the series". Untuk seri tanpa log, pakai teks langkah "form: annual
+  difference" dan sesuaikan regex `form_units()`.
+
+## Ringkasan
+
+| ID | Tingkat | Ringkas |
+|---|---|---|
+| R-13.1 | blocker | `cli_presentation()` salah satuan pada bentuk laju/percepatan (beda skala ~19×; laju dari laju) |
+| R-13.2 | major | Bentuk nilai + `hp_smoother()` diam-diam menghasilkan tren sebagai siklus; `update(form = level_form())` membawa ke sana |
+| R-13.3 | major | NEWS berisi `RESULTS_PLACEHOLDER`; `?cli_cycles`, `@slot transformed`, `?cli_presentation`, dan vinyet belum sesuai; `forms.csv` belum terlacak |
+| R-13.4 | minor | `show(CliSpec)` tidak menampilkan bentuk |
+| R-13.5 | minor | Penolakan CB berupa cabang kelas di validitas dan dapat dilewati lewat `cli_composite()` |
+| R-13.6 | minor | Celah uji: golden 0.6.0, presentasi, prakiraan TRAMO, batas 3f, observer, bulanan |
+| R-13.7 | minor | "Penghalus HP" tidak ada di daftar; observer menimpa filter pilihan pengguna |
+| R-13.8 | minor | `false_leading` 1,7–2,5% pada bentuk baru tidak disebut di dokumen |
+| R-13.9 | nit | λ(12) di F-09 salah (10,4 → 13,93) |
+| R-13.10 | nit | Label "growth rate"/"percentage points" untuk seri tanpa log |
+
+Putaran berikut: A5 menindaklanjuti R-13.1 sampai R-13.3 (wajib) dan
+sebaiknya R-13.4 sampai R-13.10; reviewer memverifikasi ulang.
+
+Putusan: CHANGES-REQUESTED
+
+---
+
+## Tindak lanjut A5 (2026-11-11)
+
+| ID | Tindakan |
+|---|---|
+| R-13.1 | `cli_presentation()` untuk bentuk laju/percepatan memakai `rate_presentation()`: komposit di sekitar rata-rata laju acuan dalam poin persentase, kolom laju perubahan `NA`. Uji satuan baru di AC-FR-013.5 (kolom setara, rasio simpangan baku 0,2–5). |
+| R-13.2 | Generic internal `removes_trend()` (`HPSmoother` = FALSE); `cli_spec()` dan `update()` memberi peringatan `rcli_warning_form_filter` untuk bentuk level + penyaring tanpa pembuangan tren. `update(form = )` memindahkan penyaring bawaan bentuk lama ke bawaan bentuk baru dan mempertahankan pilihan manual. |
+| R-13.3 | NEWS terisi hasil `forms.csv`; dokumentasi `cli_cycles`, slot `transformed`, `cli_presentation`, `cli_spec` diperbarui; `forms.csv` ikut dikomit. Buku pedoman ada di luar repo (folder kerja maintainer) dan sudah diperbarui di sana (bab 3, 11, 12, A, B). |
+| R-13.4 | `show()` mencetak baris `form:` untuk bentuk bukan level; snapshot level tidak berubah. |
+| R-13.5 | Pemeriksaan kelas diganti generic `form_kind()` dan `needs_levels()`; `cli_composite()` juga menolak siklus bukan level dengan agregator yang memerlukan level. |
+| R-13.6 | Berkas emas `fixtures/level-0.6.0.rds` dibuat dari komit 285b331 (`data-raw/make_level_060.R`); uji siklus, kelas, dan indeks bulanan dan triwulanan identik. Uji baru: penyajian, prakiraan TRAMO + bentuk, batas tiga tahun, observer GUI. |
+| R-13.7 | Teks Indonesia menyebut "HP smoother" sesuai label pilihan; observer hanya mengganti penyaring bawaan bentuk lain (uji dengan `local_mocked_bindings`). |
+| R-13.8 | NEWS dan buku pedoman menyebut 1,7–2,5 persen pendahulu palsu pada sel paling bising, di atas target 1,5 persen. |
+| R-13.9 | F-09: λ(12) ≈ 13,93. |
+| R-13.10 | Langkah seri tanpa log bertuliskan "annual difference"/"difference over k periods"; `form_units()` membaca awalan "form:". |
+
+Gerbang sesudah tindak lanjut: uji paket hijau, lint 0 temuan, cakupan 95,7%, `R CMD check --as-cran` 0 ERROR, 0 WARNING, 3 NOTE (lingkungan: *new submission*/URL 403 lewat proxy, waktu, `JAVA_TOOL_OPTIONS`).
+
 # 06 — Review
 
 - Increment: rcli 0.6.0 (FR-012)

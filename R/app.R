@@ -229,8 +229,10 @@ rcli_app <- function(language = c("id", "en")) {
 
 # ---- user interface ----------------------------------------------------------
 
-filter_choices <- c("hp_double", "hp", "cf", "bk", "hamilton")
+filter_choices <- c("hp_double", "hp", "hp_smoother", "cf", "bk",
+                    "hamilton")
 names(filter_choices) <- c("OECD double Hodrick-Prescott", "Hodrick-Prescott",
+                           "HP smoother (no detrending)",
                            "Christiano-Fitzgerald", "Baxter-King",
                            "Hamilton regression")
 aggregator_choices <- c("equal", "equal_level", "oecd", "pca", "cb", "dfm")
@@ -329,6 +331,19 @@ app_ui <- function(language = "id") {
               shiny::helpText(t("method_help")),
               shiny::checkboxInput("oecd_conformity", t("oecd_conformity"),
                                    TRUE)),
+            shiny::conditionalPanel(
+              "input.method == 'rcli'",
+              shiny::selectInput("form", t("form"), stats::setNames(
+                c("level", "growth", "acceleration"),
+                c(t("form_level"), t("form_growth"),
+                  t("form_acceleration")))),
+              shiny::conditionalPanel(
+                "input.form != 'level'",
+                shiny::selectInput("growth_lag", t("growth_lag"),
+                                   stats::setNames(
+                                     c("annual", "period"),
+                                     c(t("lag_annual"), t("lag_period")))),
+                shiny::helpText(t("form_help")))),
             shiny::selectInput("filter", t("filter"), filter_choices),
             shiny::selectInput("aggregator", t("aggregator"),
                                aggregator_choices),
@@ -1117,6 +1132,17 @@ app_server <- function(language = "id") {
     })
 
     # 3. Specification -------------------------------------------------------
+    # growth rate and acceleration forms go with the HP smoother
+    # (only the default filter of the other form is switched; a filter
+    # chosen by hand is kept)
+    shiny::observeEvent(input$form, {
+      level <- identical(input$form, "level")
+      to <- if (level) "hp_double" else "hp_smoother"
+      from <- if (level) "hp_smoother" else "hp_double"
+      if (identical(input$filter, from)) {
+        shiny::updateSelectInput(session, "filter", selected = to)
+      }
+    }, ignoreInit = TRUE)
     shiny::observeEvent(input$run3, {
       if (!2L %in% rv$done) {
         shiny::showNotification(t("need_prev"), type = "warning")

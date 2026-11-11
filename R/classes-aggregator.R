@@ -112,6 +112,15 @@ setClass("ConferenceBoard", contains = "Aggregator")
 #' @rdname Aggregator-class
 setClass("DynamicFactor", contains = "Aggregator")
 
+# Does an aggregator need the levels of the components (and therefore the
+# level form)? The Conference Board's symmetric changes of levels are not
+# defined for growth rates, which change sign.
+setGeneric("needs_levels", function(aggregator) {
+  standardGeneric("needs_levels")
+})
+setMethod("needs_levels", "Aggregator", function(aggregator) FALSE)
+setMethod("needs_levels", "ConferenceBoard", function(aggregator) TRUE)
+
 new_aggregator <- function(class, label, min_coverage) {
   check_number(min_coverage, "min_coverage", lower = 0, upper = 1)
   new(class, label = label, min_coverage = min_coverage)

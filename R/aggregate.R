@@ -262,6 +262,11 @@ cli_composite <- function(cycles, components, spec, reference = NULL,
     rcli_abort("`reference` must be the reference CycleSeries, e.g. `cyc$ref`.",
                "rcli_error_argument")
   }
+  units <- vapply(components, function(nm) form_units(cycles[[nm]]), "")
+  if (needs_levels(spec@aggregator) && any(units != "level")) {
+    rcli_abort(paste("The", spec@aggregator@label, "aggregator needs cycles",
+                     "of the level form."), "rcli_error_argument")
+  }
   template <- cycles[[components[1]]]@normalised
   z <- vapply(components, function(nm) as.numeric(cycles[[nm]]@normalised),
               numeric(length(template)))
@@ -343,9 +348,11 @@ lag_shifts <- function(components, assessment) {
   stats::setNames(round(lead - min(lead)), components)
 }
 
-# Amplitude of the reference cycle in percent deviation from trend.
+# Amplitude of the reference cycle in percent deviation from trend; for the
+# growth rate and acceleration forms, in percentage points (AC-FR-013.5).
 reference_amplitude <- function(reference) {
   cyc <- as.numeric(reference@cycle)
+  if (!identical(form_units(reference), "level")) return(mean_abs_dev(cyc))
   if (is_logged(reference)) {
     100 * mean_abs_dev(cyc)
   } else {

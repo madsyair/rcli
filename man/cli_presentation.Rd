@@ -48,6 +48,14 @@ zero), deviations are measured in percent of the mean absolute level, as
 in the amplitude of the composite, and the trend is restored by adding
 them to the trend rather than by multiplying.
 
+With a growth rate or acceleration form (\code{\link[=growth_form]{growth_form()}},
+\code{\link[=acceleration_form]{acceleration_form()}}), the reference is its rate and the amplitude of
+the composite is in percentage points (the units of the rate):
+\code{amplitude_adjusted} and \code{reference_amplitude_adjusted} are 100 plus the
+deviation in percentage points, \code{trend_restored} and \code{reference_trend}
+are the mean rate of the reference plus that deviation and the mean rate
+itself, and the two rate-of-change columns are \code{NA}.
+
 The reference series in the output is the transformed one: seasonally
 adjusted and cleaned of outliers as in the specification, in the units
 of the original data, so that neither seasonality nor spikes enter the

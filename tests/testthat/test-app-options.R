@@ -442,3 +442,62 @@ test_that("R14/R16/R18: limits, malformed text inputs and cut-offs", {
   expect_equal(rcli:::parse_cutoffs(NULL), numeric(0))
   expect_error(rcli:::parse_cutoffs(list("1")), class = "rcli_error_argument")
 })
+
+test_that("AC-FR-013.7: cycle form, growth lag and HP smoother in step 3", {
+  skip_if_not_installed("shiny")
+  html <- as.character(rcli:::app_ui("id"))
+  expect_match(html, 'id="form"', fixed = TRUE)
+  expect_match(html, 'id="growth_lag"', fixed = TRUE)
+  expect_match(html, "hp_smoother", fixed = TRUE)
+  expect_match(as.character(rcli:::app_ui("en")), "Experimental",
+               fixed = TRUE)
+  with_step3(list(form = "growth", growth_lag = "annual",
+                  filter = "hp_smoother", outlier = NA),
+             function(rv, session) {
+    expect_true(3L %in% rv$done)
+    expect_s4_class(rv$spec@form, "GrowthForm")
+    expect_identical(rv$spec@form@lag, NA_real_)
+    expect_s4_class(rv$spec@filter, "HPSmoother")
+    expect_match(rv$spec_call, "form = growth_form()", fixed = TRUE)
+    expect_match(rv$spec_call, "filter = hp_smoother()", fixed = TRUE)
+    expect_script_spec(rv)
+  })
+  with_step3(list(form = "acceleration", growth_lag = "period",
+                  filter = "hp_smoother", hp_smooth_period = 6),
+             function(rv, session) {
+    expect_s4_class(rv$spec@form, "AccelerationForm")
+    expect_identical(rv$spec@form@lag, 1)
+    expect_identical(rv$spec@filter@period, 6)
+    expect_match(rv$spec_call, "form = acceleration_form(lag = 1)",
+                 fixed = TRUE)
+    expect_script_spec(rv)
+  })
+  # the level form writes nothing new into the script
+  with_step3(list(form = "level"), function(rv, session) {
+    expect_s4_class(rv$spec@form, "LevelForm")
+    # (`transform =` is an older argument; no `*_form()` call is written)
+    expect_false(grepl("_form(", rv$spec_call, fixed = TRUE))
+  })
+  # a forged choice is refused
+  with_step3(list(form = "growth; system('x')"), function(rv, session) {
+    expect_false(3L %in% rv$done)
+  })
+})
+
+test_that("the form switches only a default filter (review R-13.7)", {
+  skip_if_not_installed("shiny")
+  sel <- character(0)
+  local_mocked_bindings(
+    updateSelectInput = function(session, inputId, ..., selected = NULL) {
+      sel <<- c(sel, paste(inputId, selected))
+    },
+    .package = "shiny"
+  )
+  shiny::testServer(rcli:::app_server("en"), {
+    session$setInputs(form = "level", filter = "hp_double")
+    session$setInputs(form = "growth")
+    session$setInputs(filter = "cf", form = "acceleration")
+    session$setInputs(filter = "hp_smoother", form = "level")
+  })
+  expect_identical(sel, c("filter hp_smoother", "filter hp_double"))
+})

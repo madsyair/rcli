@@ -23,6 +23,11 @@
 #'   and `pu` (defaults 1.5 and 8 years).
 #' * `bk_filter()`: Baxter-King symmetric band-pass filter with `k` leads and
 #'   lags (default 3 years); the first and last `k` values are missing.
+#' * `hp_smoother()`: the HP trend at a short cut-off of `period`
+#'   observations (default one year). It smooths without removing a trend,
+#'   as the second step of the OECD double filter does, and is the default
+#'   filter of the growth rate and acceleration forms ([CycleForm-class]).
+#'   Formula F-09 in the package harness.
 #' * `hamilton_filter()`: Hamilton (2018) regression filter; the cycle is the
 #'   residual of a regression of \eqn{y_{t+h}} on \eqn{y_t, \dots,
 #'   y_{t-p+1}}. Defaults: `h` = 2 years, `p` = 1 year.
@@ -34,6 +39,8 @@
 #'   `NA` for the defaults.
 #' @param k Number of leads and lags of the Baxter-King filter, or `NA`.
 #' @param h,p Horizon and number of lags of the Hamilton filter, or `NA`.
+#' @param period Cut-off period (in observations) of the HP smoother, or
+#'   `NA` for one year.
 #' @return An object inheriting from `CycleFilter`.
 #' @references
 #' Christiano, L. J. and Fitzgerald, T. J. (2003). The band pass filter.
@@ -71,6 +78,10 @@ setClass("HPFilter", contains = "CycleFilter",
 #' @rdname CycleFilter-class
 setClass("HPDoubleFilter", contains = "CycleFilter",
          representation(trend_period = "numeric", smooth_period = "numeric"))
+
+#' @rdname CycleFilter-class
+setClass("HPSmoother", contains = "CycleFilter",
+         representation(period = "numeric"))
 
 #' @rdname CycleFilter-class
 setClass("CFFilter", contains = "CycleFilter",
@@ -111,6 +122,16 @@ hp_double_filter <- function(trend_period = NA, smooth_period = NA) {
   new("HPDoubleFilter", label = "OECD double Hodrick-Prescott",
       trend_period = as.numeric(trend_period),
       smooth_period = as.numeric(smooth_period))
+}
+
+#' @rdname CycleFilter-class
+#' @export
+hp_smoother <- function(period = NA) {
+  check_number(period, "period", lower = 2 + 1e-8, allow_na = TRUE)
+  if (is.infinite(period)) {
+    rcli_abort("`period` must be finite.", "rcli_error_argument")
+  }
+  new("HPSmoother", label = "HP smoother", period = as.numeric(period))
 }
 
 #' @rdname CycleFilter-class
