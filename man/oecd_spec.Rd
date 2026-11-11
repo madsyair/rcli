@@ -24,7 +24,9 @@ quarterly data the month thresholds are converted to quarters.}
 \item{classifier}{An OECD \linkS4class{Classifier}, by default
 \code{\link[=oecd_classifier]{oecd_classifier()}}.}
 
-\item{...}{Further arguments of \code{\link[=cli_spec]{cli_spec()}}.}
+\item{...}{Further arguments of \code{\link[=cli_spec]{cli_spec()}}. With \verb{form =}
+\code{\link[=growth_form]{growth_form()}} or \code{\link[=acceleration_form]{acceleration_form()}} (experimental, not part of the
+OECD method) the filter is \code{\link[=hp_smoother]{hp_smoother()}}, as in \code{\link[=cli_spec]{cli_spec()}}.}
 }
 \value{
 A \linkS4class{CliSpec}.

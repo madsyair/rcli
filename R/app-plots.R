@@ -266,19 +266,31 @@ plot_series_dated <- function(series, reference, tr = function(x) x) {
 # One of the three OECD forms of the composite (cli_presentation()) next to
 # the matching form of the reference series.
 plot_presentation <- function(pres, form, tr = function(x) x) {
+  rate <- !is.null(attr(pres, "units"))
   cli <- pres[[form]]
+  if (all(is.na(cli))) {
+    # growth rate and acceleration forms: a rate of a rate is not defined
+    graphics::plot.new()
+    graphics::text(0.5, 0.5, tr(paste("not defined for growth rate or",
+                                      "acceleration forms")))
+    return(invisible(NULL))
+  }
   ref <- switch(form,
     amplitude_adjusted = pres$reference_amplitude_adjusted,
     trend_restored = pres$reference,
     rate_of_change = pres$reference_rate_of_change)
   ylab <- switch(form,
-    amplitude_adjusted = "index (trend of the reference = 100)",
-    trend_restored = "level of the reference series",
+    amplitude_adjusted = if (rate) "100 + deviation from the mean rate" else
+      "index (trend of the reference = 100)",
+    trend_restored = if (rate) "rate of the reference series" else
+      "level of the reference series",
     rate_of_change = "rate of change over a year (%)")
   ref_label <- switch(form,
     amplitude_adjusted = "reference series without trend",
     trend_restored = "reference series",
     rate_of_change = "rate of change of the reference series")
+  trend_label <- if (rate) "mean rate of the reference series" else
+    "trend of the reference series"
   ylim <- range(cli, ref, na.rm = TRUE)
   graphics::plot(pres$time, cli, type = "n", ylim = ylim, xlab = "",
                  ylab = tr(ylab))
@@ -293,7 +305,7 @@ plot_presentation <- function(pres, form, tr = function(x) x) {
   col <- c("firebrick", "black")
   lty <- c(1, 1)
   if (form == "trend_restored") {
-    leg <- c(leg, tr("trend of the reference series"))
+    leg <- c(leg, tr(trend_label))
     col <- c(col, "grey55")
     lty <- c(lty, 2)
   }

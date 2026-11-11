@@ -1,7 +1,7 @@
 Package: rcli
 Type: Package
 Title: Composite Leading and Coincident Indicators
-Version: 0.6.0
+Version: 0.7.0
 Authors@R: c(
     person("Achmad Syahrul", "Choir", email = "madsyair@stis.ac.id",
            role = c("aut", "cre"))
@@ -71,6 +71,7 @@ Collate:
     'classes-classifier.R'
     'classes-outliers.R'
     'classes-extension.R'
+    'classes-form.R'
     'classes-core.R'
     'spec.R'
     'align.R'

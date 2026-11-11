@@ -150,7 +150,8 @@ assign_text <- function(name, fun, args, width = 78L) {
 code_names <- c("<-", "(", "c", "::", "stats", "setNames", "[", "!=",
                 "names", "-")
 spec_functions <- c(
-  "cli_spec", "oecd_spec", "hp_double_filter", "hp_filter", "cf_filter",
+  "cli_spec", "oecd_spec", "hp_double_filter", "hp_filter", "hp_smoother",
+  "growth_form", "acceleration_form", "cf_filter",
   "bk_filter", "hamilton_filter", "bry_boschan", "bbq", "equal_weight",
   "oecd_aggregate", "principal_component", "conference_board",
   "dynamic_factor", "ar_extension", "no_extension", "tramo_outliers",
@@ -214,13 +215,15 @@ classifier_text <- function(x) {
 }
 
 filter_text <- function(input) {
-  key <- choice_key(input$filter, c("hp_double", "hp", "cf", "bk",
-                                    "hamilton"), "filter")
+  key <- choice_key(input$filter, c("hp_double", "hp", "hp_smoother", "cf",
+                                    "bk", "hamilton"), "filter")
   switch(key,
     hp_double = call_text("hp_double_filter", list(
       trend_period = num_in(input, "hp_trend_period"),
       smooth_period = num_in(input, "hp_smooth_period"))),
     hp = call_text("hp_filter", list(lambda = num_in(input, "hp_lambda"))),
+    hp_smoother = call_text("hp_smoother", list(
+      period = num_in(input, "hp_smooth_period"))),
     cf = call_text("cf_filter", list(pl = num_in(input, "band_pl"),
                                      pu = num_in(input, "band_pu"))),
     bk = call_text("bk_filter", list(pl = num_in(input, "band_pl"),
@@ -254,6 +257,16 @@ dater_text <- function(input, freq) {
                end_exclusion = num_in(input, "dater_end_exclusion"))
   if (all(vapply(args, is.null, logical(1)))) return(NULL)
   call_text(if (freq == 12) "bry_boschan" else "bbq", args)
+}
+
+# The cycle form (AC-FR-013.7); NULL for the level form (the default).
+form_text <- function(input) {
+  if (is.null(input$form)) return(NULL)
+  key <- choice_key(input$form, c("level", "growth", "acceleration"), "form")
+  if (key == "level") return(NULL)
+  lag <- choice_key(if (is.null(input$growth_lag)) "annual" else
+    input$growth_lag, c("annual", "period"), "growth_lag")
+  call_text(paste0(key, "_form"), list(lag = if (lag == "period") "1"))
 }
 
 extension_text <- function(input) {
@@ -313,7 +326,7 @@ spec_call <- function(input, freq) {
     oos_cutoffs = cut,
     classifier = classifier_text(input$classifier),
     lag_shift = if (isTRUE(input$lag_shift)) "TRUE",
-    extension = extension_text(input)))
+    extension = extension_text(input), form = form_text(input)))
 }
 
 # Inputs of the advanced options of the rcli method (step 3). Empty
@@ -339,8 +352,10 @@ advanced_ui <- function(t) {
         shiny::checkboxInput("lag_shift", t("lag_shift"), FALSE),
         shiny::h5(t("adv_filter")),
         shiny::conditionalPanel(
-          "input.filter == 'hp_double'",
-          num("hp_trend_period", min = 2), num("hp_smooth_period", min = 2)),
+          "input.filter == 'hp_double'", num("hp_trend_period", min = 2)),
+        shiny::conditionalPanel(
+          "input.filter == 'hp_double' || input.filter == 'hp_smoother'",
+          num("hp_smooth_period", min = 2)),
         shiny::conditionalPanel("input.filter == 'hp'",
                                 num("hp_lambda", min = 0)),
         shiny::conditionalPanel(

@@ -81,6 +81,14 @@
 #' @param extension An [Extension-class]; default [ar_extension()]: each
 #'   series is extended by one year of AR forecasts before the cycle filter.
 #'   Use [no_extension()] for the behaviour of rcli 0.1.x.
+#' @param form A [CycleForm-class]: [level_form()] (default, the growth
+#'   cycle), [growth_form()] (growth rate cycle) or [acceleration_form()].
+#'   Without `filter`, the growth and acceleration forms use [hp_smoother()].
+#'   The two new forms are experimental: the thresholds were calibrated for
+#'   the level form. [update()] changes a filter left at the default of the
+#'   old form to the default of the new one; a filter chosen by hand is
+#'   kept. The level form with [hp_smoother()] gives a warning, since that
+#'   filter does not remove the trend.
 #' @return A [CliSpec-class] object.
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -103,17 +111,19 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
                      max_iter = 10, min_components = 2, horizon = NA,
                      oos_cutoffs = numeric(0), holidays = list(),
                      classifier = NULL, outliers = NULL, lag_shift = FALSE,
-                     extension = NULL) {
+                     extension = NULL, form = NULL) {
   check_frequency(freq)
   monthly <- freq == 12
   if (is(holidays, "HolidayEffect")) holidays <- list(holidays)
   check_strategy(classifier, "Classifier", "classifier")
   check_strategy(outliers, "OutlierTreatment", "outliers")
   check_strategy(extension, "Extension", "extension")
+  check_strategy(form, "CycleForm", "form")
+  if (is.null(form)) form <- level_form()
   spec <- new_valid(
     "CliSpec",
     freq = as.numeric(freq),
-    filter = if (is.null(filter)) hp_double_filter() else filter,
+    filter = if (is.null(filter)) default_filter(form) else filter,
     dater = if (is.null(dater)) {
       if (monthly) bry_boschan() else bbq()
     } else {
@@ -176,13 +186,27 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
       outliers
     },
     lag_shift = lag_shift,
-    extension = if (is.null(extension)) ar_extension() else extension
+    extension = if (is.null(extension)) ar_extension() else extension,
+    form = form
   )
   if (is(spec@outliers, "RobustOutliers")) {
     spec@outlier_threshold <- spec@outliers@threshold
   }
   check_valid(spec)
+  check_form_filter(spec)
   spec
+}
+
+# A filter that only smooths keeps the trend, so with the level form the
+# "cycle" would be the smoothed trend itself.
+check_form_filter <- function(spec) {
+  if (form_kind(spec_form(spec)) == "level" && !removes_trend(spec@filter)) {
+    rcli_warn(paste0("The ", spec@filter@label, " does not remove the ",
+                     "trend: with the level form the cycle is the smoothed ",
+                     "series. Use it with growth_form() or ",
+                     "acceleration_form()."), "rcli_warning_form_filter")
+  }
+  invisible(spec)
 }
 
 # validObject() and new() with the error class of the package.
@@ -211,7 +235,8 @@ check_strategy <- function(x, class, name) {
 upgrade_spec <- function(object) {
   old <- list(holidays = list(), classifier = rcli_classifier(),
               outliers = robust_outliers(object@outlier_threshold),
-              lag_shift = FALSE, extension = no_extension())
+              lag_shift = FALSE, extension = no_extension(),
+              form = level_form())
   for (nm in names(old)) {
     if (!methods::.hasSlot(object, nm)) attr(object, nm) <- old[[nm]]
   }
@@ -242,6 +267,13 @@ setValidity("CliSpec", function(object) {
   }
   if (!(object@outlier_threshold > 0)) {
     msg <- c(msg, "`outlier_threshold` must be positive.")
+  }
+  if (methods::.hasSlot(object, "form") &&
+      form_kind(object@form) != "level" &&
+      needs_levels(object@aggregator)) {
+    msg <- c(msg, paste("The", object@aggregator@label, "aggregator needs",
+                        "the level form: its changes of levels are not",
+                        "defined for growth rates."))
   }
   if (!(object@min_lead >= 0)) msg <- c(msg, "`min_lead` must be >= 0.")
   if (!(object@min_consistency >= 0 && object@min_consistency <= 1)) {
@@ -318,6 +350,12 @@ setMethod("update", "CliSpec", function(object, ...) {
       "rcli_error_argument"
     )
   }
+  # a filter left at the default of the old form follows the new form
+  if ("form" %in% names(args) && !"filter" %in% names(args) &&
+      is(args$form, "CycleForm") &&
+      identical(object@filter, default_filter(object@form))) {
+    args$filter <- default_filter(args$form)
+  }
   types <- methods::getSlots("CliSpec")
   for (nm in names(args)) {
     value <- args[[nm]]
@@ -335,6 +373,7 @@ setMethod("update", "CliSpec", function(object, ...) {
     object@outlier_threshold <- object@outliers@threshold
   }
   check_valid(object)
+  check_form_filter(object)
   object
 })
 
@@ -378,7 +417,9 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' @param engine Engine of [tramo_outliers()] and of the log/level test.
 #' @param classifier An OECD [Classifier-class], by default
 #'   [oecd_classifier()].
-#' @param ... Further arguments of [cli_spec()].
+#' @param ... Further arguments of [cli_spec()]. With `form =`
+#'   [growth_form()] or [acceleration_form()] (experimental, not part of the
+#'   OECD method) the filter is [hp_smoother()], as in [cli_spec()].
 #' @return A [CliSpec-class].
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -407,7 +448,11 @@ oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
                "rcli_error_argument")
   }
   cls <- classifier
-  cli_spec(freq = freq, filter = hp_double_filter(), dater = NULL,
+  # the OECD double HP filter, or the default filter of another form
+  form <- list(...)$form
+  filt <- if (is.null(form) || !is(form, "CycleForm")) hp_double_filter() else
+    default_filter(form)
+  cli_spec(freq = freq, filter = filt, dater = NULL,
            aggregator = oecd_aggregate(), transform = "test",
            seasonal_adjust = seasonal_adjust, holidays = holidays,
            min_median_lead = cls@coincident * freq / 12,

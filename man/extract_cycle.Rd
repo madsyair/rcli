@@ -4,6 +4,7 @@
 \alias{extract_cycle}
 \alias{extract_cycle,HPFilter-method}
 \alias{extract_cycle,HPDoubleFilter-method}
+\alias{extract_cycle,HPSmoother-method}
 \alias{extract_cycle,CFFilter-method}
 \alias{extract_cycle,BKFilter-method}
 \alias{extract_cycle,HamiltonFilter-method}
@@ -14,6 +15,8 @@ extract_cycle(filter, x, ...)
 \S4method{extract_cycle}{HPFilter}(filter, x, ...)
 
 \S4method{extract_cycle}{HPDoubleFilter}(filter, x, ...)
+
+\S4method{extract_cycle}{HPSmoother}(filter, x, ...)
 
 \S4method{extract_cycle}{CFFilter}(filter, x, ...)
 

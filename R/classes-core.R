@@ -45,6 +45,8 @@
 #'   align before aggregation (OECD lag-shifting)?
 #' @slot extension An [Extension-class]: forecasts appended to each series
 #'   before the cycle filter.
+#' @slot form A [CycleForm-class]: the cycle of the level, the growth rate
+#'   or the acceleration of each series.
 #' @seealso [cli_spec()]
 #' @exportClass CliSpec
 setClass("CliSpec", representation(
@@ -60,10 +62,10 @@ setClass("CliSpec", representation(
   max_iter = "numeric", min_components = "numeric", horizon = "numeric",
   oos_cutoffs = "numeric", holidays = "list", classifier = "Classifier",
   outliers = "OutlierTreatment", lag_shift = "logical",
-  extension = "Extension"
+  extension = "Extension", form = "CycleForm"
 ), prototype(holidays = list(), classifier = rcli_classifier(),
              outliers = robust_outliers(5), lag_shift = FALSE,
-             extension = no_extension()))
+             extension = no_extension(), form = level_form()))
 
 #' Reference and candidate series
 #'
@@ -89,7 +91,9 @@ setClass("CandidateSet", representation(
 #' @slot name Series name.
 #' @slot original Original series (`ts`).
 #' @slot transformed Series after transformation, outlier treatment and
-#'   seasonal adjustment (`ts`).
+#'   seasonal adjustment (`ts`); with a growth rate or acceleration form
+#'   ([growth_form()], [acceleration_form()]), that rate, missing for the
+#'   first periods.
 #' @slot cycle Filtered cycle (`ts`).
 #' @slot normalised Normalised cycle (mean 0, mean absolute deviation 1).
 #' @slot steps Character log of the transformations applied.

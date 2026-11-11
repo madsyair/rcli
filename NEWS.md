@@ -1,3 +1,65 @@
+# rcli 0.7.0
+
+Cycles can now be taken from growth rates and accelerations, as in studies
+whose reference is the year-on-year growth of a national accounts aggregate
+(FR-013, formulas F-08 and F-09, ADR-003). Default results do not change.
+
+## Cycle forms (experimental)
+
+* New strategy class `CycleForm` with `level_form()` (default, the growth
+  cycle of earlier versions), `growth_form(lag)` and `acceleration_form(lag)`,
+  chosen with `cli_spec(form = )`. `lag = NA` (default) is one year (the
+  year-on-year rate), `lag = 1` the period-on-period rate.
+* A logged series gives the log growth rate in percent,
+  `100 * (z[t] - z[t - k])`; a series in levels (rates, percentages,
+  confidence balances) gives the difference in its own units. The
+  acceleration is the first difference of the growth rate. Rates of value
+  series are the sums of the rates of volume and price.
+* `cli_cycles()` applies the form after seasonal adjustment, the
+  transformation and the outlier treatment, and before the end-of-series
+  extension and the filter, so growth rates are computed from seasonally
+  adjusted series. The step is recorded in `steps` ("form: annual growth
+  rate", or "annual difference" for a series that was not logged).
+* The amplitude of a growth or acceleration reference is the mean absolute
+  deviation of its cycle in percentage points. `cli_presentation()` then
+  shows the composite around the mean rate of the reference, in percentage
+  points; its rate-of-change columns are `NA`.
+* `print()` of a specification shows a growth or acceleration form.
+  `update()` moves a filter left at the default of the old form to the
+  default of the new one and keeps a filter chosen by hand. The level form
+  with `hp_smoother()` gives a warning, since that filter keeps the trend.
+* Aggregators that need levels (`conference_board()`) are refused with a
+  growth or acceleration form, in `cli_spec()` and in `cli_composite()`.
+* The thresholds of the classifiers were calibrated on level cycles. The
+  simulation in `data-raw/calibrate_forms.R` (`inst/calibration/forms.csv`)
+  measures the default rules on growth rate and acceleration cycles (60
+  replications per cell). Annual growth rate cycles are classified about as
+  well as level cycles (overall 49 to 98 percent against 52 to 96). The
+  acceleration form loses power as noise grows: true leaders are found
+  9 to 96 percent of the time (25 to 98 for levels). Noise series labelled
+  leading stay at or below 2.5 percent in every form, but in the noisiest
+  cells they exceed the 1.5 percent target of the level defaults (1.7 to
+  2.5 percent).
+* New generics `apply_form()` and `default_filter()`; specifications saved
+  before 0.7.0 are read as `level_form()`.
+
+## HP smoother
+
+* New filter `hp_smoother(period)`: the Hodrick-Prescott trend with a short
+  cut-off (default one year), which smooths a series without removing a
+  trend. It is the default filter of the growth and acceleration forms.
+
+## Interface
+
+* Step 3 has a **Cycle form** entry (level, growth rate, acceleration) and,
+  for the last two, the lag (one year or one period). Choosing a growth or
+  acceleration form selects the HP smoother, whose period has its own
+  entry; a filter chosen by hand is kept. The exported script writes
+  `form = growth_form()` and `filter = hp_smoother()` and reproduces the
+  specification. The presentation panel shows the composite as a deviation
+  from the mean rate of the reference for these forms.
+* `oecd_spec(form = growth_form())` uses the HP smoother, as `cli_spec()`.
+
 # rcli 0.6.0
 
 The evaluation of candidates and the validation of the composite are

@@ -56,6 +56,12 @@ setMethod("show", "Aggregator", function(object) {
 setMethod("show", "CliSpec", function(object) {
   cat("<CliSpec> ", if (object@freq == 12) "monthly" else "quarterly",
       " composite leading indicator\n", sep = "")
+  form <- spec_form(object)
+  if (form_kind(form) != "level") {
+    cat("  form:        ", sub("^form: ", "", form_step(form, object@freq)),
+        " (experimental)\n",
+        sep = "")
+  }
   cat("  filter:      ", object@filter@label, "\n", sep = "")
   cat("  dating:      ", object@dater@label, "\n", sep = "")
   cat("  aggregation: ", object@aggregator@label, "\n", sep = "")

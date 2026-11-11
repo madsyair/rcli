@@ -146,6 +146,20 @@ setMethod("extract_cycle", "HPDoubleFilter", function(filter, x, ...) {
   as_ts_like(hp_trend_core(dev, hp_lambda(sp)), x)
 })
 
+# Does a filter remove the trend? Filters that only smooth (the HP smoother)
+# are meant for growth rate and acceleration forms, whose series have no
+# trend; with the level form their "cycle" would be the trend itself.
+setGeneric("removes_trend", function(filter) standardGeneric("removes_trend"))
+setMethod("removes_trend", "CycleFilter", function(filter) TRUE)
+setMethod("removes_trend", "HPSmoother", function(filter) FALSE)
+
+#' @rdname extract_cycle
+setMethod("extract_cycle", "HPSmoother", function(filter, x, ...) {
+  check_ts(x)
+  p <- resolve_default(filter@period, stats::frequency(x))
+  as_ts_like(hp_trend_core(as.numeric(x), hp_lambda(p)), x)
+})
+
 #' @rdname extract_cycle
 setMethod("extract_cycle", "CFFilter", function(filter, x, ...) {
   check_ts(x)

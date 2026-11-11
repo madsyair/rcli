@@ -3,8 +3,10 @@
 #' Applies, series by series on its own non-missing span: interpolation of
 #' internal gaps, optional seasonal adjustment of the original series with
 #' X-13ARIMA-SEATS, the transformation (`"auto"` takes logarithms of strictly
-#' positive series), outlier replacement, the extension of the series end
-#' with forecasts ([ar_extension()] by default), the cycle filter and the OECD
+#' positive series), outlier replacement, the cycle form of the
+#' specification (the level by default, or the growth rate or acceleration,
+#' see [growth_form()]), the extension of the series end with forecasts
+#' ([ar_extension()] by default), the cycle filter and the OECD
 #' normalisation (subtract the mean, divide by the mean absolute deviation).
 #' Every step is recorded in the `steps` slot.
 #'
@@ -74,6 +76,26 @@ cycle_one <- function(x, name, spec) {
   steps <- c(steps, out$step)
   core <- out$x
   fc <- out$forecast
+  # cycle form (F-08): after seasonal adjustment, transformation and
+  # outliers, before the extension and the filter; forecasts of the outlier
+  # treatment are put in the same form
+  form <- spec_form(spec)
+  logged <- any(grepl("^log", steps))
+  whole <- stats::ts(c(as.numeric(core), fc), start = stats::start(core),
+                     frequency = stats::frequency(core))
+  whole <- apply_form(form, whole, logged)
+  drop <- sum(cumprod(is.na(as.numeric(whole))))
+  keep <- length(core) - drop
+  if (keep < 3L * spec@freq) {
+    rcli_abort(sprintf(paste("Series '%s' has fewer than three years of",
+                             "observations in the %s form."), name,
+                       form@label), "rcli_error_short_series")
+  }
+  steps <- c(steps, form_step(form, spec@freq, logged))
+  core <- stats::window(whole, start = stats::time(whole)[drop + 1L],
+                        end = stats::time(whole)[length(core)])
+  fc <- utils::tail(as.numeric(whole), length(fc))
+  span[1] <- span[1] + drop
   kind <- "outlier treatment"
   if (length(fc) == 0L) {
     ext <- spec_extension(spec)

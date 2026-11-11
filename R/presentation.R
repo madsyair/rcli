@@ -23,6 +23,15 @@
 #' in the amplitude of the composite, and the trend is restored by adding
 #' them to the trend rather than by multiplying.
 #'
+#' With a growth rate or acceleration form ([growth_form()],
+#' [acceleration_form()]), the reference is its rate and the amplitude of
+#' the composite is in percentage points (the units of the rate):
+#' `amplitude_adjusted` and `reference_amplitude_adjusted` are 100 plus the
+#' deviation in percentage points, `trend_restored` and `reference_trend`
+#' are the mean rate of the reference plus that deviation and the mean rate
+#' itself, and the two rate-of-change columns are `NA`. The data frame then
+#' has an attribute `units` (`"growth"` or `"acceleration"`).
+#'
 #' The reference series in the output is the transformed one: seasonally
 #' adjusted and cleaned of outliers as in the specification, in the units
 #' of the original data, so that neither seasonality nor spikes enter the
@@ -70,6 +79,7 @@ cli_presentation <- function(x, composite = NULL) {
   ref <- x@cycles[[x@candidates@reference]]
   f <- stats::frequency(comp@cycle)
   amp_adj <- 100 + as.numeric(comp@cycle) * comp@amplitude
+  if (form_units(ref) != "level") return(rate_presentation(comp, ref, amp_adj))
   logged <- is_logged(ref)
   trend <- reference_trend(ref, x@spec)
   trend_level <- if (logged) exp(trend) else trend
@@ -99,7 +109,31 @@ cli_presentation <- function(x, composite = NULL) {
   )
 }
 
-is_logged <- function(cs) any(grepl("^log", cs@steps))
+# Growth rate and acceleration forms: the composite amplitude is in the
+# units of the reference rate (percentage points), so the composite is
+# shown around the mean rate of the reference; a rate of change of a rate
+# is not defined.
+rate_presentation <- function(comp, ref, amp_adj) {
+  orig <- as.numeric(ref@transformed)
+  centre <- rep(mean(orig, na.rm = TRUE), length(orig))
+  na <- rep(NA_real_, length(orig))
+  out <- data.frame(
+    time = as.numeric(stats::time(comp@cycle)),
+    amplitude_adjusted = amp_adj,
+    trend_restored = centre + amp_adj - 100,
+    rate_of_change = na,
+    reference = orig,
+    reference_amplitude_adjusted = 100 + orig - centre,
+    reference_trend = centre,
+    reference_rate_of_change = na
+  )
+  attr(out, "units") <- form_units(ref)
+  out
+}
+
+is_logged <- function(cs) {
+  any(grepl("^log", cs@steps)) && identical(form_units(cs), "level")
+}
 
 # Level of the transformed series of a CycleSeries: seasonally adjusted and
 # cleaned of outliers, in the units of the original data.

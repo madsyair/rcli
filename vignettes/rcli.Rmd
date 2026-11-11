@@ -253,6 +253,35 @@ spec_sa <- cli_spec(seasonal_adjust = TRUE, holidays = eid)
 which can differ from the official Indonesian dates by a day or two; use
 the official dates when you have them.
 
+### Growth rate and acceleration cycles (experimental)
+
+The OECD cycle is a growth cycle: the deviation of the level from its
+trend. Some studies use another reference, such as the year-on-year growth
+of household consumption or the change of that growth. `form` in
+`cli_spec()` takes the cycle from growth rates (`growth_form()`) or
+accelerations (`acceleration_form()`). The rate of a logged series is the
+log growth rate in percent; series in levels (rates, balances) are
+differenced in their own units. The form is applied after seasonal
+adjustment and outlier treatment, so rates are computed from seasonally
+adjusted series. Growth rates have little trend, so these forms are paired
+with `hp_smoother()`, which only smooths:
+
+```{r forms}
+spec_g <- cli_spec(freq = 12, form = growth_form())
+spec_g@filter
+tail(cli_cycles(cand, spec_g)$reference@steps, 4)
+```
+
+The thresholds of the classifiers were calibrated on level cycles, so the
+two new forms are experimental. `data-raw/calibrate_forms.R` measures the
+default rules on them:
+
+```{r forms-calibration}
+fm <- read.csv(system.file("calibration", "forms.csv", package = "rcli"))
+fm[, c("form", "freq", "noise_sd", "correct.leading", "false_leading",
+       "overall")]
+```
+
 ## 8. The OECD method and the defaults
 
 `oecd_spec()` sets every step as in the OECD system (Gyomai and Guidetti
@@ -262,7 +291,7 @@ of X-13), the TRAMO log/level test (`transform = "test"`), the median-lead
 classification with the OECD criteria of cyclical conformity and missed or
 extra cycles (`oecd_classifier()`), lag-shifting (`lag_shift = TRUE`) and
 the chained average growth of the components (`oecd_aggregate()`).
-`cli_presentation()` returns the three OECD forms of any composite:
+`cli_presentation()` returns the three OECD forms of a level composite:
 amplitude adjusted, trend restored and its 12-month rate of change.
 
 ```{r oecd, eval = FALSE}

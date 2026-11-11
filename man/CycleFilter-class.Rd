@@ -6,11 +6,13 @@
 \alias{CycleFilter}
 \alias{HPFilter-class}
 \alias{HPDoubleFilter-class}
+\alias{HPSmoother-class}
 \alias{CFFilter-class}
 \alias{BKFilter-class}
 \alias{HamiltonFilter-class}
 \alias{hp_filter}
 \alias{hp_double_filter}
+\alias{hp_smoother}
 \alias{cf_filter}
 \alias{bk_filter}
 \alias{hamilton_filter}
@@ -19,6 +21,8 @@
 hp_filter(lambda = NA)
 
 hp_double_filter(trend_period = NA, smooth_period = NA)
+
+hp_smoother(period = NA)
 
 cf_filter(pl = NA, pu = NA)
 
@@ -31,6 +35,9 @@ hamilton_filter(h = NA, p = NA)
 
 \item{trend_period, smooth_period}{Cut-off periods (in observations) of the
 two HP filters, or \code{NA} for the defaults.}
+
+\item{period}{Cut-off period (in observations) of the HP smoother, or
+\code{NA} for one year.}
 
 \item{pl, pu}{Lower and upper period (in observations) of the pass band, or
 \code{NA} for the defaults.}
@@ -67,6 +74,11 @@ random walk (Christiano and Fitzgerald 2003), keeping periods between \code{pl}
 and \code{pu} (defaults 1.5 and 8 years).
 \item \code{bk_filter()}: Baxter-King symmetric band-pass filter with \code{k} leads and
 lags (default 3 years); the first and last \code{k} values are missing.
+\item \code{hp_smoother()}: the HP trend at a short cut-off of \code{period}
+observations (default one year). It smooths without removing a trend,
+as the second step of the OECD double filter does, and is the default
+filter of the growth rate and acceleration forms (\linkS4class{CycleForm}).
+Formula F-09 in the package harness.
 \item \code{hamilton_filter()}: Hamilton (2018) regression filter; the cycle is the
 residual of a regression of \eqn{y_{t+h}} on \eqn{y_t, \dots,
   y_{t-p+1}}. Defaults: \code{h} = 2 years, \code{p} = 1 year.

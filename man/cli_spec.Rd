@@ -33,7 +33,8 @@ cli_spec(
   classifier = NULL,
   outliers = NULL,
   lag_shift = FALSE,
-  extension = NULL
+  extension = NULL,
+  form = NULL
 )
 }
 \arguments{
@@ -129,6 +130,15 @@ dropped.}
 \item{extension}{An \linkS4class{Extension}; default \code{\link[=ar_extension]{ar_extension()}}: each
 series is extended by one year of AR forecasts before the cycle filter.
 Use \code{\link[=no_extension]{no_extension()}} for the behaviour of rcli 0.1.x.}
+
+\item{form}{A \linkS4class{CycleForm}: \code{\link[=level_form]{level_form()}} (default, the growth
+cycle), \code{\link[=growth_form]{growth_form()}} (growth rate cycle) or \code{\link[=acceleration_form]{acceleration_form()}}.
+Without \code{filter}, the growth and acceleration forms use \code{\link[=hp_smoother]{hp_smoother()}}.
+The two new forms are experimental: the thresholds were calibrated for
+the level form. \code{\link[=update]{update()}} changes a filter left at the default of the
+old form to the default of the new one; a filter chosen by hand is
+kept. The level form with \code{\link[=hp_smoother]{hp_smoother()}} gives a warning, since that
+filter does not remove the trend.}
 }
 \value{
 A \linkS4class{CliSpec} object.
