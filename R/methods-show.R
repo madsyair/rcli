@@ -65,6 +65,9 @@ setMethod("show", "CliSpec", function(object) {
   cat("  filter:      ", object@filter@label, "\n", sep = "")
   cat("  dating:      ", object@dater@label, "\n", sep = "")
   cat("  aggregation: ", object@aggregator@label, "\n", sep = "")
+  if (identical(spec_amplitude(object), "sd")) {
+    cat("  amplitude:   standard deviation of the reference cycle\n")
+  }
   if (isTRUE(object@seasonal_adjust)) {
     hol <- if (methods::.hasSlot(object, "holidays")) object@holidays else
       list()

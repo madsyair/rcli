@@ -34,6 +34,14 @@
 #'   all components are observed, the result moves almost exactly like
 #'   the equal-weight mean; it differs at the ragged edge, where a missing
 #'   component changes the average growth instead of the average level.
+#'   With `growth = "log"` (the default since INC-15) the growth rates are
+#'   log differences and a counter-cyclical component enters as the
+#'   reciprocal of its original index, \eqn{100^2 / (100 + z)}, so that its
+#'   log growth is minus that of the original series. The OECD documents do
+#'   not give the formula; on the CLI of Indonesia this form reproduces the
+#'   published CLI with a correlation of 0.9998, against 0.998 for
+#'   `growth = "ratio"`, the arithmetic growth rates of rcli 0.7.0
+#'   (`data-raw/oecd_idn_validate.R`, `vignette("rcli")`).
 #' * `principal_component()` and `dynamic_factor()` fall back to
 #'   `equal_weight()` (chained at the ragged edge since 0.2.0) when there
 #'   are fewer than three complete rows per component.
@@ -58,6 +66,10 @@
 #'
 #' @param min_coverage Minimum share of components that must be observed at a
 #'   date for the composite to be computed.
+#' @param growth Growth rates chained by `oecd_aggregate()`: `"log"` (log
+#'   differences, reciprocal inversion) or `"ratio"` (arithmetic growth
+#'   rates of the normalised cycles plus 100, sign inversion, as in rcli
+#'   0.7.0).
 #' @param ragged_edge How `equal_weight()` fills the dates after the last
 #'   date at which all components are observed: `"chain"` (previous value
 #'   plus the average change of the components; default) or `"level"`
@@ -101,7 +113,15 @@ setClass("EqualWeight", contains = "Aggregator",
          prototype(ragged_edge = "level"))
 
 #' @rdname Aggregator-class
-setClass("OecdAggregate", contains = "Aggregator")
+setClass("OecdAggregate", contains = "Aggregator",
+         representation(growth = "character"),
+         prototype(growth = "ratio"))
+
+# Growth rule of an OECD aggregator; objects saved before INC-15 have none
+# and keep the arithmetic rule they were created with.
+aggregate_growth <- function(aggregator) {
+  if (methods::.hasSlot(aggregator, "growth")) aggregator@growth else "ratio"
+}
 
 #' @rdname Aggregator-class
 setClass("PrincipalComponent", contains = "Aggregator")
@@ -149,9 +169,22 @@ equal_weight <- function(min_coverage = 0.6,
 
 #' @rdname Aggregator-class
 #' @export
-oecd_aggregate <- function(min_coverage = 0.6) {
-  new_aggregator("OecdAggregate", "Chained average growth (OECD)",
-                 min_coverage)
+oecd_aggregate <- function(min_coverage = 0.6, growth = c("log", "ratio")) {
+  choices <- c("log", "ratio")
+  if (identical(growth, choices)) growth <- "log"
+  if (!is.character(growth) || length(growth) != 1L ||
+      !growth %in% choices) {
+    rcli_abort("`growth` must be \"log\" or \"ratio\".",
+               "rcli_error_argument")
+  }
+  ag <- new_aggregator("OecdAggregate",
+                       if (growth == "log") {
+                         "Chained average log growth (OECD)"
+                       } else {
+                         "Chained average growth (OECD)"
+                       }, min_coverage)
+  ag@growth <- growth
+  ag
 }
 
 #' @rdname Aggregator-class

@@ -238,7 +238,7 @@ names(filter_choices) <- c("OECD double Hodrick-Prescott", "Hodrick-Prescott",
 aggregator_choices <- c("equal", "equal_level", "oecd", "pca", "cb", "dfm")
 names(aggregator_choices) <- c("Equal weights, chained at the ragged edge",
                                "Equal weights, plain mean (rcli 0.1)",
-                               "Chained average growth (OECD)",
+                               "Chained average log growth (OECD)",
                                "First principal component",
                                "Conference Board", "Dynamic factor model")
 

@@ -43,8 +43,9 @@ treat_outliers(method, x, ...)
 filter; \code{NULL} means one year (12 months or 4 quarters). With 0 the
 regARIMA model gives no forecasts and the extension of the
 specification applies instead (since 0.2.0 \code{\link[=ar_extension]{ar_extension()}} by
-default; add \code{extension = no_extension()} for none). The OECD describes
-these forecasts as "short horizon" without giving the number.}
+default; add \code{extension = no_extension()} for none). The OECD uses
+series-specific horizons of 0 to 2 months (Nilsson and Gyomai 2011,
+para. 65), which \code{\link[=oecd_spec]{oecd_spec()}} follows with 2 months.}
 
 \item{critical}{Critical t-value of the outlier detection; \code{NULL} uses
 the program's default, which depends on the length of the series.}

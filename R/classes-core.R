@@ -47,6 +47,9 @@
 #'   before the cycle filter.
 #' @slot form A [CycleForm-class]: the cycle of the level, the growth rate
 #'   or the acceleration of each series.
+#' @slot amplitude Measure that matches the amplitude of the composite index
+#'   to that of the reference cycle: `"mad"` (mean absolute deviation) or
+#'   `"sd"` (standard deviation).
 #' @seealso [cli_spec()]
 #' @exportClass CliSpec
 setClass("CliSpec", representation(
@@ -62,10 +65,11 @@ setClass("CliSpec", representation(
   max_iter = "numeric", min_components = "numeric", horizon = "numeric",
   oos_cutoffs = "numeric", holidays = "list", classifier = "Classifier",
   outliers = "OutlierTreatment", lag_shift = "logical",
-  extension = "Extension", form = "CycleForm"
+  extension = "Extension", form = "CycleForm", amplitude = "character"
 ), prototype(holidays = list(), classifier = rcli_classifier(),
              outliers = robust_outliers(5), lag_shift = FALSE,
-             extension = no_extension(), form = level_form()))
+             extension = no_extension(), form = level_form(),
+             amplitude = "mad"))
 
 #' Reference and candidate series
 #'

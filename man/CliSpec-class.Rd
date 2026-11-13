@@ -78,6 +78,10 @@ before the cycle filter.}
 
 \item{\code{form}}{A \linkS4class{CycleForm}: the cycle of the level, the growth rate
 or the acceleration of each series.}
+
+\item{\code{amplitude}}{Measure that matches the amplitude of the composite index
+to that of the reference cycle: \code{"mad"} (mean absolute deviation) or
+\code{"sd"} (standard deviation).}
 }}
 
 \seealso{

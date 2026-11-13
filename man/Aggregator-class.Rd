@@ -18,7 +18,7 @@
 \usage{
 equal_weight(min_coverage = 0.6, ragged_edge = c("chain", "level"))
 
-oecd_aggregate(min_coverage = 0.6)
+oecd_aggregate(min_coverage = 0.6, growth = c("log", "ratio"))
 
 principal_component(min_coverage = 0.6)
 
@@ -34,6 +34,11 @@ date for the composite to be computed.}
 date at which all components are observed: \code{"chain"} (previous value
 plus the average change of the components; default) or \code{"level"}
 (plain mean, as in rcli 0.1.x).}
+
+\item{growth}{Growth rates chained by \code{oecd_aggregate()}: \code{"log"} (log
+differences, reciprocal inversion) or \code{"ratio"} (arithmetic growth
+rates of the normalised cycles plus 100, sign inversion, as in rcli
+0.7.0).}
 }
 \value{
 An \code{Aggregator} object.
@@ -75,6 +80,14 @@ chain restarts at the mean level of the available components. When
 all components are observed, the result moves almost exactly like
 the equal-weight mean; it differs at the ragged edge, where a missing
 component changes the average growth instead of the average level.
+With \code{growth = "log"} (the default since INC-15) the growth rates are
+log differences and a counter-cyclical component enters as the
+reciprocal of its original index, \eqn{100^2 / (100 + z)}, so that its
+log growth is minus that of the original series. The OECD documents do
+not give the formula; on the CLI of Indonesia this form reproduces the
+published CLI with a correlation of 0.9998, against 0.998 for
+\code{growth = "ratio"}, the arithmetic growth rates of rcli 0.7.0
+(\code{data-raw/oecd_idn_validate.R}, \code{vignette("rcli")}).
 \item \code{principal_component()} and \code{dynamic_factor()} fall back to
 \code{equal_weight()} (chained at the ragged edge since 0.2.0) when there
 are fewer than three complete rows per component.

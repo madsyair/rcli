@@ -89,6 +89,12 @@
 #'   old form to the default of the new one; a filter chosen by hand is
 #'   kept. The level form with [hp_smoother()] gives a warning, since that
 #'   filter does not remove the trend.
+#' @param amplitude How the composite index is scaled to the amplitude of
+#'   the reference cycle (in percent deviation from trend): `"mad"`
+#'   (default) gives the index the mean absolute deviation of the reference
+#'   cycle; `"sd"` gives it the standard deviation of the reference cycle
+#'   over their common dates, which reproduces the OECD amplitude-adjusted
+#'   CLI (see [oecd_spec()]). Only the index changes, not the cycle.
 #' @return A [CliSpec-class] object.
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
@@ -111,7 +117,8 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
                      max_iter = 10, min_components = 2, horizon = NA,
                      oos_cutoffs = numeric(0), holidays = list(),
                      classifier = NULL, outliers = NULL, lag_shift = FALSE,
-                     extension = NULL, form = NULL) {
+                     extension = NULL, form = NULL,
+                     amplitude = c("mad", "sd")) {
   check_frequency(freq)
   monthly <- freq == 12
   if (is(holidays, "HolidayEffect")) holidays <- list(holidays)
@@ -120,6 +127,7 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
   check_strategy(extension, "Extension", "extension")
   check_strategy(form, "CycleForm", "form")
   if (is.null(form)) form <- level_form()
+  if (identical(amplitude, c("mad", "sd"))) amplitude <- "mad"
   spec <- new_valid(
     "CliSpec",
     freq = as.numeric(freq),
@@ -187,7 +195,8 @@ cli_spec <- function(freq = 12, filter = NULL, dater = NULL,
     },
     lag_shift = lag_shift,
     extension = if (is.null(extension)) ar_extension() else extension,
-    form = form
+    form = form,
+    amplitude = amplitude
   )
   if (is(spec@outliers, "RobustOutliers")) {
     spec@outlier_threshold <- spec@outliers@threshold
@@ -237,7 +246,7 @@ upgrade_spec <- function(object) {
   old <- list(holidays = list(), classifier = rcli_classifier(),
               outliers = robust_outliers(object@outlier_threshold),
               lag_shift = FALSE, extension = no_extension(),
-              form = level_form())
+              form = level_form(), amplitude = "mad")
   for (nm in names(old)) {
     if (!methods::.hasSlot(object, nm)) attr(object, nm) <- old[[nm]]
   }
@@ -329,6 +338,11 @@ setValidity("CliSpec", function(object) {
   if (length(object@lag_shift) != 1L || is.na(object@lag_shift)) {
     msg <- c(msg, "`lag_shift` must be TRUE or FALSE.")
   }
+  if (methods::.hasSlot(object, "amplitude") &&
+      (length(object@amplitude) != 1L ||
+         !isTRUE(object@amplitude %in% c("mad", "sd")))) {
+    msg <- c(msg, "`amplitude` must be \"mad\" or \"sd\".")
+  }
   if (length(msg) == 0L) TRUE else msg
 })
 
@@ -386,8 +400,8 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' * outliers: TRAMO, additive outliers and transitory changes replaced by
 #'   estimates ([tramo_outliers()]);
 #' * logarithm or levels: TRAMO test (`transform = "test"`);
-#' * end of the series: TRAMO forecasts before the filter
-#'   ([tramo_outliers()]);
+#' * end of the series: two months of TRAMO forecasts before the filter
+#'   ([tramo_outliers()]; Nilsson and Gyomai 2011);
 #' * cycle: double Hodrick-Prescott filter, 12 to 120 months
 #'   ([hp_double_filter()]);
 #' * turning points: simplified Bry-Boschan ([bry_boschan()]);
@@ -396,10 +410,20 @@ setMethod("update", "CliSpec", function(object, ...) {
 #'   ([oecd_classifier()]; `classifier = oecd_classifier(conformity =
 #'   FALSE)` for the median lead alone, as in rcli 0.5.1);
 #' * lag-shifting: the leads of the components aligned (`lag_shift = TRUE`);
-#' * aggregation: chained average growth with the 60 percent rule
+#' * aggregation: chained average log growth with the 60 percent rule,
+#'   counter-cyclical components entering as reciprocals
 #'   ([oecd_aggregate()]);
-#' * presentation: amplitude adjusted, trend restored and 12-month rate of
-#'   change ([cli_presentation()]).
+#' * presentation: amplitude adjusted (scaled to the standard deviation of
+#'   the reference cycle, `amplitude = "sd"`), trend restored and 12-month
+#'   rate of change ([cli_presentation()]).
+#'
+#' The aggregation formula and the amplitude measure are not written out in
+#' the OECD documents; both were chosen because they reproduce the
+#' published CLI of Indonesia (correlation 0.9998 with the normalised CLI,
+#' every turning point on the same month, amplitude-adjusted index within
+#' a few hundredths of a point; `data-raw/oecd_idn_validate.R`). The
+#' settings of rcli 0.7.0 are `oecd_spec(forecast = 12, amplitude = "mad",
+#' aggregator = oecd_aggregate(growth = "ratio"))`.
 #'
 #' Seasonal adjustment, which the OECD applies only to series that are not
 #' already adjusted at the source, uses X-13ARIMA-SEATS (the successor of
@@ -418,6 +442,12 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' @param engine Engine of [tramo_outliers()] and of the log/level test.
 #' @param classifier An OECD [Classifier-class], by default
 #'   [oecd_classifier()].
+#' @param forecast Months of TRAMO forecasts appended before the filter
+#'   ([tramo_outliers()]); `NULL` means 2 months (1 quarter), the upper end
+#'   of the "forecast horizons from 0 to 2 month" that the OECD put in place
+#'   (Nilsson and Gyomai 2011, para. 65). Until INC-15 it was one year.
+#' @param amplitude Amplitude measure of the index (see [cli_spec()]); the
+#'   OECD amplitude-adjusted CLI matches standard deviations (`"sd"`).
 #' @param ... Further arguments of [cli_spec()]. With `form =`
 #'   [growth_form()] or [acceleration_form()] (experimental, not part of the
 #'   OECD method) the filter is [hp_smoother()], as in [cli_spec()].
@@ -425,6 +455,11 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' @references
 #' Gyomai, G. and Guidetti, E. (2012). *OECD System of Composite Leading
 #' Indicators*. OECD Publishing, Paris.
+#'
+#' Nilsson, R. and Gyomai, G. (2011). Cycle extraction: a comparison of the
+#' phase-average trend method, the Hodrick-Prescott and Christiano-Fitzgerald
+#' filters. *OECD Statistics Working Papers* 2011/04.
+#' \doi{10.1787/5kg9srt7f8g0-en}
 #' @seealso [cli_spec()] for the package defaults and the reasons they
 #'   differ (`vignette("rcli")`).
 #' @examples
@@ -441,9 +476,12 @@ setMethod("update", "CliSpec", function(object, ...) {
 #' @export
 oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
                       engine = c("auto", "tramo", "x13"),
-                      classifier = oecd_classifier(), ...) {
+                      classifier = oecd_classifier(), forecast = NULL,
+                      amplitude = c("sd", "mad"), ...) {
   check_frequency(freq)
   engine <- match.arg(engine)
+  if (identical(amplitude, c("sd", "mad"))) amplitude <- "sd"
+  if (is.null(forecast)) forecast <- if (freq == 12) 2 else 1
   if (!is(classifier, "OecdClassifier")) {
     rcli_abort("`classifier` must be an oecd_classifier().",
                "rcli_error_argument")
@@ -457,6 +495,8 @@ oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
            aggregator = oecd_aggregate(), transform = "test",
            seasonal_adjust = seasonal_adjust, holidays = holidays,
            min_median_lead = cls@coincident * freq / 12,
-           classifier = cls, outliers = tramo_outliers(engine = engine),
-           lag_shift = TRUE, extension = no_extension(), ...)
+           classifier = cls,
+           outliers = tramo_outliers(engine = engine, forecast = forecast),
+           lag_shift = TRUE, extension = no_extension(),
+           amplitude = amplitude, ...)
 }

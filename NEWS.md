@@ -1,21 +1,41 @@
 # rcli (development version)
 
+`oecd_spec()` now reproduces the OECD composite leading indicator: on the
+CLI of Indonesia, from the seven components the OECD publishes, the
+composite correlates 0.9998 with the published normalised CLI, every
+turning point falls on the same month, and the amplitude-adjusted index is
+on average 0.04 points from the published one (0.998 and 0.34 points with
+rcli 0.7.0). The defaults of `cli_spec()` do not change (FR-014).
+
+## OECD options
+
+* `oecd_aggregate(growth = "log")`, the new default: chained average log
+  growth, with counter-cyclical components entering as the reciprocal of
+  their original index (formula F-10). `growth = "ratio"` is the rule of
+  0.7.0. Aggregators saved before keep it.
+* `cli_spec(amplitude = c("mad", "sd"))`: the index can be scaled to the
+  standard deviation of the reference cycle instead of its mean absolute
+  deviation (F-11). The default stays `"mad"`; `oecd_spec()` uses `"sd"`.
+* `oecd_spec(forecast = NULL)`: two months (one quarter) of TRAMO
+  forecasts before the filter, the horizon the OECD adopted in 2008
+  (Nilsson and Gyomai 2011), instead of one year. The help of
+  `tramo_outliers()` no longer says that the OECD gives no horizon.
+* The settings of 0.7.0 are `oecd_spec(forecast = 12, amplitude = "mad",
+  aggregator = oecd_aggregate(growth = "ratio"))`.
+
 ## Validation
 
-* Replication of the OECD composite leading indicator of Indonesia, from
-  the OECD's own data (SDMX dataflows DF_CLI, DF_FINMARK, DF_CS and DF_QNA;
-  snapshot `data-raw/oecd_idn_fetch.R`, experiments
-  `data-raw/oecd_idn_validate.R`, results in
-  `inst/calibration/oecd-idn-*.csv` and section 8 of `vignette("rcli")`).
-  `oecd_aggregate()` reproduces the published CLI from its seven published
-  components (correlation 0.998, all 27 turning points on the same month);
-  `oecd_spec()` cycles of the original series correlate 0.90 to 0.99 with
-  the OECD cycles. Remaining differences of method are documented, not
-  changed: the OECD amplitude adjustment matches standard deviations
-  (rcli: mean absolute deviations), its aggregation is closest to chained
-  log growth with reciprocal inversion, and it publishes months below its
-  60 percent coverage rule. Two regression tests in `test-oecd.R` use the snapshot
-  (`tests/testthat/fixtures/oecd-idn.rds`). No change to the code.
+* Replication of the OECD CLI of Indonesia, from the OECD's own data (SDMX
+  dataflows DF_CLI, DF_FINMARK, DF_CS and DF_QNA; snapshot
+  `data-raw/oecd_idn_fetch.R`, experiments `data-raw/oecd_idn_validate.R`,
+  results in `inst/calibration/oecd-idn-*.csv` and section 8 of
+  `vignette("rcli")`). `oecd_spec()` cycles of the original series
+  correlate 0.90 to 0.99 with the OECD cycles. Still different: the OECD
+  published the last month below its 60 percent coverage rule. Regression
+  tests in `test-oecd.R` use the snapshot
+  (`tests/testthat/fixtures/oecd-idn.rds`).
+* `data-raw/compare_oecd.R` pins `oecd_aggregate(growth = "ratio")`, the
+  rule with which `inst/calibration/oecd-aggregation.csv` was produced.
 
 # rcli 0.7.0
 

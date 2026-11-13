@@ -33,12 +33,24 @@ pariwisata.
 | T6 | Klasifikasi | Aturan median *lead* saja: 5 *leading*, 2 *coincident*. Aturan OECD dengan kesesuaian siklus: hanya suku bunga yang *leading*, karena siklus ekstra melebihi `max_extra` 0,4. CLI terbitan OECD sendiri memiliki 11 titik balik ekstra terhadap 16 titik balik acuan (0,69) | `oecd_classifier()`, `max_extra` | rcli lebih ketat daripada praktik OECD |
 | T7 | Ekstraksi siklus | Dari seri asli, `oecd_spec()` menghasilkan siklus berkorelasi 0,90–0,99 dengan siklus OECD; siklus PDB (Denton–Cholette ke bulanan) menemukan 19 dari 19 titik balik acuan. Tanpa pencilan TRAMO, korelasi naik sedikit (0,92–0,99) | `cli_cycles()` | sama; selisih berasal dari data dan pencilan |
 
-## Keputusan yang menunggu maintainer
+## Kajian dokumen OECD (14 November 2026)
 
-1. T3: tambahkan pilihan ukuran amplitudo (`sd` atau `mad`) dan jadikan
-   `sd` bawaan `oecd_spec()`? Bawaan `cli_spec()` tidak berubah.
-2. T2: tambahkan pilihan laju log dengan pembalikan resiprokal pada
-   `oecd_aggregate()`? Bukti hanya dari satu negara; dokumen OECD hanya
-   menyebut "averaging the growth rates".
-3. T6: ambang `max_extra` untuk aturan OECD perlu dikaji dengan lebih
-   banyak negara sebelum diubah.
+| Dokumen | Isi yang relevan | Dampak pada rcli |
+|---|---|---|
+| Gyomai dan Guidetti (2012), *OECD System of Composite Leading Indicators* (sama dengan versi November 2008 yang dipresentasikan di UNSD 2009) | Agregasi: "averaging the growth rates … chained"; amplitudo: "rescales … to match the amplitudes"; normalisasi dengan simpangan absolut rata-rata; Bry–Boschan fase 5 dan siklus 15 bulan; aturan 60% | Sudah menjadi acuan; rumus laju, ukuran amplitudo, dan cara pembalikan tidak disebut |
+| Nilsson dan Gyomai (2011), *Cycle extraction* (OECD Statistics Working Papers 2011/04) | HP ganda 12–120 bulan sejak Desember 2008; "series specific stabilizing forecasting with forecast horizons from 0 to 2 month" (¶65); prakiraan panjang memperbesar revisi akhir (¶62) | `oecd_spec()` memakai prakiraan 12 bulan → diubah menjadi 2 bulan; dokumentasi `tramo_outliers()` keliru dan diperbaiki |
+| *OECD CLI Zone Aggregation Methodology* | Agregasi zona: indeks Laspeyres berantai tahunan dengan bobot PDB PPP; 60% bobot; CLI *trend restored* = CLI *amplitude adjusted* × tren acuan | Hanya untuk zona; rumus *trend restored* sama dengan `cli_presentation()` |
+| FAQ dan glosarium CLI OECD | λ = 133.107,94 dan 13,93 (sama dengan rcli); amplitudo "on average agrees" dengan acuan; normalisasi CLI dengan simpangan absolut rata-rata | Tidak ada rumus amplitudo maupun pembalikan |
+| *Handbook on Constructing Composite Indicators* (OECD/JRC 2008) | Menyatakan tidak membahas CLI; rumus normalisasi siklus sama (bagian 5.6) | Tidak berdampak |
+| *Interpreting OECD CLIs* (2020) | Tafsiran CLI di atas/bawah 100 dan arah perubahan bulanan | Tidak berdampak pada perhitungan |
+
+Kesimpulan: dokumen OECD tidak menetapkan rumus laju, cara pembalikan, dan ukuran amplitudo. Pilihan FR-014 diambil dari data OECD Indonesia (T2, T3), sedangkan horizon prakiraan diambil dari Nilsson dan Gyomai (2011).
+
+## Tindak lanjut (INC-15, FR-014)
+
+| Temuan | Perubahan | Hasil pada data Indonesia |
+|---|---|---|
+| T2 | `oecd_aggregate(growth = "log")` menjadi bawaan; `"ratio"` = aturan 0.7.0 | korelasi 0,998 → 0,9998; 27 dari 27 titik balik tetap |
+| T3 | `cli_spec(amplitude = "sd")`; `oecd_spec()` memakai `"sd"`, bawaan `cli_spec()` tetap `"mad"` | selisih rata-rata indeks *amplitude adjusted* 0,34 → 0,04 poin |
+| Nilsson dan Gyomai (2011) | `oecd_spec(forecast = NULL)` = 2 bulan (1 triwulan) | korelasi siklus harga saham dengan siklus OECD 0,976 → 0,985; suku bunga 0,943 → 0,947 |
+| T4, T6 | tidak diubah: dokumen OECD hanya menyebut aturan 60% dan tidak memberi ambang siklus ekstra | — |
