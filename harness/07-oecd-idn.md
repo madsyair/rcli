@@ -26,7 +26,7 @@ pariwisata.
 | No. | Tahap | Hasil | Kode rcli | Status |
 |---|---|---|---|---|
 | T1 | Agregasi | `oecd_aggregate()` dengan tanda OECD: korelasi 0,998 dengan CLI terbitan; 27 dari 27 titik balik pada bulan yang sama | `R/aggregate.R`, metode `OecdAggregate` | sama |
-| T2 | Rumus agregasi | rcli merantai laju aritmetika (z + 100) dan membalik tanda z. Laju log dengan pembalikan resiprokal memberi korelasi 0,9998; titik balik tetap sama | `R/aggregate.R`; `invert_cycle()` di `R/assessment.R` | varian, tidak berdampak pada titik balik |
+| T2 | Rumus agregasi | rcli merantai laju aritmetika (z + 100) dan membalik tanda z. Laju log dengan pembalikan resiprokal memberi korelasi 0,9999 (0,99985); titik balik tetap sama | `R/aggregate.R`; `invert_cycle()` di `R/assessment.R` | varian, tidak berdampak pada titik balik |
 | T3 | Penyesuaian amplitudo | CLI *amplitude adjusted* OECD = CLI ternormalisasi × 1,713, mendekati rasio simpangan baku (1,704). rcli memakai rasio simpangan absolut rata-rata (1,427), sehingga ayunan indeksnya sekitar 17% lebih kecil | `reference_amplitude()` di `R/aggregate.R` | varian; usul opsi `sd` |
 | T4 | Tepi kasar | OECD menerbitkan Oktober 2026 dengan 2 dari 6 komponen aktif (di bawah aturan 60%); rcli mengosongkan bulan itu | `coverage_mask()` | rcli mengikuti dokumen OECD |
 | T5 | Arah komponen | Dari data, rcli membalik kurs dan suku bunga seperti OECD, tetapi tidak membalik harga produsen (korelasi dengan PDB 0,07). Dengan `meta$sign`, hasil T1 kembali | penentuan tanda di `cli_assess()` | sesuai dokumentasi; anjuran: tanda dari rasional ekonomi |
@@ -50,7 +50,17 @@ Kesimpulan: dokumen OECD tidak menetapkan rumus laju, cara pembalikan, dan ukura
 
 | Temuan | Perubahan | Hasil pada data Indonesia |
 |---|---|---|
-| T2 | `oecd_aggregate(growth = "log")` menjadi bawaan; `"ratio"` = aturan 0.7.0 | korelasi 0,998 → 0,9998; 27 dari 27 titik balik tetap |
+| T2 | `oecd_aggregate(growth = "log")` menjadi bawaan; `"ratio"` = aturan 0.7.0 | korelasi 0,998 → 0,9999; 27 dari 27 titik balik tetap |
 | T3 | `cli_spec(amplitude = "sd")`; `oecd_spec()` memakai `"sd"`, bawaan `cli_spec()` tetap `"mad"` | selisih rata-rata indeks *amplitude adjusted* 0,34 → 0,04 poin |
 | Nilsson dan Gyomai (2011) | `oecd_spec(forecast = NULL)` = 2 bulan (1 triwulan) | korelasi siklus harga saham dengan siklus OECD 0,976 → 0,985; suku bunga 0,943 → 0,947 |
 | T4, T6 | tidak diubah: dokumen OECD hanya menyebut aturan 60% dan tidak memberi ambang siklus ekstra | — |
+
+## Acuan laju pertumbuhan dan contoh (INC-16, FR-014.6–7)
+
+| Pemeriksaan | Hasil pada data Indonesia |
+|---|---|
+| CLI *trend restored* OECD (LI TR IX) = AA × tren acuan (RS T) / 100 | rasio 0,999999–1,000001; rumus `cli_presentation()` untuk acuan dilog sama |
+| Laju 12 bulan komposit A1 dengan tren acuan OECD vs LI TR GY | korelasi 0,9999, selisih rata-rata 0,05 poin persen, 24 dari 24 titik balik |
+| `oecd_spec(form = growth_form())`, empat seri asli, acuan laju tahunan PDB | tidak ada komponen *leading*; komposit empat laju berkorelasi 0,90 dengan LI TR GY; laju CLI OECD mendahului siklus laju PDB 2 bulan (r 0,85) |
+
+Data contoh `inst/extdata/oecd-idn/` (termasuk LI TR IX dan LI TR GY) dan `vignette("oecd-indonesia")` menjalankan kedua acuan dalam sembilan langkah. Laporan kajian-pkrt `laporan/validasi-oecd.qmd` bagian "Acuan laju pertumbuhan" memuat angka di atas.

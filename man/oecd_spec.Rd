@@ -12,6 +12,8 @@ oecd_spec(
   classifier = oecd_classifier(),
   forecast = NULL,
   amplitude = c("sd", "mad"),
+  transform = "test",
+  filter = NULL,
   ...
 )
 }
@@ -33,6 +35,15 @@ of the "forecast horizons from 0 to 2 month" that the OECD put in place
 
 \item{amplitude}{Amplitude measure of the index (see \code{\link[=cli_spec]{cli_spec()}}); the
 OECD amplitude-adjusted CLI matches standard deviations (\code{"sd"}).}
+
+\item{transform}{Transformation before the filter (see \code{\link[=cli_spec]{cli_spec()}});
+the OECD log/level test (\code{"test"}) by default. \code{"none"} suits series
+that are already growth rates or percentages.}
+
+\item{filter}{A \linkS4class{CycleFilter} in place of the OECD double
+Hodrick-Prescott filter, for example \code{\link[=hp_smoother]{hp_smoother()}} for series that
+are already growth rates (FR-014.8). \code{NULL} keeps the OECD filter (or
+the default filter of the cycle form).}
 
 \item{...}{Further arguments of \code{\link[=cli_spec]{cli_spec()}}. With \verb{form =}
 \code{\link[=growth_form]{growth_form()}} or \code{\link[=acceleration_form]{acceleration_form()}} (experimental, not part of the

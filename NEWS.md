@@ -2,7 +2,7 @@
 
 `oecd_spec()` now reproduces the OECD composite leading indicator: on the
 CLI of Indonesia, from the seven components the OECD publishes, the
-composite correlates 0.9998 with the published normalised CLI, every
+composite correlates 0.9999 with the published normalised CLI, every
 turning point falls on the same month, and the amplitude-adjusted index is
 on average 0.04 points from the published one (0.998 and 0.34 points with
 rcli 0.7.0). The defaults of `cli_spec()` do not change (FR-014).
@@ -36,6 +36,33 @@ rcli 0.7.0). The defaults of `cli_spec()` do not change (FR-014).
   (`tests/testthat/fixtures/oecd-idn.rds`).
 * `data-raw/compare_oecd.R` pins `oecd_aggregate(growth = "ratio")`, the
   rule with which `inst/calibration/oecd-aggregation.csv` was produced.
+
+## Example data and interface
+
+* `inst/extdata/oecd-idn/`: the OECD series of Indonesia as one CSV file
+  per indicator (quarterly GDP, share prices, call-money rate, rupiah per
+  US dollar, consumer confidence) and `oecd_cli.csv` with the published
+  CLI (amplitude-adjusted, normalised, trend-restored and its 12-month
+  growth rate), the reference series and the seven components. Written by
+  `data-raw/oecd_idn_extdata.R` from the snapshot.
+* New `vignette("oecd-indonesia")`: the nine steps with `oecd_spec()` on
+  these files, against the deviation cycle of GDP and against the cycle of
+  its annual growth rate (`oecd_spec(form = growth_form())`), and the same
+  steps in the graphical interface.
+* The cycle form of step 3 now also applies to the OECD method: the
+  selector is no longer hidden when *Exactly as the OECD* is chosen, and
+  the exported script passes `form =` to `oecd_spec()` (FR-014.6). The
+  help text of the method says so in both languages.
+* Step 3 offers the engine of the TRAMO-type outliers for the OECD method
+  (automatic, TRAMO through RJDemetra, or X-13 through seasonal), passed
+  as `oecd_spec(engine =)` to the analysis and the exported script
+  (FR-014.7). Choosing X-13 gives the same results on every computer.
+* `oecd_spec(transform =, filter =)`: the OECD method on series that are
+  already growth rates or accelerations, for example
+  `oecd_spec(4, transform = "none", filter = hp_smoother(4))`; the
+  defaults stay the log/level test and the double HP filter. Step 3 of the
+  interface offers it as *Uploaded series are already growth rates*
+  (FR-014.8).
 
 # rcli 0.7.0
 

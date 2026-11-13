@@ -484,6 +484,29 @@ test_that("AC-FR-013.7: cycle form, growth lag and HP smoother in step 3", {
   })
 })
 
+test_that("FR-014.6: the OECD method takes the cycle form of step 3", {
+  skip_if_not_installed("shiny")
+  # the form is offered for both methods: it comes before the first panel
+  # shown only for the rcli method
+  html <- as.character(rcli:::app_ui("en"))
+  expect_lt(regexpr('id="form"', html, fixed = TRUE),
+            regexpr("input.method == &#39;rcli&#39;", html, fixed = TRUE))
+  with_step3(list(method = "oecd", form = "growth", growth_lag = "annual"),
+             function(rv, session) {
+    expect_true(3L %in% rv$done)
+    expect_s4_class(rv$spec@classifier, "OecdClassifier")
+    expect_s4_class(rv$spec@form, "GrowthForm")
+    expect_s4_class(rv$spec@filter, "HPSmoother")
+    expect_match(rv$spec_call, "oecd_spec(", fixed = TRUE)
+    expect_match(rv$spec_call, "form = growth_form()", fixed = TRUE)
+    expect_script_spec(rv)
+  })
+  with_step3(list(method = "oecd", form = "level"), function(rv, session) {
+    expect_s4_class(rv$spec@filter, "HPDoubleFilter")
+    expect_false(grepl("_form(", rv$spec_call, fixed = TRUE))
+  })
+})
+
 test_that("the form switches only a default filter (review R-13.7)", {
   skip_if_not_installed("shiny")
   sel <- character(0)
@@ -504,4 +527,45 @@ test_that("the form switches only a default filter (review R-13.7)", {
   })
   expect_identical(sel, c("filter hp_smoother", "filter hp_smoother",
                           "filter hp_double"))
+})
+
+test_that("FR-014.7: the OECD method takes the engine of the outliers", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("seasonal")
+  html <- as.character(rcli:::app_ui("en"))
+  expect_match(html, 'id="oecd_engine"', fixed = TRUE)
+  with_step3(list(method = "oecd", oecd_engine = "x13"),
+             function(rv, session) {
+    expect_true(3L %in% rv$done)
+    expect_identical(rv$spec@outliers@engine, "x13")
+    expect_match(rv$spec_call, 'engine = "x13"', fixed = TRUE)
+    expect_script_spec(rv)
+  })
+  with_step3(list(method = "oecd", oecd_engine = "auto"),
+             function(rv, session) {
+    expect_identical(rv$spec@outliers@engine, "auto")
+    expect_false(grepl("engine =", rv$spec_call, fixed = TRUE))
+  })
+})
+
+test_that("FR-014.8: the OECD method on uploaded rates", {
+  skip_if_not_installed("shiny")
+  skip_if_not_installed("seasonal")
+  html <- as.character(rcli:::app_ui("en"))
+  expect_match(html, 'id="oecd_rates"', fixed = TRUE)
+  with_step3(list(method = "oecd", oecd_rates = TRUE, oecd_smooth_period = 4),
+             function(rv, session) {
+    expect_true(3L %in% rv$done)
+    expect_identical(rv$spec@transform, "none")
+    expect_s4_class(rv$spec@filter, "HPSmoother")
+    expect_match(rv$spec_call, 'transform = "none"', fixed = TRUE)
+    expect_match(rv$spec_call, "filter = hp_smoother(period = 4)",
+                 fixed = TRUE)
+    expect_script_spec(rv)
+  })
+  with_step3(list(method = "oecd", oecd_rates = FALSE),
+             function(rv, session) {
+    expect_identical(rv$spec@transform, "test")
+    expect_false(grepl("filter =", rv$spec_call, fixed = TRUE))
+  })
 })

@@ -451,3 +451,34 @@ test_that("signs of the Indonesian components: data and meta$sign", {
   expect_setequal(a@inverted, c("LOCOEX", "LOCOST", "LOCOPP"))
   expect_true(all(as.data.frame(a)$sign_source == "meta"))
 })
+
+test_that("FR-014.6: the OECD example files of Indonesia read and align", {
+  dir <- system.file("extdata", "oecd-idn", package = "rcli")
+  files <- file.path(dir, c("gdp.csv", "share_prices.csv",
+                            "call_money_rate.csv", "rupiah_per_usd.csv",
+                            "consumer_confidence.csv"))
+  expect_true(all(file.exists(files)))
+  s <- read_cli_series(files)
+  expect_identical(unname(vapply(s, attr, "", "frequency")),
+                   c("quarterly", rep("monthly", 4)))
+  x <- cli_align(s, type = c(gdp = "flow", call_money_rate = "average"),
+                 reference = "gdp")
+  expect_identical(stats::frequency(x), 12)
+  o <- read_cli_data(file.path(dir, "oecd_cli.csv"))
+  expect_true(all(c("cli_amplitude_adjusted", "cli_normalised",
+                    "cli_trend_restored", "cli_growth_rate",
+                    "reference_normalised") %in% colnames(o)))
+})
+
+test_that("FR-014.8: oecd_spec takes a filter and a transformation", {
+  s <- oecd_spec(4, transform = "none", filter = hp_smoother(4))
+  expect_identical(s@transform, "none")
+  expect_s4_class(s@filter, "HPSmoother")
+  ref <- update(oecd_spec(4), transform = "none", filter = hp_smoother(4))
+  expect_identical(s, ref)
+  # the defaults are those of the OECD method
+  expect_identical(oecd_spec()@transform, "test")
+  expect_s4_class(oecd_spec()@filter, "HPDoubleFilter")
+  expect_s4_class(oecd_spec(form = growth_form())@filter, "HPSmoother")
+  expect_error(oecd_spec(filter = "hp"), class = "rcli_error_argument")
+})

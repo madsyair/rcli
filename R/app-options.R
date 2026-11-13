@@ -33,7 +33,8 @@ input_limits <- list(
   min_consistency = c(0, 1), max_missed = c(0, 1), max_extra = c(0, 1),
   alpha = c(0, 1), min_auc = c(0, 1), min_components = c(1, 100),
   max_iter = c(1, 100), hp_trend_period = c(2, 1200),
-  hp_smooth_period = c(2, 1200), hp_lambda = c(0, 1e10),
+  hp_smooth_period = c(2, 1200), oecd_smooth_period = c(2, 1200),
+  hp_lambda = c(0, 1e10),
   band_pl = c(2, 1200), band_pu = c(2, 1200), bk_k = c(1, 240),
   ham_h = c(1, 240), ham_p = c(1, 60), dater_window = c(1, 120),
   dater_min_phase = c(1, 120), dater_min_cycle = c(2, 240),
@@ -269,6 +270,14 @@ form_text <- function(input) {
   call_text(paste0(key, "_form"), list(lag = if (lag == "period") "1"))
 }
 
+# Engine of the TRAMO-type outliers of the OECD method; "auto" (TRAMO when
+# RJDemetra is installed, otherwise X-13) is the default of oecd_spec().
+engine_text <- function(input) {
+  e <- input$oecd_engine
+  if (is.null(e) || !e %in% c("tramo", "x13")) return(NULL)
+  deparse_value(e)
+}
+
 extension_text <- function(input) {
   if (isFALSE(input$extend)) return("no_extension()")
   call_text("ar_extension", list(h = num_in(input, "ar_h"),
@@ -294,7 +303,12 @@ spec_call <- function(input, freq) {
       max_iter = num_in(input, "max_iter"), oos_cutoffs = cut,
       classifier = if (isFALSE(input$oecd_conformity)) {
         "oecd_classifier(conformity = FALSE)"
-      })))
+      }, engine = engine_text(input),
+      transform = if (isTRUE(input$oecd_rates)) deparse_value("none"),
+      filter = if (isTRUE(input$oecd_rates)) {
+        call_text("hp_smoother", list(
+          period = num_in(input, "oecd_smooth_period")))
+      }, form = form_text(input))))
   }
   tramo <- identical(input$outlier_method, "tramo")
   assign_text("spec", "cli_spec", list(
