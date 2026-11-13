@@ -99,6 +99,7 @@
 | 2026-11-11 19:00 | INC-13 | A0 | — | komit 9d52d14, cabang didorong, PR #8 dibuka | — | A6 putaran 2 |
 | 2026-11-11 19:10 | INC-13 | A6 | G6 | CHANGES-REQUESTED putaran 2 (R-13.11–.12 major, 4 minor/nit) | 2/3 | A5 |
 | 2026-11-11 19:45 | INC-13 | A5, A0 | G4–G8 | R-13.11–.16 ditindaklanjuti; uji mutan baris prakiraan terbunuh; check 0/0/3 catatan, cakupan 95,7%, plot penyajian diperiksa (PNG) | 3/3 | tinjauan maintainer di PR #8 |
+| 2026-11-14 00:10 | INC-14 | A0, A4 | G4–G5 | audit: CLI Indonesia OECD (data SDMX); T1–T7 di `07-oecd-idn.md`; 2 uji regresi hijau; lint 0; check 0/0/3 catatan lingkungan | 1/3 | keputusan maintainer T2, T3, T6 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->

@@ -297,3 +297,63 @@ test_that("R3/R4: the forms of a reference that is not logged", {
     stats::sd(pr$amplitude_adjusted, na.rm = TRUE)
   expect_true(ratio > 0.5 && ratio < 2)
 })
+
+# ---- replication: the OECD CLI of Indonesia ---------------------------------
+# The OECD publishes the Indonesian CLI with its reference series and its
+# seven components as normalised cycles (SDMX dataflow DF_CLI; snapshot and
+# experiments in data-raw/oecd_idn_fetch.R and data-raw/oecd_idn_validate.R).
+# The published components are not inverted; the OECD inverts the exchange
+# rate, the short-term interest rate and producer prices before aggregating.
+oecd_idn <- function() {
+  f <- readRDS(test_path("fixtures", "oecd-idn.rds"))
+  x <- stats::ts(f$data, start = f$start, frequency = 12)
+  as_cycle <- function(nm) {
+    v <- x[, nm] - 100
+    new("CycleSeries", name = nm, original = v, transformed = v, cycle = v,
+        normalised = normalise_cycle(v), steps = "OECD normalised cycle")
+  }
+  comps <- grep("^LOCO", colnames(x), value = TRUE)
+  list(x = x, comps = comps,
+       cycles = stats::setNames(lapply(c("RS", comps), as_cycle),
+                                c("RS", comps)),
+       li = as_cycle("LI"))
+}
+
+test_that("oecd_aggregate() reproduces the OECD CLI of Indonesia", {
+  o <- oecd_idn()
+  cyc <- o$cycles
+  for (nm in c("LOCOEX", "LOCOST", "LOCOPP")) {
+    cyc[[nm]] <- invert_cycle(cyc[[nm]])
+  }
+  s <- oecd_spec()
+  ci <- cli_composite(cyc, o$comps, s, cyc$RS)
+  ok <- !is.na(ci@cycle) & !is.na(o$li@normalised)
+  # chained growth with a component ending in 2019 (LOCOPM): the published
+  # cycle is matched almost exactly, and every turning point on its month
+  expect_gt(stats::cor(ci@cycle[ok], o$li@normalised[ok]), 0.995)
+  tp <- function(v) {
+    as.data.frame(date_turning_points(s@dater, v))[, c("period", "type")]
+  }
+  expect_equal(tp(ci@cycle), tp(o$li@normalised))
+  # a plain average of the components is clearly worse
+  ew <- cli_composite(cyc, o$comps, update(s, aggregator = equal_weight()),
+                      cyc$RS)
+  expect_lt(stats::cor(ew@cycle[ok], o$li@normalised[ok]),
+            stats::cor(ci@cycle[ok], o$li@normalised[ok]))
+})
+
+test_that("signs of the Indonesian components: data and meta$sign", {
+  o <- oecd_idn()
+  meta <- data.frame(name = o$comps, rationale = "early_stage")
+  cand <- cli_candidates(o$x[, c("RS", o$comps)], "RS", meta = meta)
+  a <- cli_assess(cand, oecd_spec(), cycles = o$cycles)
+  # from the data, rcli inverts the exchange rate and the interest rate as
+  # the OECD does; producer prices barely co-move with GDP (r < 0.1), so
+  # their sign cannot come from the data
+  expect_setequal(a@inverted, c("LOCOEX", "LOCOST"))
+  meta$sign <- ifelse(o$comps %in% c("LOCOEX", "LOCOST", "LOCOPP"), -1, 1)
+  cand <- cli_candidates(o$x[, c("RS", o$comps)], "RS", meta = meta)
+  a <- cli_assess(cand, oecd_spec(), cycles = o$cycles)
+  expect_setequal(a@inverted, c("LOCOEX", "LOCOST", "LOCOPP"))
+  expect_true(all(as.data.frame(a)$sign_source == "meta"))
+})
