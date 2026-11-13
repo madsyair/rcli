@@ -1,4 +1,4 @@
-# rcli (development version)
+# rcli 0.8.0
 
 `oecd_spec()` now reproduces the OECD composite leading indicator: on the
 CLI of Indonesia, from the seven components the OECD publishes, the
