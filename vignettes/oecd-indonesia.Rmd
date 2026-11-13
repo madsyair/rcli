@@ -313,7 +313,12 @@ are in the folder printed by
 4. Steps 4 to 8 of the interface run the cycles, turning points,
    classification, composite and validation. Automatic mode keeps the
    interest rate in Part A and finds no leader in Part B; choose the four
-   components by hand for the composites above.
+   components by hand for the composites above. With the OECD method the
+   interface aligns the components by their median leads (OECD
+   lag-shifting) also in manual mode, so its composite equals
+   `cli_composite(cy, meta$name, spec, cy$gdp, shifts =
+   lag_shifts(meta$name, assessment(res)))` and differs slightly from the
+   unshifted composite of this vignette.
 5. Step 9 builds a composite coincident index, which this vignette does
    not need. Step 10 downloads the results, the OECD forms of
    presentation of step 9 above and an R script that reproduces them with

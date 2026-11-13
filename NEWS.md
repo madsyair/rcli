@@ -48,7 +48,8 @@ rcli 0.7.0). The defaults of `cli_spec()` do not change (FR-014).
 * New `vignette("oecd-indonesia")`: the nine steps with `oecd_spec()` on
   these files, against the deviation cycle of GDP and against the cycle of
   its annual growth rate (`oecd_spec(form = growth_form())`), and the same
-  steps in the graphical interface.
+  steps in the graphical interface (with a note that the interface
+  lag-shifts manual composites under the OECD method).
 * The cycle form of step 3 now also applies to the OECD method: the
   selector is no longer hidden when *Exactly as the OECD* is chosen, and
   the exported script passes `form =` to `oecd_spec()` (FR-014.6). The
