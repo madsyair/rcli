@@ -79,7 +79,9 @@ aggregation_rep <- function(seed, noise_sd, k = 2L) {
   ragged$lead_9@normalised[(last - k + 1L):last] <- NA
   out <- list()
   aggs <- list(level = equal_weight(ragged_edge = "level"),
-               chain = equal_weight(), oecd = oecd_aggregate())
+               chain = equal_weight(),
+               # the rule of rcli 0.7.0, with which the CSV was produced
+               oecd = oecd_aggregate(growth = "ratio"))
   for (agg in names(aggs)) {
     for (shift in c(FALSE, TRUE)) {
       s <- update(spec, aggregator = aggs[[agg]])

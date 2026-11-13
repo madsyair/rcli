@@ -149,6 +149,14 @@ Sumber: kajian *leading* dan *coincident indicator* PKRT (11 November 2026), yan
 - AC-FR-013.7 (GUI)  Langkah 3 menyediakan pilihan bentuk siklus (nilai, laju pertumbuhan, percepatan), lag laju (tahunan atau antarperiode), dan filter "HP smoother"; teks dalam dua bahasa; skrip ekspor menulis `form = growth_form(lag = ...)` dan `filter = hp_smoother(...)`; objek dari GUI sama dengan objek dari skrip (testServer). GUI menampilkan catatan bahwa bentuk laju dan percepatan masih eksperimental.
 - AC-FR-013.8 (dokumen)  `?cli_spec`, `?CycleForm-class`, `?CycleFilter-class`, NEWS, vinyet, dan pedoman menjelaskan bentuk baru, urutan langkahnya, dan status eksperimentalnya (ambang dikalibrasi untuk siklus pertumbuhan).
 
+### FR-014 — Opsi kecocokan dengan CLI terbitan OECD (increment INC-15)
+Sumber: validasi dengan CLI Indonesia dari API OECD (`harness/07-oecd-idn.md`, T2–T3) dan kajian empat dokumen OECD (Gyomai dan Guidetti 2012; Nilsson dan Gyomai 2011; *OECD CLI Zone Aggregation Methodology*; FAQ dan glosarium CLI OECD). Bawaan `cli_spec()` tidak berubah; `oecd_spec()` diubah agar mengikuti praktik OECD.
+- AC-FR-014.1 (amplitudo)  `cli_spec(amplitude = c("mad", "sd"))`, bawaan `"mad"` (perilaku 0.7.0). Dengan `"sd"`, faktor amplitudo = sd(siklus acuan dalam persen) / sd(siklus komposit ternormalisasi), keduanya pada tanggal yang sama-sama tersedia (F-11). Spesifikasi lama berperilaku `"mad"`; nilai lain → `rcli_error_argument`. `oecd_spec()` memakai `"sd"`.
+- AC-FR-014.2 (agregasi)  `oecd_aggregate(min_coverage = 0.6, growth = c("log", "ratio"))`. `"ratio"` adalah rumus 0.7.0 (rata-rata laju aritmetika z + 100, uji lama tetap). `"log"` merantai rata-rata selisih log; komponen yang dibalik masuk sebagai kebalikan indeksnya, 100²/(100 − z), sehingga laju lognya adalah negatif laju log seri asal (F-10). Objek yang disimpan sebelum INC-15 berperilaku `"ratio"`.
+- AC-FR-014.3 (prakiraan)  `oecd_spec(forecast = NULL)`: NULL berarti 2 bulan (1 triwulan), sesuai Nilsson dan Gyomai (2011, ¶65: "forecast horizons from 0 to 2 month"); bilangan bulat ≥ 0 diteruskan ke `tramo_outliers(forecast = )`. Dokumentasi `tramo_outliers()` diperbaiki.
+- AC-FR-014.4 (replikasi)  Dengan `oecd_spec()` dan tanda OECD, komposit dari tujuh komponen OECD berkorelasi > 0,9995 dengan CLI ternormalisasi terbitan OECD, semua titik baliknya sama, dan indeks *amplitude adjusted* rcli (acuan: rasio terhadap tren OECD) berbeda rata-rata < 0,1 poin dari CLI *amplitude adjusted* OECD (`test-oecd.R`, *fixture* `oecd-idn.rds`).
+- AC-FR-014.5 (dokumen)  `?oecd_spec`, `?oecd_aggregate`, `?cli_spec`, NEWS, vinyet bagian 8, dan `harness/07-oecd-idn.md` menjelaskan opsi dan dasarnya; skrip GUI yang memakai `oecd_spec()` atau `oecd_aggregate()` tetap mereproduksi objek GUI.
+
 ## Kebutuhan nonfungsional
 ### NFR-001 — Tanpa dependensi baru
 - AC-NFR-001.1  DESCRIPTION Imports tidak berubah; AR memakai `stats::ar`.
@@ -171,6 +179,8 @@ Sumber: kajian *leading* dan *coincident indicator* PKRT (11 November 2026), yan
 | F-07 | Logit rekursif luar sampel untuk peluang kontraksi, QPS, dan AUC | Estrella & Mishkin (1998); Diebold & Rudebusch (1989); Berge & Jordà (2011) | FR-012 |
 | F-08 | Bentuk laju pertumbuhan (selisih log × 100 atau selisih biasa) dan percepatan (selisih pertama laju) | Gyomai & Guidetti (2012, siklus pertumbuhan vs siklus laju pertumbuhan); definisi laju BPS | FR-013 |
 | F-09 | Penghalus HP: tren HP dengan λ(p) = [4(1 − cos 2π/p)²]⁻¹ | Hodrick & Prescott (1997); F-03; Gyomai & Guidetti (2012, tahap penghalusan HP ganda) | FR-013 |
+| F-10 | Rantai rata-rata laju log dengan pembalikan resiprokal | Gyomai & Guidetti (2012, p. 9: "averaging the growth rates … chained"); bentuk log dan resiprokal dari validasi OECD Indonesia | FR-014 |
+| F-11 | Faktor amplitudo rasio simpangan baku | Gyomai & Guidetti (2012, p. 9: "rescales … to match the amplitudes"); glosarium OECD; validasi OECD Indonesia | FR-014 |
 
 ## Di luar cakupan
 - Perpanjangan bermusim (SARIMA) dan prakiraan dari model multivariat.

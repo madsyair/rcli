@@ -15,8 +15,7 @@
 #               (quarterly; the OECD reference series is monthly GDP)
 # Output: data-raw/oecd-idn/oecd-idn.csv (long format),
 # data-raw/oecd-idn/SNAPSHOT (download date and queries) and the test
-# fixture tests/testthat/fixtures/oecd-idn.rds (the normalised CLI, reference
-# series and components, used by test-oecd.R).
+# fixture tests/testthat/fixtures/oecd-idn.rds (data-raw/oecd_idn_fixture.R).
 
 base <- "https://sdmx.oecd.org/public/rest/data/"
 queries <- c(
@@ -50,14 +49,4 @@ writeLines(c(paste("downloaded:", format(Sys.time(), "%Y-%m-%d %H:%M %Z")),
            "data-raw/oecd-idn/SNAPSHOT")
 print(table(paste(all$dataflow, all$measure, all$adjustment)))
 
-# test fixture: the OECD normalised cycles, monthly, from 1990-01
-nor <- all[all$dataflow == "DF_CLI" & all$adjustment == "NOR", ]
-months <- format(seq(as.Date("1990-01-01"),
-                     as.Date(paste0(max(nor$period), "-01")), by = "month"),
-                 "%Y-%m")
-fixture <- sapply(split(nor, nor$measure), function(s) {
-  s$value[match(months, s$period)]
-})
-saveRDS(list(snapshot = readLines("data-raw/oecd-idn/SNAPSHOT")[1],
-             start = c(1990L, 1L), data = round(fixture, 5)),
-        "tests/testthat/fixtures/oecd-idn.rds", version = 2)
+source("data-raw/oecd_idn_fixture.R")

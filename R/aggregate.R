@@ -57,19 +57,28 @@ chain_ragged_edge <- function(z, comp, min_coverage) {
 #' @rdname cli_composite
 setMethod("aggregate_components", "OecdAggregate",
           function(aggregator, z, levels, spec) {
+  log_growth <- identical(aggregate_growth(aggregator), "log")
   lv <- z + 100
+  if (log_growth) {
+    # inverted components enter as the reciprocal of their original index
+    # 100 - z (z is already inverted), F-10
+    sgn <- attr(levels, "sign")
+    if (is.null(sgn)) sgn <- rep(1, ncol(z))
+    for (j in which(sgn < 0)) lv[, j] <- 100^2 / (100 - z[, j])
+  }
   n <- nrow(lv)
-  growth <- rbind(NA_real_, lv[-1, , drop = FALSE] / lv[-n, , drop = FALSE] -
-                    1)
+  ratio <- lv[-1, , drop = FALSE] / lv[-n, , drop = FALSE]
+  growth <- rbind(NA_real_, if (log_growth) log(ratio) else ratio - 1)
   covered <- coverage_mask(z, aggregator@min_coverage)
   g <- rowMeans(growth, na.rm = TRUE)
   g[!is.finite(g)] <- NA_real_
+  step <- if (log_growth) exp(g) else 1 + g
   index <- rep(NA_real_, n)
   for (t in seq_len(n)) {
     if (!covered[t]) next
     chain <- t > 1L && !is.na(index[t - 1L]) && !is.na(g[t])
     index[t] <- if (chain) {
-      index[t - 1L] * (1 + g[t])
+      index[t - 1L] * step[t]
     } else {
       mean(lv[t, ], na.rm = TRUE)
     }
@@ -290,7 +299,11 @@ cli_composite <- function(cycles, components, spec, reference = NULL,
   }
   agg <- aggregate_components(spec@aggregator, z, levels, spec)
   cyc <- normalise_cycle(agg$cycle)
-  amp <- if (is.null(reference)) 1 else reference_amplitude(reference)
+  amp <- 1
+  if (!is.null(reference)) {
+    amp <- reference_amplitude(reference, as_ts_like(cyc, template),
+                               spec_amplitude(spec))
+  }
   index <- if (is.null(agg$index)) 100 + cyc * amp else agg$index
   new("CompositeIndex", index = as_ts_like(index, template),
       cycle = as_ts_like(cyc, template), components = components,
@@ -348,15 +361,38 @@ lag_shifts <- function(components, assessment) {
   stats::setNames(round(lead - min(lead)), components)
 }
 
-# Amplitude of the reference cycle in percent deviation from trend; for the
-# growth rate and acceleration forms, in percentage points (AC-FR-013.5).
-reference_amplitude <- function(reference) {
+# Reference cycle in percent deviation from trend; for the growth rate and
+# acceleration forms, in percentage points (AC-FR-013.5).
+reference_percent <- function(reference) {
   cyc <- as.numeric(reference@cycle)
-  if (!identical(form_units(reference), "level")) return(mean_abs_dev(cyc))
+  if (!identical(form_units(reference), "level")) return(cyc)
   if (is_logged(reference)) {
-    100 * mean_abs_dev(cyc)
+    100 * cyc
   } else {
-    100 * mean_abs_dev(cyc) / mean(abs(as.numeric(reference@transformed)),
-                                   na.rm = TRUE)
+    100 * cyc / mean(abs(as.numeric(reference@transformed)), na.rm = TRUE)
   }
+}
+
+# Amplitude factor of the composite (F-11): "mad", the mean absolute
+# deviation of the reference cycle (the normalised composite has mean
+# absolute deviation 1); "sd", the ratio of the standard deviations of the
+# reference cycle and the composite cycle at their common dates.
+reference_amplitude <- function(reference, cycle = NULL, measure = "mad") {
+  r <- reference_percent(reference)
+  if (identical(measure, "mad") || is.null(cycle)) return(mean_abs_dev(r))
+  r <- stats::ts(r, start = stats::start(reference@cycle),
+                 frequency = stats::frequency(reference@cycle))
+  both <- tryCatch(stats::ts.intersect(r, cycle), error = function(e) NULL)
+  ok <- if (is.null(both)) logical(0) else stats::complete.cases(both)
+  if (sum(ok) >= 3L) {
+    stats::sd(both[ok, 1]) / stats::sd(both[ok, 2])
+  } else {
+    stats::sd(r, na.rm = TRUE) / stats::sd(as.numeric(cycle), na.rm = TRUE)
+  }
+}
+
+# Amplitude measure of a specification; those saved before INC-15 have
+# none and use the mean absolute deviation.
+spec_amplitude <- function(spec) {
+  if (methods::.hasSlot(spec, "amplitude")) spec@amplitude else "mad"
 }

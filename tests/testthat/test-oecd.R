@@ -71,7 +71,7 @@ test_that("the default classifier is unchanged", {
 })
 
 test_that("OECD aggregation chains the average growth of the components", {
-  s <- update(spec, aggregator = oecd_aggregate())
+  s <- update(spec, aggregator = oecd_aggregate(growth = "ratio"))
   z <- cbind(a = c(1, 2, 1, 0), b = c(0, 1, 3, 2))
   out <- aggregate_components(s@aggregator, z, NULL, s)
   lv <- z + 100
@@ -85,7 +85,7 @@ test_that("OECD aggregation chains the average growth of the components", {
 })
 
 test_that("OECD aggregation uses available growth rates at a ragged edge", {
-  s <- update(spec, aggregator = oecd_aggregate())
+  s <- update(spec, aggregator = oecd_aggregate(growth = "ratio"))
   z <- cbind(a = c(0, 1, 2, 3), b = c(0, 1, 2, 3), c = c(0, 1, 2, NA))
   out <- aggregate_components(s@aggregator, z, NULL, s)$cycle
   expect_equal(out[4] / out[3], 103 / 102)
@@ -98,6 +98,83 @@ test_that("OECD aggregation uses available growth rates at a ragged edge", {
   expect_equal(out2[5] / out2[4], 104 / 103)
   expect_true(all(is.na(aggregate_components(
     s@aggregator, cbind(a = c(NA, 1), b = c(NA, NA)), NULL, s)$cycle)))
+})
+
+test_that("FR-014.2: oecd_aggregate(growth = 'log') chains average log growth", {
+  s <- update(spec, aggregator = oecd_aggregate())
+  expect_equal(s@aggregator@growth, "log")
+  z <- cbind(a = c(1, 2, 1, 0), b = c(0, 1, 3, 2))
+  out <- aggregate_components(s@aggregator, z, NULL, s)
+  lv <- z + 100
+  g <- rowMeans(log(lv[-1, ] / lv[-4, ]))
+  expect_equal(out$cycle, 100.5 * cumprod(c(1, exp(g))), tolerance = 1e-12)
+  same <- cbind(a = c(1, 2, 1, 0), b = c(1, 2, 1, 0))
+  expect_equal(aggregate_components(s@aggregator, same, NULL, s)$cycle,
+               c(1, 2, 1, 0) + 100, tolerance = 1e-12)
+  # an inverted component enters as the reciprocal of its original index:
+  # its log growth is minus that of the original series (F-10)
+  orig <- c(1, 2, 1, 0)
+  inv <- cbind(a = orig, b = -orig)
+  lev <- matrix(NA_real_, 4, 2)
+  attr(lev, "sign") <- c(1, -1)
+  out_inv <- aggregate_components(s@aggregator, inv, lev, s)$cycle
+  # the two log growth rates cancel: the index stays at its first value,
+  # the mean of 101 and the reciprocal index 100^2 / 101
+  expect_equal(out_inv, rep((101 + 100^2 / 101) / 2, 4), tolerance = 1e-12)
+  # the ragged edge and the 60 percent rule work as with "ratio"
+  z2 <- cbind(a = c(0, 1, NA, 3, 4), b = c(0, 1, NA, NA, 4),
+              c = c(0, 1, NA, 3, 4))
+  out2 <- aggregate_components(s@aggregator, z2, NULL, s)$cycle
+  expect_true(is.na(out2[3]))
+  expect_equal(out2[5] / out2[4], 104 / 103, tolerance = 1e-12)
+})
+
+test_that("FR-014.2: growth argument and objects saved before it", {
+  expect_error(oecd_aggregate(growth = "geometric"),
+               class = "rcli_error_argument")
+  old <- oecd_aggregate()
+  attr(old, "growth") <- NULL
+  s <- update(spec, aggregator = old)
+  z <- cbind(a = c(1, 2, 1, 0), b = c(0, 1, 3, 2))
+  expect_equal(aggregate_components(old, z, NULL, s)$cycle,
+               aggregate_components(oecd_aggregate(growth = "ratio"), z,
+                                    NULL, s)$cycle)
+  expect_output(show(oecd_aggregate()), "log")
+})
+
+test_that("FR-014.1: amplitude by standard deviations", {
+  expect_equal(cli_spec()@amplitude, "mad")
+  expect_equal(oecd_spec()@amplitude, "sd")
+  expect_error(cli_spec(amplitude = "range"), class = "rcli_error_argument")
+  expect_error(update(spec, amplitude = c("sd", "mad")),
+               class = "rcli_error_argument")
+  ref <- cyc$reference
+  ci_mad <- cli_composite(cyc, comps, spec, ref)
+  ci_sd <- cli_composite(cyc, comps, update(spec, amplitude = "sd"), ref)
+  expect_equal(ci_mad@cycle, ci_sd@cycle)
+  r <- 100 * as.numeric(ref@cycle)
+  c0 <- as.numeric(ci_sd@cycle)
+  ok <- !is.na(r) & !is.na(c0)
+  expect_equal(ci_sd@amplitude, stats::sd(r[ok]) / stats::sd(c0[ok]))
+  expect_equal(stats::sd(as.numeric(ci_sd@index)[ok] - 100),
+               stats::sd(r[ok]), tolerance = 1e-10)
+  # default unchanged: mean absolute deviation of the reference cycle
+  expect_equal(ci_mad@amplitude, mean_abs_dev(r))
+  # a specification saved before the slot behaves as "mad"
+  old <- spec
+  attr(old, "amplitude") <- NULL
+  expect_equal(cli_composite(cyc, comps, old, ref)@amplitude,
+               ci_mad@amplitude)
+  expect_equal(update(old, min_lead = 3)@amplitude, "mad")
+  expect_output(show(update(spec, amplitude = "sd")), "standard deviation")
+})
+
+test_that("FR-014.3: oecd_spec forecasts two months ahead", {
+  expect_equal(oecd_spec()@outliers@forecast, 2)
+  expect_equal(oecd_spec(4)@outliers@forecast, 1)
+  expect_equal(oecd_spec(forecast = 0)@outliers@forecast, 0)
+  expect_equal(oecd_spec(forecast = 12)@outliers@forecast, 12)
+  expect_error(oecd_spec(forecast = -1), class = "rcli_error_argument")
 })
 
 test_that("cli_composite applies lag shifts", {
@@ -319,27 +396,44 @@ oecd_idn <- function() {
        li = as_cycle("LI"))
 }
 
-test_that("oecd_aggregate() reproduces the OECD CLI of Indonesia", {
+test_that("FR-014.4: oecd_spec() reproduces the OECD CLI of Indonesia", {
   o <- oecd_idn()
   cyc <- o$cycles
   for (nm in c("LOCOEX", "LOCOST", "LOCOPP")) {
     cyc[[nm]] <- invert_cycle(cyc[[nm]])
   }
+  # the reference cycle as the OECD publishes it: ratio to trend (percent)
+  rt <- o$x[, "RS_RT"]
+  ref <- new("CycleSeries", name = "RS", original = rt, transformed = rt,
+             cycle = rt - 100, normalised = normalise_cycle(rt - 100),
+             steps = "OECD ratio to trend")
   s <- oecd_spec()
-  ci <- cli_composite(cyc, o$comps, s, cyc$RS)
-  ok <- !is.na(ci@cycle) & !is.na(o$li@normalised)
-  # chained growth with a component ending in 2019 (LOCOPM): the published
-  # cycle is matched almost exactly, and every turning point on its month
-  expect_gt(stats::cor(ci@cycle[ok], o$li@normalised[ok]), 0.995)
+  ci <- cli_composite(cyc, o$comps, s, ref)
+  li <- as.numeric(o$li@normalised)
+  ok <- !is.na(ci@cycle) & !is.na(li)
+  # chained log growth, reciprocal inversion: the published cycle
+  expect_gt(stats::cor(as.numeric(ci@cycle)[ok], li[ok]), 0.9995)
   tp <- function(v) {
     as.data.frame(date_turning_points(s@dater, v))[, c("period", "type")]
   }
   expect_equal(tp(ci@cycle), tp(o$li@normalised))
-  # a plain average of the components is clearly worse
+  # amplitude by standard deviations: the published amplitude-adjusted CLI
+  aa <- as.numeric(o$x[, "LI_AA"])
+  ok_aa <- ok & !is.na(aa)
+  expect_lt(mean(abs(as.numeric(ci@index)[ok_aa] - aa[ok_aa])), 0.1)
+  expect_gt(mean(abs(as.numeric(
+    cli_composite(cyc, o$comps, update(s, amplitude = "mad"), ref)@index
+  )[ok_aa] - aa[ok_aa])), 0.2)
+  # the 0.7.0 rule is close, a plain average is clearly worse
+  ratio <- cli_composite(cyc, o$comps,
+                         update(s, aggregator = oecd_aggregate(
+                           growth = "ratio")), ref)
   ew <- cli_composite(cyc, o$comps, update(s, aggregator = equal_weight()),
-                      cyc$RS)
-  expect_lt(stats::cor(ew@cycle[ok], o$li@normalised[ok]),
-            stats::cor(ci@cycle[ok], o$li@normalised[ok]))
+                      ref)
+  r_ratio <- stats::cor(as.numeric(ratio@cycle)[ok], li[ok])
+  expect_gt(r_ratio, 0.995)
+  expect_lt(r_ratio, stats::cor(as.numeric(ci@cycle)[ok], li[ok]))
+  expect_lt(stats::cor(as.numeric(ew@cycle)[ok], li[ok]), r_ratio)
 })
 
 test_that("signs of the Indonesian components: data and meta$sign", {

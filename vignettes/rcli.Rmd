@@ -381,35 +381,41 @@ are; in the second, the original series go through `oecd_spec()`.
 ```{r oecd-idn-composite}
 idn <- read.csv(system.file("calibration", "oecd-idn-composite.csv",
                             package = "rcli"))
-idn[, c("composite", "corr_lag0", "matched", "ref_tp", "ref_ccf_lag",
-        "ref_ccf_r")]
+idn[, c("composite", "corr_lag0", "aa_gap", "matched", "ref_tp",
+        "ref_ccf_lag")]
 ```
 
 With the OECD signs (the exchange rate, the interest rate and producer
-prices inverted), `oecd_aggregate()` reproduces the published CLI: the
-correlation is 0.998 and all 27 turning points fall on the same month
-(A1). A plain average is close but not as close (A4). From the data alone
-rcli inverts the exchange rate and the interest rate, as the OECD does,
-but not producer prices, whose cycle barely moves with GDP (A2); given as
-`meta$sign`, the OECD sign gives back A1 (A3). The sign of a weak
-component should therefore come from its economic rationale.
+prices inverted), `oecd_spec()` reproduces the published CLI (A1): the
+correlation with the normalised CLI is 0.9998, all 27 turning points fall
+on the same month, and the amplitude-adjusted index (`aa_gap`, scaled to
+the OECD ratio-to-trend reference) is on average 0.04 points from the
+published one. The rule of rcli 0.7.0 (A0) had the same turning points
+but a correlation of 0.998 and an index 0.34 points away; a plain average
+is further off (A4). From the data alone rcli inverts the exchange rate
+and the interest rate, as the OECD does, but not producer prices, whose
+cycle barely moves with GDP (A2); given as `meta$sign`, the OECD sign
+gives back A1 (A3). The sign of a weak component should therefore come
+from its economic rationale.
 
-Three differences of method remain (part C of the script):
+Part C of the script shows where A0 and A1 differ:
 
 ```{r oecd-idn-gaps}
 read.csv(system.file("calibration", "oecd-idn-gaps.csv", package = "rcli"))
 ```
 
-`oecd_aggregate()` chains the arithmetic growth of the normalised cycles
-plus 100 and inverts a component by changing its sign. Chaining log growth
-and inverting by the reciprocal brings the correlation from 0.998 to
-0.9998; the turning points are the same either way. The OECD
-amplitude-adjusted CLI is the normalised CLI times 1.71, the ratio of the
-standard deviations of the reference cycle and the CLI; rcli matches the
-mean absolute deviations, 1.43 over the same months, so its
-amplitude-adjusted index swings about 17 percent less. Finally, the OECD
-published the last month with 2 of the 6 live components, below its own
-60 percent rule, while rcli leaves that month missing.
+The OECD documents say that the growth rates of the components are
+averaged and chained and that the CLI is rescaled "to match the
+amplitudes" of the reference series, without the formulas. Chained log
+growth with counter-cyclical components entering as reciprocals
+(`oecd_aggregate(growth = "log")`) fits the published CLI best, and the
+published amplitude-adjusted CLI is the normalised CLI times 1.71, the
+ratio of standard deviations (1.70; the mean absolute deviations give
+1.43). `oecd_spec()` therefore uses both, with `amplitude = "sd"`, and two
+months of TRAMO forecasts, the horizon the OECD adopted (Nilsson and
+Gyomai 2011). One difference remains: the OECD published the last month
+with 2 of the 6 live components, below its own 60 percent rule, while
+rcli leaves that month missing.
 
 ```{r oecd-idn-components}
 cmp_idn <- read.csv(system.file("calibration", "oecd-idn-components.csv",
@@ -422,8 +428,8 @@ cmp_idn[, c("component", "A_class_oecd_rule", "A_class_oecd_median_rule",
 From quarterly GDP (Denton-Cholette to months) and the original series,
 `oecd_spec()` gives cycles that correlate 0.90 to 0.99 with the OECD
 cycles; the GDP cycle matches all 19 reference turning points. The
-composite of the four (B1) leads GDP by four months at the
-cross-correlation peak, as the OECD cycles of the same four do (A5).
+composite of the four (B1) leads GDP by three months at the
+cross-correlation peak, the OECD cycles of the same four (A5) by four.
 Classification differs most. By the median lead alone, five of the seven
 OECD components are leading and two coincident; with the conformity
 criteria of the OECD rule only the interest rate passes, because the
@@ -533,6 +539,11 @@ heteroskedasticity-autocorrelation robust tests. *Econometric Theory*,
 Marcellino, M. (2006). Leading indicators. In G. Elliott, C. W. J. Granger and
 A. Timmermann (eds.), *Handbook of Economic Forecasting*, Vol. 1, 879–960.
 Elsevier.
+
+Nilsson, R. and Gyomai, G. (2011). Cycle extraction: a comparison of the
+phase-average trend method, the Hodrick-Prescott and Christiano-Fitzgerald
+filters. *OECD Statistics Working Papers* 2011/04.
+https://doi.org/10.1787/5kg9srt7f8g0-en
 
 Pesaran, M. H. and Timmermann, A. (2009). Testing dependence among serially
 correlated multicategory variables. *Journal of the American Statistical

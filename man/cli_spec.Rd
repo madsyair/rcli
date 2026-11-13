@@ -34,7 +34,8 @@ cli_spec(
   outliers = NULL,
   lag_shift = FALSE,
   extension = NULL,
-  form = NULL
+  form = NULL,
+  amplitude = c("mad", "sd")
 )
 }
 \arguments{
@@ -139,6 +140,13 @@ the level form. \code{\link[=update]{update()}} changes a filter left at the def
 old form to the default of the new one; a filter chosen by hand is
 kept. The level form with \code{\link[=hp_smoother]{hp_smoother()}} gives a warning, since that
 filter does not remove the trend.}
+
+\item{amplitude}{How the composite index is scaled to the amplitude of
+the reference cycle (in percent deviation from trend): \code{"mad"}
+(default) gives the index the mean absolute deviation of the reference
+cycle; \code{"sd"} gives it the standard deviation of the reference cycle
+over their common dates, which reproduces the OECD amplitude-adjusted
+CLI (see \code{\link[=oecd_spec]{oecd_spec()}}). Only the index changes, not the cycle.}
 }
 \value{
 A \linkS4class{CliSpec} object.

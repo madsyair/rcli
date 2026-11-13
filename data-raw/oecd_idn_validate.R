@@ -7,8 +7,11 @@
 # Two experiments:
 #   A. OECD cycles in: the OECD's normalised components and reference cycle
 #      go into rcli as cycles. Tests the sign of each component, the
-#      classification, the OECD aggregation (oecd_aggregate()) and turning
-#      points against the published CLI.
+#      classification, the OECD aggregation (oecd_aggregate()), the
+#      amplitude adjustment and turning points against the published CLI.
+#      A0 is the rule of rcli 0.7.0 (arithmetic growth, mean absolute
+#      deviation); A1 the oecd_spec() of FR-014 (log growth with reciprocal
+#      inversion, standard deviation).
 #   B. Original series in: the four components whose original series the
 #      OECD also publishes (share prices, call-money rate, rupiah per US
 #      dollar, consumer confidence) and quarterly GDP go through the whole
@@ -106,6 +109,14 @@ inv_a <- ass_a$oecd@inverted
 cyc_inv <- cyc_a
 for (nm in inv_a) cyc_inv[[nm]] <- invert_cycle(cyc_inv[[nm]])
 
+# the reference cycle in percent deviation from trend (ratio to trend), for
+# the amplitude adjustment
+rt <- on_base(monthly("RS", "RT"))
+ref_rt <- new("CycleSeries", name = "RS", original = rt, transformed = rt,
+              cycle = rt - 100, normalised = normalise_cycle(rt - 100),
+              steps = "OECD ratio to trend")
+spec_070 <- update(spec_a, aggregator = oecd_aggregate(growth = "ratio"),
+                   amplitude = "mad")
 li <- as_cycle(nor[, "LI"], "LI")
 li_tp <- date_tp(li@normalised, "LI")
 rs_tp <- date_tp(cyc_a$RS@normalised, "RS")
@@ -113,11 +124,12 @@ composite_row <- function(label, ci) {
   cc <- composite_as_cycle(ci)
   tp <- date_tp(cc@normalised, label)
   p <- peak(cc@normalised, li@normalised)
-  aa <- corr_at(ci@index, nor[, "LI_AA"])
+  aa <- mean(abs(as.numeric(on_base(ci@index)) - as.numeric(nor[, "LI_AA"])),
+            na.rm = TRUE)
   e <- as.numeric(on_base(cc@normalised)) - as.numeric(li@normalised)
   data.frame(composite = label, n_components = length(ci@components),
              corr_lag0 = p[["r0"]], best_lag = p[["lag"]],
-             corr_best = p[["r"]], corr_index_aa = aa,
+             corr_best = p[["r"]], aa_gap = aa,
              mad_gap = mean(abs(e), na.rm = TRUE),
              tp_agreement(li_tp, tp, spec_a),
              vs_reference(tp, cc@normalised))
@@ -136,21 +148,24 @@ vs_reference <- function(tp, x) {
 oecd_signs <- c(LOCOEX = -1, LOCOST = -1, LOCOPP = -1)
 cyc_true <- cyc_a
 for (nm in names(oecd_signs)) cyc_true[[nm]] <- invert_cycle(cyc_true[[nm]])
-benchmark <- new("CompositeIndex", index = nor[, "LI"], cycle = li@normalised,
+benchmark <- new("CompositeIndex", index = nor[, "LI_AA"],
+                 cycle = li@normalised,
                  components = names(comps), weights = rep(1 / 7, 7),
                  aggregator = oecd_aggregate(), amplitude = 1)
 comp_a <- rbind(
   composite_row("OECD published CLI (benchmark)", benchmark),
-  composite_row("A1 OECD components, OECD signs, oecd_aggregate()",
-                cli_composite(cyc_true, names(comps), spec_a, cyc_a$RS)),
+  composite_row("A0 OECD components, OECD signs, rcli 0.7.0 rule",
+                cli_composite(cyc_true, names(comps), spec_070, ref_rt)),
+  composite_row("A1 OECD components, OECD signs, oecd_spec()",
+                cli_composite(cyc_true, names(comps), spec_a, ref_rt)),
   composite_row("A2 OECD components, signs found by rcli, oecd_aggregate()",
-                cli_composite(cyc_inv, names(comps), spec_a, cyc_a$RS)),
+                cli_composite(cyc_inv, names(comps), spec_a, ref_rt)),
   composite_row("A3 OECD components, signs from meta$sign, oecd_aggregate()",
-                cli_composite(cyc_sign, names(comps), spec_a, cyc_a$RS)),
+                cli_composite(cyc_sign, names(comps), spec_a, ref_rt)),
   composite_row("A4 OECD components, OECD signs, equal_weight()",
                 cli_composite(cyc_true, names(comps),
                               update(spec_a, aggregator = equal_weight()),
-                              cyc_a$RS))
+                              ref_rt))
 )
 
 # ---- B. original series in ------------------------------------------------------
@@ -231,7 +246,7 @@ cyc_a4 <- cyc_true[c("RS", four)]
 tab_compo <- rbind(
   comp_a,
   composite_row("A5 OECD cycles of the four components of B",
-                cli_composite(cyc_a4, four, spec_a, cyc_a$RS)),
+                cli_composite(cyc_a4, four, spec_a, ref_rt)),
   composite_row("B1 four original series, oecd_spec(), OECD signs",
                 cli_composite(cyc_b4, four, spec_b, cyc_b4$gdp)),
   composite_row(paste0("B2 cli_build(): ",
@@ -240,7 +255,7 @@ tab_compo <- rbind(
 )
 
 # turning points of the published CLI, the reference and composite A1
-ci_a1 <- cli_composite(cyc_true, names(comps), spec_a, cyc_a$RS)
+ci_a1 <- cli_composite(cyc_true, names(comps), spec_a, ref_rt)
 tp_a1 <- date_tp(composite_as_cycle(ci_a1)@normalised, "A1")
 tp_tab <- do.call(rbind, lapply(list(RS = rs_tp, LI = li_tp, A1 = tp_a1),
                                 as.data.frame))
@@ -251,10 +266,11 @@ tp_tab$series <- rep(c("RS (OECD reference)", "LI (OECD CLI)",
 tp_tab <- tp_tab[, c("series", "period", "type")]
 
 # ---- C. where the remaining gaps come from -------------------------------------
-# C1 aggregation: rcli chains the arithmetic growth of z + 100 and inverts
-# by changing the sign of z (R/aggregate.R, OecdAggregate; R/assessment.R,
-# invert_cycle()). Variants on the published components, inverted by the
-# OECD signs, are compared with the published normalised CLI.
+# C1 aggregation: rcli 0.7.0 chained the arithmetic growth of z + 100 and
+# inverted by changing the sign of z; oecd_aggregate(growth = "log") chains
+# log growth with reciprocal inversion (R/aggregate.R, OecdAggregate).
+# Variants on the published components, inverted by the OECD signs, are
+# compared with the published normalised CLI.
 pub <- nor[, names(comps)]
 sgn <- ifelse(colnames(pub) %in% names(oecd_signs), -1, 1)
 mirror <- sweep(pub - 100, 2, sgn, "*") + 100
@@ -285,18 +301,20 @@ gap_row <- function(label, x) {
              mad_gap = mean(abs(x[ok] - y[ok])))
 }
 gaps <- rbind(
-  gap_row("arithmetic growth, sign inversion (rcli oecd_aggregate)",
+  gap_row("arithmetic growth, sign inversion (growth = \"ratio\", 0.7.0)",
           chain_growth(mirror, FALSE)),
   gap_row("arithmetic growth, reciprocal inversion",
           chain_growth(recip, FALSE)),
   gap_row("log growth, sign inversion", chain_growth(mirror, TRUE)),
-  gap_row("log growth, reciprocal inversion", chain_growth(recip, TRUE)),
+  gap_row("log growth, reciprocal inversion (growth = \"log\")",
+          chain_growth(recip, TRUE)),
   gap_row("plain average of the available components",
           normalise_cycle(rowMeans(mirror, na.rm = TRUE) - 100))
 )
 # C2 amplitude adjustment: the published amplitude-adjusted CLI is the
-# normalised CLI times a factor; rcli takes the mean absolute deviation of
-# the reference cycle (R/aggregate.R, reference_amplitude()).
+# normalised CLI times a factor; cli_spec(amplitude =) chooses the mean
+# absolute deviation or the standard deviation (R/aggregate.R,
+# reference_amplitude()).
 rt <- monthly("RS", "RT")
 both <- stats::ts.intersect(rt, nor[, "LI"], nor[, "LI_AA"])
 both <- both[stats::complete.cases(both), ]
@@ -305,8 +323,8 @@ mad <- function(v) mean(abs(v - mean(v)))
 gaps <- rbind(gaps, data.frame(
   experiment = "C2 amplitude",
   variant = c("OECD factor (amplitude-adjusted CLI on normalised CLI)",
-              "ratio of mean absolute deviations (rcli)",
-              "ratio of standard deviations"),
+              "ratio of mean absolute deviations (amplitude = \"mad\")",
+              "ratio of standard deviations (amplitude = \"sd\")"),
   value = c(fit[[1]], mad(both[, 1]) / mad(both[, 2]),
             stats::sd(both[, 1]) / stats::sd(both[, 2])),
   mad_gap = NA_real_))

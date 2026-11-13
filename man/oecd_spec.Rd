@@ -10,6 +10,8 @@ oecd_spec(
   holidays = list(),
   engine = c("auto", "tramo", "x13"),
   classifier = oecd_classifier(),
+  forecast = NULL,
+  amplitude = c("sd", "mad"),
   ...
 )
 }
@@ -23,6 +25,14 @@ quarterly data the month thresholds are converted to quarters.}
 
 \item{classifier}{An OECD \linkS4class{Classifier}, by default
 \code{\link[=oecd_classifier]{oecd_classifier()}}.}
+
+\item{forecast}{Months of TRAMO forecasts appended before the filter
+(\code{\link[=tramo_outliers]{tramo_outliers()}}); \code{NULL} means 2 months (1 quarter), the upper end
+of the "forecast horizons from 0 to 2 month" that the OECD put in place
+(Nilsson and Gyomai 2011, para. 65). Until INC-15 it was one year.}
+
+\item{amplitude}{Amplitude measure of the index (see \code{\link[=cli_spec]{cli_spec()}}); the
+OECD amplitude-adjusted CLI matches standard deviations (\code{"sd"}).}
 
 \item{...}{Further arguments of \code{\link[=cli_spec]{cli_spec()}}. With \verb{form =}
 \code{\link[=growth_form]{growth_form()}} or \code{\link[=acceleration_form]{acceleration_form()}} (experimental, not part of the
@@ -40,8 +50,8 @@ leading indicators (Gyomai and Guidetti 2012):
 \item outliers: TRAMO, additive outliers and transitory changes replaced by
 estimates (\code{\link[=tramo_outliers]{tramo_outliers()}});
 \item logarithm or levels: TRAMO test (\code{transform = "test"});
-\item end of the series: TRAMO forecasts before the filter
-(\code{\link[=tramo_outliers]{tramo_outliers()}});
+\item end of the series: two months of TRAMO forecasts before the filter
+(\code{\link[=tramo_outliers]{tramo_outliers()}}; Nilsson and Gyomai 2011);
 \item cycle: double Hodrick-Prescott filter, 12 to 120 months
 (\code{\link[=hp_double_filter]{hp_double_filter()}});
 \item turning points: simplified Bry-Boschan (\code{\link[=bry_boschan]{bry_boschan()}});
@@ -49,11 +59,20 @@ estimates (\code{\link[=tramo_outliers]{tramo_outliers()}});
 cyclical conformity and few missed or extra cycles
 (\code{\link[=oecd_classifier]{oecd_classifier()}}; \code{classifier = oecd_classifier(conformity = FALSE)} for the median lead alone, as in rcli 0.5.1);
 \item lag-shifting: the leads of the components aligned (\code{lag_shift = TRUE});
-\item aggregation: chained average growth with the 60 percent rule
+\item aggregation: chained average log growth with the 60 percent rule,
+counter-cyclical components entering as reciprocals
 (\code{\link[=oecd_aggregate]{oecd_aggregate()}});
-\item presentation: amplitude adjusted, trend restored and 12-month rate of
-change (\code{\link[=cli_presentation]{cli_presentation()}}).
+\item presentation: amplitude adjusted (scaled to the standard deviation of
+the reference cycle, \code{amplitude = "sd"}), trend restored and 12-month
+rate of change (\code{\link[=cli_presentation]{cli_presentation()}}).
 }
+
+The aggregation formula and the amplitude measure are not written out in
+the OECD documents; both were chosen because they reproduce the
+published CLI of Indonesia (correlation 0.9998 with the normalised CLI,
+every turning point on the same month, amplitude-adjusted index within
+a few hundredths of a point; \code{data-raw/oecd_idn_validate.R}). The
+settings of rcli 0.7.0 are \code{oecd_spec(forecast = 12, amplitude = "mad", aggregator = oecd_aggregate(growth = "ratio"))}.
 
 Seasonal adjustment, which the OECD applies only to series that are not
 already adjusted at the source, uses X-13ARIMA-SEATS (the successor of
@@ -81,6 +100,11 @@ if (requireNamespace("seasonal", quietly = TRUE)) {
 \references{
 Gyomai, G. and Guidetti, E. (2012). \emph{OECD System of Composite Leading
 Indicators}. OECD Publishing, Paris.
+
+Nilsson, R. and Gyomai, G. (2011). Cycle extraction: a comparison of the
+phase-average trend method, the Hodrick-Prescott and Christiano-Fitzgerald
+filters. \emph{OECD Statistics Working Papers} 2011/04.
+\doi{10.1787/5kg9srt7f8g0-en}
 }
 \seealso{
 \code{\link[=cli_spec]{cli_spec()}} for the package defaults and the reasons they
