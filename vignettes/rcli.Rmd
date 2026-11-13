@@ -366,6 +366,74 @@ equally well when spikes and a level shift are injected:
 read.csv(system.file("calibration", "oecd-outliers.csv", package = "rcli"))
 ```
 
+### Replication: the OECD CLI of Indonesia
+
+The OECD publishes, through its SDMX interface, the CLI of Indonesia, its
+reference series (monthly GDP) and its seven components (consumer
+confidence, the rupiah exchange rate, production of non-metallic products,
+producer prices, share prices, the short-term interest rate and tourism
+activity). The components are published only as normalised cycles, and
+for four of them the OECD also publishes the original series.
+`data-raw/oecd_idn_fetch.R` saves a snapshot; `data-raw/oecd_idn_validate.R`
+runs two experiments. In the first, the OECD cycles go into rcli as they
+are; in the second, the original series go through `oecd_spec()`.
+
+```{r oecd-idn-composite}
+idn <- read.csv(system.file("calibration", "oecd-idn-composite.csv",
+                            package = "rcli"))
+idn[, c("composite", "corr_lag0", "matched", "ref_tp", "ref_ccf_lag",
+        "ref_ccf_r")]
+```
+
+With the OECD signs (the exchange rate, the interest rate and producer
+prices inverted), `oecd_aggregate()` reproduces the published CLI: the
+correlation is 0.998 and all 27 turning points fall on the same month
+(A1). A plain average is close but not as close (A4). From the data alone
+rcli inverts the exchange rate and the interest rate, as the OECD does,
+but not producer prices, whose cycle barely moves with GDP (A2); given as
+`meta$sign`, the OECD sign gives back A1 (A3). The sign of a weak
+component should therefore come from its economic rationale.
+
+Three differences of method remain (part C of the script):
+
+```{r oecd-idn-gaps}
+read.csv(system.file("calibration", "oecd-idn-gaps.csv", package = "rcli"))
+```
+
+`oecd_aggregate()` chains the arithmetic growth of the normalised cycles
+plus 100 and inverts a component by changing its sign. Chaining log growth
+and inverting by the reciprocal brings the correlation from 0.998 to
+0.9998; the turning points are the same either way. The OECD
+amplitude-adjusted CLI is the normalised CLI times 1.71, the ratio of the
+standard deviations of the reference cycle and the CLI; rcli matches the
+mean absolute deviations, 1.43 over the same months, so its
+amplitude-adjusted index swings about 17 percent less. Finally, the OECD
+published the last month with 2 of the 6 live components, below its own
+60 percent rule, while rcli leaves that month missing.
+
+```{r oecd-idn-components}
+cmp_idn <- read.csv(system.file("calibration", "oecd-idn-components.csv",
+                                package = "rcli"))
+cmp_idn[, c("component", "A_class_oecd_rule", "A_class_oecd_median_rule",
+            "A_median_lead", "B_corr_with_oecd_cycle", "B_tp_matched",
+            "B_tp_oecd")]
+```
+
+From quarterly GDP (Denton-Cholette to months) and the original series,
+`oecd_spec()` gives cycles that correlate 0.90 to 0.99 with the OECD
+cycles; the GDP cycle matches all 19 reference turning points. The
+composite of the four (B1) leads GDP by four months at the
+cross-correlation peak, as the OECD cycles of the same four do (A5).
+Classification differs most. By the median lead alone, five of the seven
+OECD components are leading and two coincident; with the conformity
+criteria of the OECD rule only the interest rate passes, because the
+dating finds more cycles in the components than in GDP. The published CLI
+itself has 11 extra turning points against 16 of the reference, a share
+above the `max_extra` of 0.4 that the conformity criteria use. `cli_build()`
+then keeps the interest rate alone (B2). The OECD chose the components
+with economic rationale and on an earlier sample, so the stricter rule is
+a warning about the Indonesian components, not a contradiction.
+
 ## 9. A coincident index
 
 A coincident index summarises where the cycle is now. The Conference Board

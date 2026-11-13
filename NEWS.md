@@ -1,3 +1,22 @@
+# rcli (development version)
+
+## Validation
+
+* Replication of the OECD composite leading indicator of Indonesia, from
+  the OECD's own data (SDMX dataflows DF_CLI, DF_FINMARK, DF_CS and DF_QNA;
+  snapshot `data-raw/oecd_idn_fetch.R`, experiments
+  `data-raw/oecd_idn_validate.R`, results in
+  `inst/calibration/oecd-idn-*.csv` and section 8 of `vignette("rcli")`).
+  `oecd_aggregate()` reproduces the published CLI from its seven published
+  components (correlation 0.998, all 27 turning points on the same month);
+  `oecd_spec()` cycles of the original series correlate 0.90 to 0.99 with
+  the OECD cycles. Remaining differences of method are documented, not
+  changed: the OECD amplitude adjustment matches standard deviations
+  (rcli: mean absolute deviations), its aggregation is closest to chained
+  log growth with reciprocal inversion, and it publishes months below its
+  60 percent coverage rule. Two regression tests in `test-oecd.R` use the snapshot
+  (`tests/testthat/fixtures/oecd-idn.rds`). No change to the code.
+
 # rcli 0.7.0
 
 Cycles can now be taken from growth rates and accelerations, as in studies
@@ -27,7 +46,8 @@ whose reference is the year-on-year growth of a national accounts aggregate
 * `print()` of a specification shows a growth or acceleration form.
   `update()` moves a filter left at the default of the old form to the
   default of the new one and keeps a filter chosen by hand. The level form
-  with `hp_smoother()` gives a warning, since that filter keeps the trend.
+  with `hp_smoother()` gives a warning, since that filter keeps the trend
+  (intended only for series that are already growth rates).
 * Aggregators that need levels (`conference_board()`) are refused with a
   growth or acceleration form, in `cli_spec()` and in `cli_composite()`.
 * The thresholds of the classifiers were calibrated on level cycles. The

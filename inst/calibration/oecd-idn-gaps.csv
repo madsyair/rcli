@@ -1,0 +1,12 @@
+"experiment","variant","value","mad_gap"
+"C1 aggregation","arithmetic growth, sign inversion (rcli oecd_aggregate)",0.99839,0.05299
+"C1 aggregation","arithmetic growth, reciprocal inversion",0.99951,0.03614
+"C1 aggregation","log growth, sign inversion",0.99931,0.03479
+"C1 aggregation","log growth, reciprocal inversion",0.99985,0.02151
+"C1 aggregation","plain average of the available components",0.98221,0.23985
+"C2 amplitude","OECD factor (amplitude-adjusted CLI on normalised CLI)",1.71288,NA
+"C2 amplitude","ratio of mean absolute deviations (rcli)",1.42686,NA
+"C2 amplitude","ratio of standard deviations",1.70417,NA
+"C3 ragged edge","2026-08: components available (of 7)",6,NA
+"C3 ragged edge","2026-09: components available (of 7)",6,NA
+"C3 ragged edge","2026-10: components available (of 7)",2,NA
