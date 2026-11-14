@@ -77,18 +77,22 @@ setClass("CliSpec", representation(
 #' @slot reference Name of the reference column.
 #' @slot meta Data frame of pre-selection metadata, one row per candidate:
 #'   `name`, `rationale` (OECD economic rationale), `source`, `release_lag`,
-#'   `type` (`"flow"`, `"stock"` or `"average"`, see [series_types]).
+#'   `type` (`"flow"`, `"stock"` or `"average"`, see [series_types]),
+#'   `frequency`, `sign` and `unit` (`"level"` or `"percent"`).
 #' @slot vintages Named list of earlier data releases (each a `ts` matrix
 #'   like `data`), kept for real-time evaluation.
 #' @slot alignment Data frame describing how each series was brought to the
 #'   common frequency by [cli_align()] (`name`, `from`, `type`, `method`);
 #'   empty when the data came in at one frequency.
+#' @slot units Named character vector with the unit (`"level"` or
+#'   `"percent"`) of every series, the reference included (empty in sets
+#'   saved before 0.8.0, which use `"level"`).
 #' @seealso [cli_candidates()]
 #' @exportClass CandidateSet
 setClass("CandidateSet", representation(
   data = "ts", reference = "character", meta = "data.frame",
-  vintages = "list", alignment = "data.frame"
-), prototype(alignment = data.frame()))
+  vintages = "list", alignment = "data.frame", units = "character"
+), prototype(alignment = data.frame(), units = character(0)))
 
 #' Cyclical component of one series
 #'

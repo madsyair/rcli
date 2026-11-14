@@ -688,17 +688,48 @@ candidate_lines <- function(state, data) {
   } else {
     ""
   }
+  # the unit is written only when some series is in percent (FR-015)
+  ref_percent <- identical(state$ref_unit, "percent")
+  unit_col <- meta_column(meta, "unit")
+  unit_col[unit_col %in% "level"] <- NA_character_
+  unit <- if (any(!is.na(unit_col)) || ref_percent) {
+    sprintf(",\n  unit = %s", deparse_value(unit_col))
+  } else {
+    ""
+  }
+  ref_line <- if (ref_percent) {
+    c("# the reference series is in percent: its rates are differences",
+      sprintf(paste0("meta[nrow(meta) + 1, c(\"name\", \"unit\")] <- ",
+                     "c(%s, \"percent\")"), chr_text(state$reference)))
+  }
   c("# 2. Candidates and their economic rationale",
     sprintf(paste0("meta <- data.frame(\n  name = %s,\n",
                    "  rationale = %s,\n  source = %s,\n",
-                   "  type = %s,\n  frequency = %s%s\n)"),
+                   "  type = %s,\n  frequency = %s%s%s\n)"),
             deparse_value(meta$name),
             deparse_value(meta$rationale),
             deparse_value(meta$source),
             deparse_value(meta_column(meta, "type")),
-            deparse_value(meta_column(meta, "frequency")), sign),
+            deparse_value(meta_column(meta, "frequency")), sign, unit),
+    ref_line,
     sprintf("cand <- cli_candidates(%s, reference = %s, meta = meta)",
             data, chr_text(state$reference)))
+}
+
+# A unit chosen in step 2: "percent" or NA (level); anything else is NA.
+unit_value <- function(v) {
+  if (is.character(v) && length(v) == 1L && identical(v, "percent")) {
+    "percent"
+  } else {
+    NA_character_
+  }
+}
+
+# The metadata of step 2 with a row giving the unit of the reference.
+with_reference_unit <- function(meta, reference, unit) {
+  if (!identical(unit, "percent")) return(meta)
+  meta[nrow(meta) + 1L, c("name", "unit")] <- c(reference, "percent")
+  meta
 }
 
 # A sign chosen in step 2: 1, -1 or NA (automatic); anything else is NA.
@@ -991,7 +1022,7 @@ app_server <- function(language = "id") {
           if (!is.null(v)) return(v)
         }
         col <- c(rat = "rationale", typ = "type", src = "source",
-                 frq = "frequency", sgn = "sign")[[prefix]]
+                 frq = "frequency", sgn = "sign", unt = "unit")[[prefix]]
         if (!is.null(known) && col %in% names(known) && nm %in% known$name) {
           v <- known[[col]][match(nm, known$name)]
           return(if (is.na(v)) "" else as.character(v))
@@ -1013,6 +1044,9 @@ app_server <- function(language = "id") {
       sign_choices <- stats::setNames(c("", "1", "-1"),
                                       c(t("sign_auto"), t("sign_pro"),
                                         t("sign_counter")))
+      # the unit decides how the rate forms difference a series (FR-015)
+      unit_choices <- stats::setNames(c("", "percent"),
+                                      c(t("unit_level"), t("unit_percent")))
       rows <- lapply(seq_along(cands), function(i) {
         shiny::fluidRow(
           shiny::column(2, shiny::tags$p(shiny::strong(cands[i]),
@@ -1027,7 +1061,10 @@ app_server <- function(language = "id") {
               selected = keep(paste0("sgn_", i), ""))),
           shiny::column(2, shiny::selectInput(
             paste0("typ_", i), NULL, type_choices,
-            selected = keep(paste0("typ_", i), ""))),
+            selected = keep(paste0("typ_", i), "")),
+            shiny::selectInput(
+              paste0("unt_", i), NULL, unit_choices,
+              selected = keep(paste0("unt_", i), ""))),
           shiny::column(2, frq_cell(i)),
           shiny::column(3, shiny::textInput(
             paste0("src_", i), NULL, keep(paste0("src_", i), ""),
@@ -1057,12 +1094,18 @@ app_server <- function(language = "id") {
           align_ui(t, rv$series, input$reference, rv$loaded$frequency,
                    old_align))
       }
+      ref_unit_row <- shiny::fluidRow(shiny::column(6, shiny::selectInput(
+        "ref_unit", sprintf("%s: %s", t("ref_unit"), input$reference),
+        unit_choices, selected = shiny::isolate(
+          if (is.null(input$ref_unit)) "" else input$ref_unit))))
       shiny::tagList(
         ref_row,
+        ref_unit_row,
         shiny::helpText(t("sign_help")),
+        shiny::helpText(t("unit_help")),
         shiny::fluidRow(shiny::column(2, shiny::strong("")),
                         shiny::column(3, shiny::strong(t("rationale_sign"))),
-                        shiny::column(2, shiny::strong(t("var_type"))),
+                        shiny::column(2, shiny::strong(t("var_type_unit"))),
                         shiny::column(2, shiny::strong(t("var_freq"))),
                         shiny::column(3, shiny::strong(t("data_source")))),
         rows
@@ -1088,8 +1131,12 @@ app_server <- function(language = "id") {
         sign = vapply(seq_along(cands), function(i) {
           sign_value(input[[paste0("sgn_", i)]])
         }, numeric(1)),
+        unit = vapply(seq_along(cands), function(i) {
+          unit_value(input[[paste0("unt_", i)]])
+        }, character(1)),
         stringsAsFactors = FALSE
       )
+      ref_unit <- unit_value(input$ref_unit)
       align <- NULL
       data <- rv$data
       if (multi()) {
@@ -1123,7 +1170,10 @@ app_server <- function(language = "id") {
                                  functions = align_functions))
       }
       cand <- if (!is.null(data)) {
-        safely(cli_candidates(data, input$reference, meta = meta))
+        safely(cli_candidates(data, input$reference,
+                              meta = with_reference_unit(meta,
+                                                         input$reference,
+                                                         ref_unit)))
       }
       if (is.null(cand)) {
         # a refused metadata set leaves no stale candidate set behind
@@ -1558,6 +1608,8 @@ app_server <- function(language = "id") {
         seed = rv$loaded$seed, sep = rv$loaded$sep, dec = rv$loaded$dec,
         meta = rv$meta,
         reference = if (is.null(rv$cand)) NULL else reference(),
+        ref_unit = if (is.null(rv$cand)) NA_character_ else
+          series_unit(rv$cand, rv$cand@reference),
         spec_call = rv$spec_call, mode = rv$mode,
         components = rv$components,
         lag_shift = !is.null(rv$spec) && isTRUE(rv$spec@lag_shift),
