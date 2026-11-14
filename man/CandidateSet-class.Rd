@@ -16,7 +16,8 @@ Reference and candidate series
 
 \item{\code{meta}}{Data frame of pre-selection metadata, one row per candidate:
 \code{name}, \code{rationale} (OECD economic rationale), \code{source}, \code{release_lag},
-\code{type} (\code{"flow"}, \code{"stock"} or \code{"average"}, see \link{series_types}).}
+\code{type} (\code{"flow"}, \code{"stock"} or \code{"average"}, see \link{series_types}),
+\code{frequency}, \code{sign} and \code{unit} (\code{"level"} or \code{"percent"}).}
 
 \item{\code{vintages}}{Named list of earlier data releases (each a \code{ts} matrix
 like \code{data}), kept for real-time evaluation.}
@@ -24,6 +25,10 @@ like \code{data}), kept for real-time evaluation.}
 \item{\code{alignment}}{Data frame describing how each series was brought to the
 common frequency by \code{\link[=cli_align]{cli_align()}} (\code{name}, \code{from}, \code{type}, \code{method});
 empty when the data came in at one frequency.}
+
+\item{\code{units}}{Named character vector with the unit (\code{"level"} or
+\code{"percent"}) of every series, the reference included (empty in sets
+saved before 0.8.0, which use \code{"level"}).}
 }}
 
 \seealso{

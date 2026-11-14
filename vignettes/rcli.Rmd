@@ -260,8 +260,11 @@ trend. Some studies use another reference, such as the year-on-year growth
 of household consumption or the change of that growth. `form` in
 `cli_spec()` takes the cycle from growth rates (`growth_form()`) or
 accelerations (`acceleration_form()`). The rate of a logged series is the
-log growth rate in percent; series in levels (rates, balances) are
-differenced in their own units. The form is applied after seasonal
+growth rate as BPS-Statistics Indonesia publishes it,
+`100 * (Y_t / Y_{t-k} - 1)` (`rate = "log"` gives the log rate of rcli
+0.7.0); series in levels, and candidates whose `unit` in the metadata is
+`"percent"` (interest rates, balances), are differenced in their own
+units. The form is applied after seasonal
 adjustment and outlier treatment, so rates are computed from seasonally
 adjusted series. Growth rates have little trend, so these forms are paired
 with `hp_smoother()`, which only smooths:

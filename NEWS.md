@@ -23,6 +23,34 @@ rcli 0.7.0). The defaults of `cli_spec()` do not change (FR-014).
 * The settings of 0.7.0 are `oecd_spec(forecast = 12, amplitude = "mad",
   aggregator = oecd_aggregate(growth = "ratio"))`.
 
+## Growth rates as BPS publishes them (FR-015)
+
+* `growth_form()` and `acceleration_form()` gain `rate = c("percent",
+  "log")`. The new default is the growth rate as BPS-Statistics Indonesia
+  publishes it, `100 * (Y_t / Y_{t-k} - 1)`; `rate = "log"` keeps the log
+  rate `100 * (log Y_t - log Y_{t-k})` of 0.7.0, which is lower by about
+  `50 r^2` points (0.13 points on average for the year-on-year growth of
+  Indonesian GDP 2011-2026, at most 0.24). Rates computed from the BPS
+  expenditure tables equal the published year-on-year and quarter-on-quarter
+  rates (checked outside the package; the tables are not public data). Forms saved before keep the
+  log rate. Classes and turning points hardly change (GDP growth cycle:
+  correlation 1.0000, all 22 turning points identical).
+* `cli_candidates(meta = )` takes a `unit` column, `"level"` (default) or
+  `"percent"`. In the growth rate and acceleration forms a series in
+  percent (an interest rate, an unemployment rate, a balance) becomes a
+  difference in percentage points, also when the transformation took its
+  logarithm. A row of `meta` for the reference gives its unit. The level
+  form ignores the unit.
+* Interface, step 2: a unit for every candidate and for the reference
+  series (Indonesian and English); the exported script writes `unit =`
+  only when a series is in percent. In the Indonesian interface the
+  acceleration form is now called *perubahan pertumbuhan* (change of
+  growth) instead of *percepatan*.
+* `inst/calibration/forms.csv` recalibrated with the new rates (60
+  replications): the level form is unchanged, the growth and acceleration
+  forms change within Monte Carlo noise, and noise is labelled leading in
+  at most 2.1 percent of the series (2.5 percent before).
+
 ## Validation
 
 * Replication of the OECD CLI of Indonesia, from the OECD's own data (SDMX
