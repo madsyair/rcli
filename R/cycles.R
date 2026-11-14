@@ -24,7 +24,9 @@ cli_cycles <- function(candidates, spec) {
   check_inputs(candidates, spec)
   data <- candidates@data
   nms <- c(candidates@reference, candidate_names(candidates))
-  out <- lapply(nms, function(nm) cycle_one(data[, nm], nm, spec))
+  out <- lapply(nms, function(nm) {
+    cycle_one(data[, nm], nm, spec, unit = series_unit(candidates, nm))
+  })
   stats::setNames(out, nms)
 }
 
@@ -44,7 +46,7 @@ check_inputs <- function(candidates, spec) {
   invisible(TRUE)
 }
 
-cycle_one <- function(x, name, spec) {
+cycle_one <- function(x, name, spec, unit = "level") {
   x <- as_ts_like(as.numeric(x), x)
   steps <- character(0)
   span <- non_na_span(x)
@@ -83,7 +85,12 @@ cycle_one <- function(x, name, spec) {
   logged <- any(grepl("^log", steps))
   whole <- stats::ts(c(as.numeric(core), fc), start = stats::start(core),
                      frequency = stats::frequency(core))
-  whole <- apply_form(form, whole, logged)
+  # a series in percent (FR-015) is differenced in percentage points, also
+  # when the transformation took its logarithm
+  in_points <- identical(unit, "percent") && form_kind(form) != "level"
+  if (in_points && logged) whole <- exp(whole)
+  whole <- apply_form(form, whole, logged && !in_points)
+  if (in_points) logged <- "percent"
   drop <- sum(cumprod(is.na(as.numeric(whole))))
   keep <- length(core) - drop
   if (keep < 3L * spec@freq) {

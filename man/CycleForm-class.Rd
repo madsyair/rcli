@@ -21,9 +21,9 @@
 \usage{
 level_form()
 
-growth_form(lag = NA)
+growth_form(lag = NA, rate = c("percent", "log"))
 
-acceleration_form(lag = NA)
+acceleration_form(lag = NA, rate = c("percent", "log"))
 
 apply_form(form, x, logged)
 
@@ -42,6 +42,9 @@ default_filter(form)
 \arguments{
 \item{lag}{Number of periods of the growth rate (a positive whole
 number), or \code{NA} for one year.}
+
+\item{rate}{\code{"percent"} (the BPS formula) or \code{"log"} (log differences);
+only used for logged series.}
 
 \item{form}{A \code{CycleForm}.}
 
@@ -67,13 +70,19 @@ enter them (formula F-08 in the package harness).
 \itemize{
 \item \code{level_form()}: the series itself (default; the results of earlier
 versions).
-\item \code{growth_form(lag)}: growth rate over \code{lag} periods. A logged series
-gives \eqn{100 (z_t - z_{t-k})}, the log growth rate in percent; a
-series in levels (rates, percentages, indices that were not logged)
-gives the difference \eqn{z_t - z_{t-k}} in its own units. \code{lag = NA}
-(default) means one year (12 months or 4 quarters), the year-on-year
-rate; \code{lag = 1} gives the period-on-period rate.
-\item \code{acceleration_form(lag)}: the change of that growth rate from the
+\item \code{growth_form(lag, rate)}: growth rate over \code{lag} periods. For a logged
+series \eqn{z = \log Y}, \code{rate = "percent"} (default since 0.8.0) gives
+the growth rate as BPS-Statistics Indonesia publishes it,
+\eqn{100 (Y_t / Y_{t-k} - 1)}, and \code{rate = "log"} the log growth rate
+\eqn{100 (z_t - z_{t-k})} of rcli 0.7.0 (lower by about
+\eqn{50 r^2} points at a rate \eqn{r}: 0.12 points at 5 percent). A
+series in levels (rates, percentages, indices that were not logged) gives
+the difference \eqn{z_t - z_{t-k}} in its own units; so does a
+candidate whose \code{unit} in the metadata of \code{\link[=cli_candidates]{cli_candidates()}} is
+\code{"percent"}, even when it was logged. \code{lag = NA} (default) means one
+year (12 months or 4 quarters), the year-on-year rate; \code{lag = 1} gives
+the period-on-period (q-to-q or m-to-m) rate.
+\item \code{acceleration_form(lag, rate)}: the change of that growth rate from the
 previous period, \eqn{g_t - g_{t-1}}, in percentage points for a
 logged series (in the units of the series otherwise).
 }

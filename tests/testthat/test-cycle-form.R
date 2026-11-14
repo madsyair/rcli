@@ -35,12 +35,12 @@ test_that("AC-FR-013.2: apply_form() computes growth rates and accelerations", {
           start = 2010)
   z <- log(y)
   for (k in c(1, 4)) {
-    g <- apply_form(growth_form(k), z, logged = TRUE)
+    g <- apply_form(growth_form(k, rate = "log"), z, logged = TRUE)
     expect_identical(tsp(g), tsp(z))
     expect_true(all(is.na(g[seq_len(k)])))
     expect_equal(as.numeric(g)[-seq_len(k)], 100 * diff(as.numeric(z), k),
                  tolerance = 1e-10)
-    a <- apply_form(acceleration_form(k), z, logged = TRUE)
+    a <- apply_form(acceleration_form(k, rate = "log"), z, logged = TRUE)
     expect_true(all(is.na(a[seq_len(k + 1)])))
     expect_equal(as.numeric(a)[-seq_len(k + 1)],
                  diff(100 * diff(as.numeric(z), k)), tolerance = 1e-10)
@@ -57,9 +57,9 @@ test_that("AC-FR-013.2: apply_form() computes growth rates and accelerations", {
   expect_identical(apply_form(level_form(), z, logged = TRUE), z)
   # linearity: value = volume x price  =>  rates add up (F-08, item 2)
   p <- ts(cumsum(rnorm(40, 0.005, 0.01)), frequency = 4, start = 2010)
-  expect_equal(apply_form(growth_form(), z + p, logged = TRUE),
-               apply_form(growth_form(), z, logged = TRUE) +
-                 apply_form(growth_form(), p, logged = TRUE),
+  lg <- growth_form(rate = "log")
+  expect_equal(apply_form(lg, z + p, logged = TRUE),
+               apply_form(lg, z, logged = TRUE) + apply_form(lg, p, logged = TRUE),
                tolerance = 1e-10)
   for (f in list(level_form(), growth_form(), acceleration_form())) {
     expect_s4_class(f, "CycleForm")
@@ -104,9 +104,11 @@ test_that("AC-FR-013.4: cli_cycles() applies the form after seasonal steps", {
   cyc <- cli_cycles(cand, spec)
   ref <- cyc$reference
   lv <- cli_cycles(cand, cli_spec(freq = 4, outlier_threshold = Inf))$reference
-  # the transformed slot holds the annual log growth of the level series
+  # the transformed slot holds the annual growth rate of the level series
+  # (BPS formula, FR-015)
   expect_equal(as.numeric(ref@transformed)[-(1:4)],
-               100 * diff(as.numeric(lv@transformed), 4), tolerance = 1e-10)
+               100 * expm1(diff(as.numeric(lv@transformed), 4)),
+               tolerance = 1e-10)
   expect_true(all(is.na(ref@transformed[1:4])))
   expect_true(all(is.na(ref@cycle[1:4])))
   expect_true(all(is.na(ref@normalised[1:4])))
@@ -334,7 +336,7 @@ test_that("forecasts of the outlier treatment are put in the form", {
   lv <- log(cand@data[, cand@reference])
   out <- rcli:::treat_outliers(spec@outliers, lv)
   whole <- c(as.numeric(out$x), out$forecast)
-  g <- 100 * diff(whole, 4)
+  g <- 100 * expm1(diff(whole, 4))
   n <- length(out$x) - 4
   by_hand <- utils::head(rcli:::hp_trend_core(g, hp_lambda(4)), n)
   expect_equal(as.numeric(ref@cycle)[-(1:4)], by_hand, tolerance = 1e-8)

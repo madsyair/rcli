@@ -183,10 +183,24 @@ Users often follow the growth rate of GDP rather than its deviation from
 trend. The OECD serves them with the 12-month growth rate of its
 trend-restored CLI (`cli_growth_rate` in `oecd_cli.csv`). In rcli the
 reference itself can be a growth rate: the cycle form of step 3 turns
-every series into its annual growth rate after the outlier treatment, and
+every series into its annual growth rate after the outlier treatment (the
+BPS formula, `100 * (Y_t / Y_{t-4} - 1)`; the call-money rate, a
+percentage, is given `unit = "percent"` below so that its rate is a
+difference in percentage points), and
 a Hodrick-Prescott smoother (no detrending) then removes the short
 movements. The form is experimental: the OECD thresholds were set for
-deviation cycles. Steps 1 and 2 are the same as in Part A.
+deviation cycles. Step 1 is the same as in Part A.
+
+## Step 2. Candidates, with the unit of the interest rate
+
+The call-money rate is a percentage: its change is read in percentage
+points, not as a growth rate of the rate.
+
+```{r candidates-growth}
+meta_g <- meta
+meta_g$unit <- c(NA, "percent", NA, NA)
+cand_g <- cli_candidates(x, reference = "gdp", meta = meta_g)
+```
 
 ## Step 3. The OECD specification with the growth-rate form
 
@@ -198,7 +212,7 @@ spec_g
 ## Step 4. Cycles
 
 ```{r cycles-growth}
-cyc_g <- cli_cycles(cand, spec_g)
+cyc_g <- cli_cycles(cand_g, spec_g)
 cyc_g$gdp@steps
 ```
 
@@ -226,7 +240,7 @@ as.data.frame(tps_g$gdp)[, c("period", "type")]
 ## Step 6. Classification
 
 ```{r assess-growth}
-a_g <- cli_assess(cand, spec_g, cyc_g)
+a_g <- cli_assess(cand_g, spec_g, cyc_g)
 as.data.frame(a_g)[, c("name", "class", "median_lead", "n_matched",
                        "extra", "reasons")]
 ```
@@ -241,7 +255,7 @@ for the concordance test.
 growth rates is again built with `cli_composite()`.
 
 ```{r build-growth}
-res_g <- cli_build(cand, spec_g)
+res_g <- cli_build(cand_g, spec_g)
 leaders(res_g)
 cy_g <- cycles(res_g)
 cli4_g <- cli_composite(cy_g, meta$name, spec_g, cy_g$gdp)
@@ -303,7 +317,8 @@ are in the folder printed by
 2. **Candidate metadata.** Reference series `gdp`. For each candidate set
    the rationale and the direction as in step 2 (the interest rate and the
    exchange rate countercyclical) and the variable type of the interest
-   rate *Average*.
+   rate *Average*. For Part B also set the unit of the interest rate to
+   *Ratio/percent*.
 3. **Specification.** Method *Exactly as the OECD*. The interface uses
    `oecd_spec()`; *Engine of the TRAMO outliers* is automatic by default
    (TRAMO through RJDemetra, otherwise X-13), as in this vignette. For Part B set *Cycle form* to

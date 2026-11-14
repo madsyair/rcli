@@ -36,7 +36,12 @@ oecd_rationales <- c(
 #'   annual), and `sign`, the expected direction of the candidate from its
 #'   economic rationale: 1 (procyclical), -1 (countercyclical, inverted
 #'   before aggregation) or `NA` (decided from the data by
-#'   [cli_assess()]). When `data` comes from [cli_align()], the types,
+#'   [cli_assess()]), and `unit`: `"level"` (default) or `"percent"` for a
+#'   series that is already a rate, a percentage or a balance (an interest
+#'   rate, an unemployment rate), whose growth rate and acceleration forms
+#'   ([growth_form()]) are differences in percentage points. `meta` may hold a
+#'   row for the reference; only its `unit` is used. When `data` comes from
+#'   [cli_align()], the types,
 #'   source frequencies and conversion steps recorded there are kept as
 #'   well, and a
 #'   source frequency in `meta` must agree with the recorded one. (The
@@ -114,7 +119,20 @@ cli_candidates <- function(data, reference, meta = NULL, vintages = list(),
       alignment <- alignment[!alignment$name %in% empty, , drop = FALSE]
     }
   }
+  # a row of `meta` for the reference only gives its unit (FR-015)
+  ref_unit <- NA_character_
+  if (is.data.frame(meta) && "name" %in% names(meta) &&
+      reference %in% meta$name) {
+    if ("unit" %in% names(meta)) {
+      ref_unit <- as.character(meta$unit[match(reference, meta$name)])
+    }
+    meta <- meta[meta$name != reference, , drop = FALSE]
+  }
   meta <- complete_meta(meta, setdiff(colnames(data), reference), alignment)
+  units <- stats::setNames(c(ref_unit, meta$unit),
+                           c(reference, meta$name))
+  units[is.na(units)] <- "level"
+  check_units(units)
   if (!is.list(vintages)) {
     rcli_abort("`vintages` must be a list.", "rcli_error_argument")
   }
@@ -125,14 +143,15 @@ cli_candidates <- function(data, reference, meta = NULL, vintages = list(),
     })
   }
   new("CandidateSet", data = data, reference = reference, meta = meta,
-      vintages = vintages, alignment = alignment)
+      vintages = vintages, alignment = alignment, units = units)
 }
 
 complete_meta <- function(meta, names, alignment = data.frame()) {
   base <- data.frame(name = names, rationale = NA_character_,
                      source = NA_character_, release_lag = NA_real_,
                      type = NA_character_, frequency = NA_character_,
-                     sign = NA_real_, stringsAsFactors = FALSE)
+                     sign = NA_real_, unit = NA_character_,
+                     stringsAsFactors = FALSE)
   hit <- match(names, alignment$name)
   detected <- rep(NA_character_, length(names))
   if ("from" %in% names(alignment)) {
@@ -156,7 +175,7 @@ complete_meta <- function(meta, names, alignment = data.frame()) {
     # a missing entry keeps what cli_align() recorded
     at <- match(meta$name, names)
     for (col in intersect(c("rationale", "source", "release_lag", "type",
-                            "frequency", "sign"), names(meta))) {
+                            "frequency", "sign", "unit"), names(meta))) {
       v <- meta[[col]]
       if (is.factor(v)) v <- as.character(v)
       given <- !is.na(v)
@@ -286,3 +305,20 @@ setMethod("window", "CandidateSet", function(x, start = NULL, end = NULL, ...) {
   x@data <- stats::window(x@data, start = start, end = end)
   x
 })
+
+check_units <- function(units) {
+  bad <- !units %in% c("level", "percent")
+  if (any(bad)) {
+    rcli_abort(sprintf("Unknown unit(s): %s. Use \"level\" or \"percent\".",
+                       paste(unique(units[bad]), collapse = ", ")),
+               "rcli_error_argument")
+  }
+  invisible(units)
+}
+
+# Unit of one series of a candidate set: "level" or "percent" (FR-015).
+series_unit <- function(candidates, name) {
+  u <- if (methods::.hasSlot(candidates, "units")) candidates@units else NULL
+  if (length(u) == 0L || !name %in% names(u)) return("level")
+  u[[name]]
+}

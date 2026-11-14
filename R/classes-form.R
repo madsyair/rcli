@@ -10,13 +10,19 @@
 #'
 #' * `level_form()`: the series itself (default; the results of earlier
 #'   versions).
-#' * `growth_form(lag)`: growth rate over `lag` periods. A logged series
-#'   gives \eqn{100 (z_t - z_{t-k})}, the log growth rate in percent; a
-#'   series in levels (rates, percentages, indices that were not logged)
-#'   gives the difference \eqn{z_t - z_{t-k}} in its own units. `lag = NA`
-#'   (default) means one year (12 months or 4 quarters), the year-on-year
-#'   rate; `lag = 1` gives the period-on-period rate.
-#' * `acceleration_form(lag)`: the change of that growth rate from the
+#' * `growth_form(lag, rate)`: growth rate over `lag` periods. For a logged
+#'   series \eqn{z = \log Y}, `rate = "percent"` (default since 0.8.0) gives
+#'   the growth rate as BPS-Statistics Indonesia publishes it,
+#'   \eqn{100 (Y_t / Y_{t-k} - 1)}, and `rate = "log"` the log growth rate
+#'   \eqn{100 (z_t - z_{t-k})} of rcli 0.7.0 (lower by about
+#'   \eqn{50 r^2} points at a rate \eqn{r}: 0.12 points at 5 percent). A
+#'   series in levels (rates, percentages, indices that were not logged) gives
+#'   the difference \eqn{z_t - z_{t-k}} in its own units; so does a
+#'   candidate whose `unit` in the metadata of [cli_candidates()] is
+#'   `"percent"`, even when it was logged. `lag = NA` (default) means one
+#'   year (12 months or 4 quarters), the year-on-year rate; `lag = 1` gives
+#'   the period-on-period (q-to-q or m-to-m) rate.
+#' * `acceleration_form(lag, rate)`: the change of that growth rate from the
 #'   previous period, \eqn{g_t - g_{t-1}}, in percentage points for a
 #'   logged series (in the units of the series otherwise).
 #'
@@ -33,6 +39,8 @@
 #' criteria have not been calibrated for them; simulation results are in
 #' `inst/calibration/forms.csv`.
 #'
+#' @param rate `"percent"` (the BPS formula) or `"log"` (log differences);
+#'   only used for logged series.
 #' @param lag Number of periods of the growth rate (a positive whole
 #'   number), or `NA` for one year.
 #' @param form A `CycleForm`.
@@ -63,11 +71,31 @@ setClass("LevelForm", contains = "CycleForm")
 
 #' @rdname CycleForm-class
 setClass("GrowthForm", contains = "CycleForm",
-         representation(lag = "numeric"))
+         representation(lag = "numeric", rate = "character"))
 
 #' @rdname CycleForm-class
 setClass("AccelerationForm", contains = "CycleForm",
-         representation(lag = "numeric"))
+         representation(lag = "numeric", rate = "character"))
+
+check_rate <- function(rate) {
+  choices <- c("percent", "log")
+  if (identical(rate, choices)) return("percent")
+  if (!is.character(rate) || length(rate) != 1L || !rate %in% choices) {
+    rcli_abort("`rate` must be \"percent\" or \"log\".",
+               "rcli_error_argument")
+  }
+  rate
+}
+
+# Growth rate of a form; forms saved before INC-17 have none and use the
+# log rate of rcli 0.7.0.
+form_rate <- function(form) {
+  if (methods::.hasSlot(form, "rate") && length(form@rate) == 1L) {
+    form@rate
+  } else {
+    "log"
+  }
+}
 
 check_lag <- function(lag) {
   check_number(lag, "lag", lower = 1, integer = TRUE, allow_na = TRUE)
@@ -83,14 +111,16 @@ level_form <- function() new("LevelForm", label = "level")
 
 #' @rdname CycleForm-class
 #' @export
-growth_form <- function(lag = NA) {
-  new("GrowthForm", label = "growth rate", lag = check_lag(lag))
+growth_form <- function(lag = NA, rate = c("percent", "log")) {
+  new("GrowthForm", label = "growth rate", lag = check_lag(lag),
+      rate = check_rate(rate))
 }
 
 #' @rdname CycleForm-class
 #' @export
-acceleration_form <- function(lag = NA) {
-  new("AccelerationForm", label = "acceleration", lag = check_lag(lag))
+acceleration_form <- function(lag = NA, rate = c("percent", "log")) {
+  new("AccelerationForm", label = "acceleration", lag = check_lag(lag),
+      rate = check_rate(rate))
 }
 
 #' @rdname CycleForm-class
@@ -105,14 +135,22 @@ setGeneric("default_filter", function(form) {
   standardGeneric("default_filter")
 })
 
-# Growth rate of `x` over `k` periods (F-08), NA for the first k.
-growth_rate <- function(x, k, logged) {
+# Growth rate of `x` over `k` periods (F-08), NA for the first k: for a
+# logged series the BPS rate 100 (Y_t / Y_{t-k} - 1) = 100 expm1(d) or the
+# log rate 100 d; otherwise the difference d in the units of the series.
+growth_rate <- function(x, k, logged, rate = "percent") {
   v <- as.numeric(x)
   n <- length(v)
   g <- rep(NA_real_, n)
   if (n > k) {
     d <- v[(k + 1):n] - v[1:(n - k)]
-    g[(k + 1):n] <- if (isTRUE(logged)) 100 * d else d
+    g[(k + 1):n] <- if (!isTRUE(logged)) {
+      d
+    } else if (identical(rate, "log")) {
+      100 * d
+    } else {
+      100 * expm1(d)
+    }
   }
   as_ts_like(g, x)
 }
@@ -126,12 +164,12 @@ setMethod("apply_form", "LevelForm", function(form, x, logged) x)
 
 #' @rdname CycleForm-class
 setMethod("apply_form", "GrowthForm", function(form, x, logged) {
-  growth_rate(x, form_lag(form, x), logged)
+  growth_rate(x, form_lag(form, x), logged, form_rate(form))
 })
 
 #' @rdname CycleForm-class
 setMethod("apply_form", "AccelerationForm", function(form, x, logged) {
-  g <- growth_rate(x, form_lag(form, x), logged)
+  g <- growth_rate(x, form_lag(form, x), logged, form_rate(form))
   growth_rate(g, 1, FALSE)
 })
 
@@ -163,16 +201,27 @@ setMethod("form_step", "LevelForm", function(form, freq, logged = TRUE) {
   character(0)
 })
 setMethod("form_step", "GrowthForm", function(form, freq, logged = TRUE) {
-  paste0("form: ", growth_label(form@lag, freq, logged))
+  paste0("form: ", growth_label(form@lag, freq, logged, form_rate(form)))
 })
 setMethod("form_step", "AccelerationForm",
           function(form, freq, logged = TRUE) {
-  paste0("form: acceleration of the ", growth_label(form@lag, freq, logged))
+  paste0("form: acceleration of the ",
+         growth_label(form@lag, freq, logged, form_rate(form)))
 })
 
-growth_label <- function(lag, freq, logged = TRUE) {
+# `logged` is TRUE, FALSE or "percent" (a series in percent, differenced in
+# percentage points although it was logged).
+growth_label <- function(lag, freq, logged = TRUE, rate = "percent") {
   k <- resolve_default(lag, freq)
-  what <- if (isTRUE(logged)) "growth rate" else "difference"
+  what <- if (identical(logged, "percent")) {
+    "difference (percentage points)"
+  } else if (!isTRUE(logged)) {
+    "difference"
+  } else if (identical(rate, "log")) {
+    "log growth rate"
+  } else {
+    "growth rate"
+  }
   if (k == freq) return(paste("annual", what))
   sprintf("%s over %d period%s", what, as.integer(k),
           if (k == 1) "" else "s")

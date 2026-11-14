@@ -102,6 +102,7 @@
 | 2026-11-14 00:10 | INC-14 | A0, A4 | G4–G5 | audit: CLI Indonesia OECD (data SDMX); T1–T7 di `07-oecd-idn.md`; 2 uji regresi hijau; lint 0; check 0/0/3 catatan lingkungan | 1/3 | keputusan maintainer T2, T3, T6 |
 | 2026-11-14 01:40 | INC-15 | A1–A5, A0 | G1–G8 | FR-014, F-10, F-11: `oecd_aggregate(growth = "log")`, `cli_spec(amplitude =)`, `oecd_spec(forecast = 2)`; uji merah terbukti (10 gagal), lalu hijau; replikasi CLI Indonesia r = 0,9999, selisih AA 0,04 poin; uji hijau, lint 0, cakupan 95,7%, check 0/0/3 catatan lingkungan | 1/3 | tinjauan maintainer di PR #9 |
 | 2026-11-14 05:20 | INC-16 | A1–A7, A0 | G1–G8 | FR-014.6 (bentuk siklus untuk metode OECD di GUI), FR-014.7 (mesin pencilan TRAMO untuk metode OECD di GUI), FR-014.8 (`oecd_spec(transform =, filter =)` dan opsi GUI untuk seri laju), data contoh `inst/extdata/oecd-idn/`, `vignette("oecd-indonesia")` (acuan siklus deviasi dan laju PDB); uji merah lalu hijau; lint 0; check 0/0/3 catatan lingkungan | 1/3 | tinjauan maintainer di PR #10 |
+| 2026-11-14 14:20 | INC-17 | A1, A4, A5, A7, A0 | G1–G8 | FR-015: laju rumus BPS sebagai bawaan (`growth_form(rate =)`), satuan `unit = "percent"` (kandidat dan acuan), GUI langkah 2; uji merah terbukti lalu hijau; laju PDB/PKRT sama dengan tabel BPS (galat < 1e-6); `forms.csv` dikalibrasi ulang (pendahulu palsu ≤ 2,1%); lint 0; check 0/0/3 catatan lingkungan | 1/3 | tinjauan maintainer |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
