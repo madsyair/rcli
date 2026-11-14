@@ -330,20 +330,31 @@ app_ui <- function(language = "id") {
               "input.method == 'oecd'",
               shiny::helpText(t("method_help")),
               shiny::checkboxInput("oecd_conformity", t("oecd_conformity"),
-                                   TRUE)),
-            shiny::conditionalPanel(
-              "input.method == 'rcli'",
-              shiny::selectInput("form", t("form"), stats::setNames(
-                c("level", "growth", "acceleration"),
-                c(t("form_level"), t("form_growth"),
-                  t("form_acceleration")))),
+                                   TRUE),
+              # uploaded rates: no transformation, HP smoother (FR-014.8)
+              shiny::checkboxInput("oecd_rates", t("oecd_rates"), FALSE),
               shiny::conditionalPanel(
-                "input.form != 'level'",
-                shiny::selectInput("growth_lag", t("growth_lag"),
-                                   stats::setNames(
-                                     c("annual", "period"),
-                                     c(t("lag_annual"), t("lag_period")))),
-                shiny::helpText(t("form_help")))),
+                "input.oecd_rates",
+                shiny::numericInput("oecd_smooth_period",
+                                    t("oecd_smooth_period"), NA, min = 2)),
+              # engine of the TRAMO-type outliers (FR-014.7)
+              shiny::selectInput("oecd_engine", t("oecd_engine"),
+                                 stats::setNames(
+                                   c("auto", "tramo", "x13"),
+                                   c(t("engine_auto"), t("engine_tramo"),
+                                     t("engine_x13"))))),
+            # the cycle form applies to both methods (FR-014.6)
+            shiny::selectInput("form", t("form"), stats::setNames(
+              c("level", "growth", "acceleration"),
+              c(t("form_level"), t("form_growth"),
+                t("form_acceleration")))),
+            shiny::conditionalPanel(
+              "input.form != 'level'",
+              shiny::selectInput("growth_lag", t("growth_lag"),
+                                 stats::setNames(
+                                   c("annual", "period"),
+                                   c(t("lag_annual"), t("lag_period")))),
+              shiny::helpText(t("form_help"))),
             shiny::selectInput("filter", t("filter"), filter_choices),
             shiny::selectInput("aggregator", t("aggregator"),
                                aggregator_choices),

@@ -387,7 +387,7 @@ idn[, c("composite", "corr_lag0", "aa_gap", "matched", "ref_tp",
 
 With the OECD signs (the exchange rate, the interest rate and producer
 prices inverted), `oecd_spec()` reproduces the published CLI (A1): the
-correlation with the normalised CLI is 0.9998, all 27 turning points fall
+correlation with the normalised CLI is 0.9999, all 27 turning points fall
 on the same month, and the amplitude-adjusted index (`aa_gap`, scaled to
 the OECD ratio-to-trend reference) is on average 0.04 points from the
 published one. The rule of rcli 0.7.0 (A0) had the same turning points

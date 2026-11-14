@@ -448,6 +448,13 @@ setMethod("update", "CliSpec", function(object, ...) {
 #'   (Nilsson and Gyomai 2011, para. 65). Until INC-15 it was one year.
 #' @param amplitude Amplitude measure of the index (see [cli_spec()]); the
 #'   OECD amplitude-adjusted CLI matches standard deviations (`"sd"`).
+#' @param transform Transformation before the filter (see [cli_spec()]);
+#'   the OECD log/level test (`"test"`) by default. `"none"` suits series
+#'   that are already growth rates or percentages.
+#' @param filter A [CycleFilter-class] in place of the OECD double
+#'   Hodrick-Prescott filter, for example [hp_smoother()] for series that
+#'   are already growth rates (FR-014.8). `NULL` keeps the OECD filter (or
+#'   the default filter of the cycle form).
 #' @param ... Further arguments of [cli_spec()]. With `form =`
 #'   [growth_form()] or [acceleration_form()] (experimental, not part of the
 #'   OECD method) the filter is [hp_smoother()], as in [cli_spec()].
@@ -477,7 +484,8 @@ setMethod("update", "CliSpec", function(object, ...) {
 oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
                       engine = c("auto", "tramo", "x13"),
                       classifier = oecd_classifier(), forecast = NULL,
-                      amplitude = c("sd", "mad"), ...) {
+                      amplitude = c("sd", "mad"), transform = "test",
+                      filter = NULL, ...) {
   check_frequency(freq)
   engine <- match.arg(engine)
   if (identical(amplitude, c("sd", "mad"))) amplitude <- "sd"
@@ -487,12 +495,21 @@ oecd_spec <- function(freq = 12, seasonal_adjust = FALSE, holidays = list(),
                "rcli_error_argument")
   }
   cls <- classifier
+  if (!is.null(filter) && !is(filter, "CycleFilter")) {
+    rcli_abort("`filter` must be a CycleFilter (see hp_double_filter()).",
+               "rcli_error_argument")
+  }
   # the OECD double HP filter, or the default filter of another form
   form <- list(...)$form
-  filt <- if (is.null(form) || !is(form, "CycleForm")) hp_double_filter() else
+  filt <- if (!is.null(filter)) {
+    filter
+  } else if (is.null(form) || !is(form, "CycleForm")) {
+    hp_double_filter()
+  } else {
     default_filter(form)
+  }
   cli_spec(freq = freq, filter = filt, dater = NULL,
-           aggregator = oecd_aggregate(), transform = "test",
+           aggregator = oecd_aggregate(), transform = transform,
            seasonal_adjust = seasonal_adjust, holidays = holidays,
            min_median_lead = cls@coincident * freq / 12,
            classifier = cls,

@@ -100,7 +100,8 @@
 | 2026-11-11 19:10 | INC-13 | A6 | G6 | CHANGES-REQUESTED putaran 2 (R-13.11–.12 major, 4 minor/nit) | 2/3 | A5 |
 | 2026-11-11 19:45 | INC-13 | A5, A0 | G4–G8 | R-13.11–.16 ditindaklanjuti; uji mutan baris prakiraan terbunuh; check 0/0/3 catatan, cakupan 95,7%, plot penyajian diperiksa (PNG) | 3/3 | tinjauan maintainer di PR #8 |
 | 2026-11-14 00:10 | INC-14 | A0, A4 | G4–G5 | audit: CLI Indonesia OECD (data SDMX); T1–T7 di `07-oecd-idn.md`; 2 uji regresi hijau; lint 0; check 0/0/3 catatan lingkungan | 1/3 | keputusan maintainer T2, T3, T6 |
-| 2026-11-14 01:40 | INC-15 | A1–A5, A0 | G1–G8 | FR-014, F-10, F-11: `oecd_aggregate(growth = "log")`, `cli_spec(amplitude =)`, `oecd_spec(forecast = 2)`; uji merah terbukti (10 gagal), lalu hijau; replikasi CLI Indonesia r = 0,9998, selisih AA 0,04 poin; uji hijau, lint 0, cakupan 95,7%, check 0/0/3 catatan lingkungan | 1/3 | tinjauan maintainer di PR #9 |
+| 2026-11-14 01:40 | INC-15 | A1–A5, A0 | G1–G8 | FR-014, F-10, F-11: `oecd_aggregate(growth = "log")`, `cli_spec(amplitude =)`, `oecd_spec(forecast = 2)`; uji merah terbukti (10 gagal), lalu hijau; replikasi CLI Indonesia r = 0,9999, selisih AA 0,04 poin; uji hijau, lint 0, cakupan 95,7%, check 0/0/3 catatan lingkungan | 1/3 | tinjauan maintainer di PR #9 |
+| 2026-11-14 05:20 | INC-16 | A1–A7, A0 | G1–G8 | FR-014.6 (bentuk siklus untuk metode OECD di GUI), FR-014.7 (mesin pencilan TRAMO untuk metode OECD di GUI), FR-014.8 (`oecd_spec(transform =, filter =)` dan opsi GUI untuk seri laju), data contoh `inst/extdata/oecd-idn/`, `vignette("oecd-indonesia")` (acuan siklus deviasi dan laju PDB); uji merah lalu hijau; lint 0; check 0/0/3 catatan lingkungan | 1/3 | tinjauan maintainer di PR #10 |
 
 ## Eskalasi terbuka
 <!-- Masalah yang menunggu keputusan pengguna -->
